@@ -12,13 +12,16 @@ class Keyboard {
 public:
     static int getKey(int key);
 
-    static int getKeyDown(int key);
+    static bool getKeyDown(int key);
 
-    static int getKeyUp(int key);
+    static bool getKeyUp(int key);
     
+    static bool getKeyTap(int key);
+
     static void setKeyStatus(int key, int action);
 
 private:
+    static bool key_tap[GLFW_KEY_LAST];
     static int keys[GLFW_KEY_LAST];
 };
 

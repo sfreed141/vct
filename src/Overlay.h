@@ -1,5 +1,5 @@
-#ifndef OVERLAY_HPP
-#define OVERLAY_HPP
+#ifndef OVERLAY_H
+#define OVERLAY_H
 
 /* #define NK_INCLUDE_FIXED_TYPES */
 /* #define NK_INCLUDE_STANDARD_IO */
