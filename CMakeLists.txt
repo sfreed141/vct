@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 2.8)
 
 project(voxelize)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_CXX_STANDARD 14)
+
 file(GLOB_RECURSE SOURCES src/*.cpp)
 file(GLOB_RECURSE HEADERS src/*.h)
 file(GLOB_RECURSE SHADERS shaders/*.vert shaders/*.frag shaders/*.comp)

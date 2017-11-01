@@ -19,6 +19,8 @@
 #include "Input/Keyboard.h"
 #include "Input/Mouse.h"
 
+#include "Overlay.h"
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
@@ -108,13 +110,17 @@ void init() {
 void update(float dt) {
     Mouse::update();
 
-    if (GLFW_PRESS == glfwGetKey(window, GLFW_KEY_ESCAPE)) {
+    if (GLFW_PRESS == Keyboard::getKey(GLFW_KEY_ESCAPE)) {
         glfwSetWindowShouldClose(window, 1);
     }
-    else if (GLFW_PRESS == glfwGetKey(window, GLFW_KEY_LEFT_CONTROL)) {
+    else if (GLFW_PRESS == Keyboard::getKey(GLFW_KEY_LEFT_CONTROL)) {
         int mode = glfwGetInputMode(window, GLFW_CURSOR);
         glfwSetInputMode(window, GLFW_CURSOR, (mode == GLFW_CURSOR_DISABLED) ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED);
     }
+    else if (GLFW_PRESS == Keyboard::getKey(GLFW_KEY_GRAVE_ACCENT)) {
+        /* TODO: toggle ui */
+    }
+
     camera.update(dt);
 }
 
@@ -127,6 +133,8 @@ void render(float dt) {
 
     vec3 lightPos {100.0f, 100.0f, 0.0f};
     vec3 lightInt {1.0f, 1.0f, 1.0f};
+
+    glEnable(GL_DEPTH_TEST);
 
     program.bind();
     glUniformMatrix4fv(program.uniformLocation("projection"), 1, GL_FALSE, glm::value_ptr(projection));
@@ -147,6 +155,8 @@ int main()
 
     init();
 
+    Overlay ui {window};
+
     float dt, lastFrame = 0.0f;
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = (float)glfwGetTime();
@@ -157,6 +167,8 @@ int main()
 
         update(dt);
         render(dt);
+
+        ui.render(dt);
 
         glfwSwapBuffers(window);
     }
