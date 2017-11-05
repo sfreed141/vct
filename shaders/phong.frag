@@ -7,6 +7,8 @@ in vec2 fragTexcoord;
 // Diffuse color
 uniform sampler2D texture0;
 
+uniform float shine;
+
 uniform vec3 eye;
 uniform vec3 lightPos;
 uniform vec3 lightInt;
@@ -23,7 +25,6 @@ void main() {
     vec3 h = normalize(0.5 * (view + light));
     float vdotr = max(dot(norm, h), 0);
 
-    float shine = 30;
     float ambient = 0.2;
     float diffuse = max(dot(norm, light), 0);
     float specular = pow(vdotr, shine);

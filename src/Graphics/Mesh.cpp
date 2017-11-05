@@ -162,7 +162,7 @@ void Mesh::loadMesh(const std::string &meshname) {
     }
 }
 
-void Mesh::draw() const {
+void Mesh::draw(GLuint program) const {
     glActiveTexture(GL_TEXTURE0);
 
     for (const auto &d : drawables) {
@@ -171,6 +171,7 @@ void Mesh::draw() const {
 
         glBindVertexArray(d.vao);
         glBindTexture(GL_TEXTURE_2D, texture_id);
+        glUniform1f(glGetUniformLocation(program, "shine"), materials[d.material_id].shininess);
         glDrawArrays(GL_TRIANGLES, 0, d.vertexCount);
     }
 

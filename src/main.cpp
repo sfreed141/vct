@@ -54,7 +54,7 @@ public:
         glfwGetFramebufferSize(window, &width, &height);
         glViewport(0, 0, width, height);
 
-        glClearColor(0.2f, 0, 0, 1);
+        glClearColor(0.5294f, 0.8078f, 0.9216f, 1.0f);
         glEnable(GL_DEPTH_TEST);
 
         /* mesh = make_unique<Mesh>(RESOURCE_DIR "cubes.obj"); */
@@ -103,7 +103,7 @@ public:
         glUniform3fv(program.uniformLocation("lightInt"), 1, glm::value_ptr(lightInt));
         glUniform1i(program.uniformLocation("texture0"), 0);
 
-        mesh->draw();
+        mesh->draw(program.getHandle());
         program.unbind();
 
         ui.render(dt);

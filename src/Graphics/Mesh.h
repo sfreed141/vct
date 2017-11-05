@@ -19,7 +19,7 @@ class Mesh {
 public:
     Mesh(const std::string &meshname);
 
-    void draw() const;
+    void draw(GLuint program) const;
 
     void loadMesh(const std::string &meshname);
 
