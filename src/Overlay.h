@@ -23,7 +23,7 @@ public:
     bool enabled = true;
 
 private:
-    nk_context *context;
+    nk_context *ctx;
 };
 
 #endif
