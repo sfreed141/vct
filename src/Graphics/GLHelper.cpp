@@ -86,6 +86,17 @@ void GLHelper::printUniformInfo(GLuint program) {
     }
 }
 
+void GLHelper::getMemoryUsage(GLint &totalMem, GLint &availableMem) {
+    if (GLEW_NVX_gpu_memory_info) {
+        glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &totalMem);
+        glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &availableMem);
+    }
+    else {
+        totalMem = 0;
+        availableMem = 0;
+    }
+}
+
 static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam) {
 	// Ignore "Texture 0 is base level inconsistent" warning
 	if (id == 131204) return;

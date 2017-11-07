@@ -1,4 +1,5 @@
 #include "Overlay.h"
+#include <Graphics/GLHelper.h>
 #include <cmath>
 #include <climits>
 #include <ctime>
@@ -56,10 +57,12 @@ void Overlay::render(float dt) {
         if (nk_tree_push(ctx, NK_TREE_TAB, "Performance", NK_MAXIMIZED)) {
             nk_layout_row_dynamic(ctx, rowheight, 1);
             nk_labelf(ctx, NK_TEXT_LEFT, "FPS: %.2f", 1 / dt);
-            nk_labelf(ctx, NK_TEXT_LEFT, "FPS: %.2f", 1 / dt);
-            nk_layout_row_dynamic(ctx, rowheight, 1);
-            nk_labelf(ctx, NK_TEXT_LEFT, "FPS: %.2f", 1 / dt);
-            nk_labelf(ctx, NK_TEXT_LEFT, "FPS: %.2f", 1 / dt);
+
+            int totalMem, availableMem;
+            GLHelper::getMemoryUsage(totalMem, availableMem);
+            totalMem /= 1024;
+            availableMem /= 1024;
+            nk_labelf(ctx, NK_TEXT_LEFT, "GPU Memory Usage (MB): %d / %d", totalMem - availableMem, totalMem);
 
             nk_tree_pop(ctx);
         }

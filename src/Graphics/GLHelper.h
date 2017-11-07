@@ -9,6 +9,7 @@ public:
     static void printGLExtensions();
     static void registerDebugOutputCallback();
     static void printUniformInfo(GLuint program);
+    static void getMemoryUsage(GLint &totalMem, GLint &availableMem);
 };
 
 #endif
