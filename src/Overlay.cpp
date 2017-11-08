@@ -1,5 +1,9 @@
 #include "Overlay.h"
+#include <Application.h>
+#include <Camera.h>
 #include <Graphics/GLHelper.h>
+
+#include <GL/glew.h>
 #include <cmath>
 #include <climits>
 #include <ctime>
@@ -16,8 +20,8 @@
 #define NK_INCLUDE_DEFAULT_FONT
 #define NK_IMPLEMENTATION
 #define NK_GLFW_GL3_IMPLEMENTATION
-#include <nuklear.h>
-#include <nuklear_glfw_gl3.h>
+#include "nuklear.h"
+#include "nuklear_glfw_gl3.h"
 
 #define MAX_VERTEX_BUFFER 512 * 1024
 #define MAX_ELEMENT_BUFFER 128 * 1024
@@ -30,13 +34,25 @@ struct Settings {
 
 static int overview(struct nk_context *ctx);
 
-Overlay::Overlay(GLFWwindow *window) {
+static GLuint voxelSlice = 0;
+static struct nk_image voxelSliceImage;
+
+Overlay::Overlay(GLFWwindow *window, const Application &app)
+    : app(app)
+{
     this->ctx = nk_glfw3_init(window, NK_GLFW3_INSTALL_CALLBACKS);
 
     // Load default font
     struct nk_font_atlas *atlas;
     nk_glfw3_font_stash_begin(&atlas);
     nk_glfw3_font_stash_end();
+
+    struct nk_color table[NK_COLOR_COUNT];
+    memcpy(table, nk_default_color_style, NK_COLOR_COUNT * sizeof(struct nk_color));
+    for (struct nk_color &color : table) {
+        color.a = 234;
+    }
+    nk_style_from_table(ctx, table);
 }
 
 Overlay::~Overlay() {
@@ -50,6 +66,29 @@ void Overlay::render(float dt) {
 
     /* overview(this->ctx); */
 
+    const Camera &camera = app.camera;
+
+    if (voxelSlice == 0) {
+        glGenTextures(1, &voxelSlice);
+        glBindTexture(GL_TEXTURE_2D, voxelSlice);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        /* glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA16F, app.voxelDim, app.voxelDim); */
+        glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA16F, app.voxelDim, app.voxelDim);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        voxelSliceImage = nk_image_id((int)voxelSlice);
+    }
+
+    // TODO should be able to get textures like dis
+    glCopyImageSubData(
+        app.voxelColor, GL_TEXTURE_3D, 0, 0, 0, 2,
+        voxelSlice, GL_TEXTURE_2D, 0, 0, 0, 0,
+        app.voxelDim, app.voxelDim, 1
+    );
+
     const int rowheight = 20;
     const nk_flags window_flags = NK_WINDOW_BORDER | NK_WINDOW_MOVABLE
         | NK_WINDOW_SCALABLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE;
@@ -62,16 +101,24 @@ void Overlay::render(float dt) {
             GLHelper::getMemoryUsage(totalMem, availableMem);
             totalMem /= 1024;
             availableMem /= 1024;
-            nk_labelf(ctx, NK_TEXT_LEFT, "GPU Memory Usage (MB): %d / %d", totalMem - availableMem, totalMem);
+            nk_labelf(ctx, NK_TEXT_LEFT, "GPU Memory Usage: %d / %d MB", totalMem - availableMem, totalMem);
 
             nk_tree_pop(ctx);
         }
 
         if (nk_tree_push(ctx, NK_TREE_TAB, "Debug", NK_MAXIMIZED)) {
             nk_layout_row_dynamic(ctx, rowheight, 1);
+
+            nk_labelf(ctx, NK_TEXT_LEFT, "Camera Position: (%4.1f, %4.1f, %4.1f)", camera.position.x, camera.position.y, camera.position.z);
+            nk_labelf(ctx, NK_TEXT_LEFT, "Camera Direction: (%4.1f, %4.1f, %4.1f)", camera.front.x, camera.front.y, camera.front.z);
+
             nk_checkbox_label(ctx, "Wireframe", &settings.drawWireframe);
             nk_checkbox_label(ctx, "Voxels", &settings.drawVoxels);
             nk_checkbox_label(ctx, "Axes", &settings.drawAxes);
+
+            nk_label(ctx, "Voxel Grid Slicer", NK_TEXT_LEFT);
+            nk_layout_row_static(ctx, 64, 64, 1);
+            nk_image(ctx, voxelSliceImage);
 
             nk_tree_pop(ctx);
         }

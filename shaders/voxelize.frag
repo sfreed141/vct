@@ -39,4 +39,6 @@ void main() {
     // Store value (must be atomic, use alpha component of normal as count)
 //    imageAtomicAdd(voxelColor, voxelIndex, vec4(diffuseColor, 0));
 //    imageAtomicAdd(voxelNormal, voxelIndex, vec4(fs_in.normal, 1));
+    imageStore(voxelColor, ivec3(voxelIndex), vec4(1, 1, 0, 1));
+    imageStore(voxelNormal, ivec3(voxelIndex), vec4(0, 1, 1, 1));
 }

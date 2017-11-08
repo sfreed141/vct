@@ -5,8 +5,8 @@ project(voxelize)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 14)
 
-file(GLOB_RECURSE SOURCES src/*.cpp)
-file(GLOB_RECURSE HEADERS src/*.h)
+file(GLOB_RECURSE SOURCES src/*.cpp src/*.c)
+file(GLOB_RECURSE HEADERS src/*.hpp src/*.h)
 file(GLOB_RECURSE SHADERS shaders/*.vert shaders/*.frag shaders/*.comp)
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} ${SHADERS})

@@ -12,10 +12,11 @@
 
 struct nk_context;
 struct GLFWwindow;
+class Application;
 
 class Overlay {
 public:
-    Overlay(GLFWwindow *window);
+    Overlay(GLFWwindow *window, const Application &app);
     ~Overlay();
 
     void render(float dt);
@@ -24,6 +25,7 @@ public:
 
 private:
     nk_context *ctx;
+    const Application &app;
 };
 
 #endif
