@@ -26,6 +26,12 @@
 
 #include "common.h"
 
+struct Settings {
+    int drawWireframe = false;
+    int drawVoxels = false;
+    int drawAxes = false;
+};
+
 class Application {
 public:
     friend class Overlay;
@@ -39,11 +45,10 @@ public:
         glClearColor(0.5294f, 0.8078f, 0.9216f, 1.0f);
         glEnable(GL_DEPTH_TEST);
 
-        /* mesh = make_unique<Mesh>(RESOURCE_DIR "cubes.obj"); */
         mesh = std::make_unique<Mesh>(RESOURCE_DIR "sponza/sponza_small.obj");
 
         program.linkProgram(SHADER_DIR "simple.vert", SHADER_DIR "phong.frag");
-        voxelProgram.linkProgram(SHADER_DIR "voxelize.vert", SHADER_DIR "voxelize.frag", SHADER_DIR "voxelize.geom");
+        voxelProgram.linkProgram(SHADER_DIR "simple.vert", SHADER_DIR "phongVoxel.frag");
 
         camera.position = glm::vec3(5, 1, 0);
         camera.yaw = 180.0f;
@@ -75,6 +80,45 @@ public:
     void render(float dt) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // Voxelize scene
+        {
+            GL_DEBUG_PUSH("Voxelize Scene")
+            glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
+            glm::mat4 view = camera.lookAt();
+            glm::mat4 model;
+
+            glm::vec3 lightPos {100.0f, 100.0f, 0.0f};
+            glm::vec3 lightInt {1.0f, 1.0f, 1.0f};
+
+            glViewport(0, 0, width, height);
+            glDisable(GL_DEPTH_TEST);
+            glDisable(GL_CULL_FACE);
+            glDepthMask(GL_FALSE);
+            glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+            voxelProgram.bind();
+            glUniformMatrix4fv(voxelProgram.uniformLocation("projection"), 1, GL_FALSE, glm::value_ptr(projection));
+            glUniformMatrix4fv(voxelProgram.uniformLocation("view"), 1, GL_FALSE, glm::value_ptr(view));
+            glUniformMatrix4fv(voxelProgram.uniformLocation("model"), 1, GL_FALSE, glm::value_ptr(model));
+            glUniform3fv(voxelProgram.uniformLocation("eye"), 1, glm::value_ptr(camera.position));
+            glUniform3fv(voxelProgram.uniformLocation("lightPos"), 1, glm::value_ptr(lightPos));
+            glUniform3fv(voxelProgram.uniformLocation("lightInt"), 1, glm::value_ptr(lightInt));
+            glUniform1i(voxelProgram.uniformLocation("texture0"), 0);
+
+            glBindImageTexture(1, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+
+            mesh->draw(voxelProgram.getHandle());
+            voxelProgram.unbind();
+
+            // Restore OpenGL state
+            glViewport(0, 0, width, height);
+            glEnable(GL_DEPTH_TEST);
+            glEnable(GL_CULL_FACE);
+            glDepthMask(GL_TRUE);
+            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+            GL_DEBUG_POP()
+        }
+
         // Render scene
         {
             GL_DEBUG_PUSH("Render Scene")
@@ -98,49 +142,13 @@ public:
             glUniform3fv(program.uniformLocation("lightInt"), 1, glm::value_ptr(lightInt));
             glUniform1i(program.uniformLocation("texture0"), 0);
 
+            glUniform1i(program.uniformLocation("voxelize"), settings.drawVoxels);
+
+            glBindImageTexture(1, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+
             mesh->draw(program.getHandle());
             program.unbind();
             GL_DEBUG_POP()
-        }
-
-        // Voxelize scene
-        {
-            GL_DEBUG_PUSH("Voxelization Pass")
-            // Set OpenGL state
-            glViewport(0, 0, voxelDim, voxelDim);
-            glDisable(GL_DEPTH_TEST);
-            glDisable(GL_CULL_FACE);
-            glDepthMask(GL_FALSE);
-            glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-
-            voxelProgram.bind();
-
-            // TODO: ortho values, don't need to send each frame
-            // Make and bind mvp matrices for each axis
-            glm::mat4 projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, near, far);
-            glm::mat4 mvp_x = projection * glm::lookAt(glm::vec3(0), glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0));
-            glm::mat4 mvp_y = projection * glm::lookAt(glm::vec3(0), glm::vec3( 0,-1, 0), glm::vec3(1, 0, 0));
-            glm::mat4 mvp_z = projection * glm::lookAt(glm::vec3(0), glm::vec3( 0, 0,-1), glm::vec3(0, 1, 0));
-            glUniformMatrix4fv(voxelProgram.uniformLocation("mvp_x"), 1, GL_FALSE, value_ptr(mvp_x));
-            glUniformMatrix4fv(voxelProgram.uniformLocation("mvp_y"), 1, GL_FALSE, value_ptr(mvp_y));
-            glUniformMatrix4fv(voxelProgram.uniformLocation("mvp_z"), 1, GL_FALSE, value_ptr(mvp_z));
-
-            // Bind voxel grids
-            glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
-            glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
-
-            // Render geometry
-            mesh->draw(voxelProgram.getHandle());
-
-            voxelProgram.unbind();
-
-            // Restore OpenGL state
-            glViewport(0, 0, width, height);
-            glEnable(GL_DEPTH_TEST);
-            glEnable(GL_CULL_FACE);
-            glDepthMask(GL_TRUE);
-            glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-            GL_DEBUG_POP();
         }
 
         // Render overlay
@@ -164,6 +172,8 @@ private:
     GLShaderProgram voxelProgram;
     int voxelDim = 64;
     GLuint voxelColor = 0, voxelNormal = 0;
+
+    Settings settings;
 
     // Create an empty (zeroed) 3D texture with dimensions of size (in bytes)
     GLuint make3DTexture(int size) {

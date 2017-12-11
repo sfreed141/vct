@@ -26,18 +26,12 @@
 #define MAX_VERTEX_BUFFER 512 * 1024
 #define MAX_ELEMENT_BUFFER 128 * 1024
 
-struct Settings {
-    int drawWireframe = false;
-    int drawVoxels = false;
-    int drawAxes = false;
-} settings;
-
 static int overview(struct nk_context *ctx);
 
 static GLuint voxelSlice = 0;
 static struct nk_image voxelSliceImage;
 
-Overlay::Overlay(GLFWwindow *window, const Application &app)
+Overlay::Overlay(GLFWwindow *window, Application &app)
     : app(app)
 {
     this->ctx = nk_glfw3_init(window, NK_GLFW3_INSTALL_CALLBACKS);
@@ -67,6 +61,7 @@ void Overlay::render(float dt) {
     /* overview(this->ctx); */
 
     const Camera &camera = app.camera;
+    Settings &settings = app.settings;
 
     if (voxelSlice == 0) {
         glGenTextures(1, &voxelSlice);

@@ -8,15 +8,12 @@ in vec2 fragTexcoord;
 uniform sampler2D texture0;
 
 layout(binding = 1, rgba16f) uniform image3D voxelColor;
-uniform bool voxelize = false;
 
 uniform float shine;
 
 uniform vec3 eye;
 uniform vec3 lightPos;
 uniform vec3 lightInt;
-
-out vec4 color;
 
 ivec3 voxelIndex(vec3 pos) {
     const float minx = -20, maxx = 20,
@@ -36,7 +33,7 @@ ivec3 voxelIndex(vec3 pos) {
 }
 
 void main() {
-    color = texture(texture0, fragTexcoord);
+    vec4 color = texture(texture0, fragTexcoord);
 
     vec3 norm = normalize(fragNormal);
     vec3 light = normalize(lightPos - fragPosition);
@@ -49,11 +46,8 @@ void main() {
     float diffuse = max(dot(norm, light), 0);
     float specular = pow(vdotr, shine);
 
-    if (voxelize) {
-        ivec3 i = voxelIndex(fragPosition);
-        color = imageLoad(voxelColor, i).rgba;
-    }
-    else {
-        color = vec4((ambient + diffuse + specular) * lightInt * color.rgb, 1);
-    }
+    color = vec4((ambient + diffuse + specular) * lightInt * color.rgb, 1);
+
+    ivec3 i = voxelIndex(fragPosition);
+    imageStore(voxelColor, i, color);
 }

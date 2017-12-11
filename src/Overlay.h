@@ -16,7 +16,7 @@ class Application;
 
 class Overlay {
 public:
-    Overlay(GLFWwindow *window, const Application &app);
+    Overlay(GLFWwindow *window, Application &app);
     ~Overlay();
 
     void render(float dt);
@@ -25,7 +25,7 @@ public:
 
 private:
     nk_context *ctx;
-    const Application &app;
+    Application &app;
 };
 
 #endif
