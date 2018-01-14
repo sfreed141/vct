@@ -70,24 +70,21 @@ void Overlay::render(float dt) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        /* glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA16F, app.voxelDim, app.voxelDim); */
         glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA16F, app.voxelDim, app.voxelDim);
         glBindTexture(GL_TEXTURE_2D, 0);
 
         voxelSliceImage = nk_image_id((int)voxelSlice);
     }
 
-    // TODO should be able to get textures like dis
-    glCopyImageSubData(
-        app.voxelColor, GL_TEXTURE_3D, 0, 0, 0, 2,
-        voxelSlice, GL_TEXTURE_2D, 0, 0, 0, 0,
-        app.voxelDim, app.voxelDim, 1
-    );
-
     const int rowheight = 20;
     const nk_flags window_flags = NK_WINDOW_BORDER | NK_WINDOW_MOVABLE
         | NK_WINDOW_SCALABLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE;
     if (nk_begin(ctx, "", nk_rect(10, 10, 400, 600), window_flags)) {
+		nk_layout_row_dynamic(ctx, rowheight, 1);
+		nk_label(ctx, "Movement: WASD + Mouse", NK_TEXT_LEFT);
+		nk_label(ctx, "Left Ctrl: Toggle mouse capture", NK_TEXT_LEFT);
+		nk_label(ctx, "Grave/Tilde: Toggle overlay", NK_TEXT_LEFT);
+
         if (nk_tree_push(ctx, NK_TREE_TAB, "Performance", NK_MAXIMIZED)) {
             nk_layout_row_dynamic(ctx, rowheight, 1);
             nk_labelf(ctx, NK_TEXT_LEFT, "FPS: %.2f", 1 / dt);
@@ -112,6 +109,17 @@ void Overlay::render(float dt) {
             nk_checkbox_label(ctx, "Axes", &settings.drawAxes);
 
             nk_label(ctx, "Voxel Grid Slicer", NK_TEXT_LEFT);
+
+			nk_layout_row_dynamic(ctx, rowheight, 2);
+			static int slice = 0;
+			nk_labelf(ctx, NK_TEXT_LEFT, "Slice %d", slice);
+			nk_slider_int(ctx, 0, &slice, app.voxelDim - 1, 1);
+			glCopyImageSubData(
+				app.voxelColor, GL_TEXTURE_3D, 0, 0, 0, slice,
+				voxelSlice, GL_TEXTURE_2D, 0, 0, 0, 0,
+				app.voxelDim, app.voxelDim, 1
+			);
+
             nk_layout_row_static(ctx, 64, 64, 1);
             nk_image(ctx, voxelSliceImage);
 
