@@ -19,9 +19,12 @@ out GS_OUT {
 // projection matrices along each axis
 uniform mat4 mvp_x, mvp_y, mvp_z;
 
+uniform int axis_override = -1;
+
 void main() {
     // find dominant axis (using face normal)
     vec3 faceNormal = normalize(cross(gs_in[1].position - gs_in[0].position, gs_in[2].position - gs_in[0].position));
+	faceNormal = abs(faceNormal);
 
     // since projecting onto std basis just find max component
     mat4 mvp;
@@ -38,6 +41,19 @@ void main() {
         mvp = mvp_z;
         axis = 2;
     }
+
+	if (axis_override == 0) {
+		mvp = mvp_x;
+		axis = 0;
+	}
+	else if (axis_override == 1) {
+		mvp = mvp_y;
+		axis = 1;
+	}
+	else if (axis_override == 2) {
+		mvp = mvp_z;
+		axis = 2;
+	}
 
     // project vertices and emit vertices
     for (int i = 0; i < 3; i++) {

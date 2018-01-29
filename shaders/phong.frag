@@ -20,8 +20,8 @@ out vec4 color;
 
 ivec3 voxelIndex(vec3 pos) {
     const float minx = -20, maxx = 20,
-        miny = -2, maxy = 15,
-        minz = -12, maxz = 12;
+        miny = -20, maxy = 20,
+        minz = -20, maxz = 20;
     const int voxelDim = 64;
 
     float rangex = maxx - minx;
@@ -52,6 +52,8 @@ void main() {
     if (voxelize) {
         ivec3 i = voxelIndex(fragPosition);
         color = imageLoad(voxelColor, i).rgba;
+		color.rgb = color.rgb / color.a;
+		color.a = 1;
     }
     else {
         color = vec4((ambient + diffuse + specular) * lightInt * color.rgb, 1);

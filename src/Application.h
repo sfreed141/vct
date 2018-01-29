@@ -27,6 +27,9 @@ struct Settings {
     int drawWireframe = false;
     int drawVoxels = false;
     int drawAxes = false;
+	int axisOverride = -1;
+
+	int conservativeRasterization = true;
 };
 
 class Application {
@@ -54,6 +57,8 @@ private:
     GLuint voxelColor = 0, voxelNormal = 0;
 
     Settings settings;
+
+	void renderSimpleVoxelization(float dt);
 };
 
 #endif

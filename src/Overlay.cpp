@@ -81,7 +81,7 @@ void Overlay::render(float dt) {
         | NK_WINDOW_SCALABLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE;
     if (nk_begin(ctx, "", nk_rect(10, 10, 400, 600), window_flags)) {
 		nk_layout_row_dynamic(ctx, rowheight, 1);
-		nk_label(ctx, "Movement: WASD + Mouse", NK_TEXT_LEFT);
+		nk_label(ctx, "WASD + Mouse: Movement", NK_TEXT_LEFT);
 		nk_label(ctx, "Left Ctrl: Toggle mouse capture", NK_TEXT_LEFT);
 		nk_label(ctx, "Grave/Tilde: Toggle overlay", NK_TEXT_LEFT);
 
@@ -108,6 +108,11 @@ void Overlay::render(float dt) {
             nk_checkbox_label(ctx, "Voxels", &settings.drawVoxels);
             nk_checkbox_label(ctx, "Axes", &settings.drawAxes);
 
+            nk_layout_row_dynamic(ctx, rowheight, 2);
+			nk_labelf(ctx, NK_TEXT_LEFT, "Axis Override: %d", settings.axisOverride);
+			nk_slider_int(ctx, -1, &settings.axisOverride, 2, 1);
+
+            nk_layout_row_dynamic(ctx, rowheight, 1);
             nk_label(ctx, "Voxel Grid Slicer", NK_TEXT_LEFT);
 
 			nk_layout_row_dynamic(ctx, rowheight, 2);
@@ -127,6 +132,11 @@ void Overlay::render(float dt) {
         }
 
         if (nk_tree_push(ctx, NK_TREE_TAB, "Settings", NK_MAXIMIZED)) {
+			nk_layout_row_dynamic(ctx, rowheight, 1);
+
+			if (GLEW_NV_conservative_raster) {
+				nk_checkbox_label(ctx, "Conservative Rasterization", &settings.conservativeRasterization);
+			}
 
             nk_tree_pop(ctx);
         }
