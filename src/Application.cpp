@@ -132,6 +132,7 @@ void Application::render(float dt) {
 		glViewport(0, 0, width, height);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
+		glPolygonMode(GL_FRONT_AND_BACK, settings.drawWireframe ? GL_LINE : GL_FILL);
 
 		program.bind();
 		glUniformMatrix4fv(program.uniformLocation("projection"), 1, GL_FALSE, glm::value_ptr(projection));
@@ -152,6 +153,9 @@ void Application::render(float dt) {
 
 		mesh->draw(program.getHandle());
 		program.unbind();
+		if (settings.drawWireframe) {
+			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		}
 		GL_DEBUG_POP()
 	}
 
