@@ -14,7 +14,6 @@
 #include <memory>
 
 #include "Graphics/GLHelper.h"
-#include "Graphics/Mesh.h"
 #include "Graphics/GLShaderProgram.h"
 
 #include "Input/Keyboard.h"
@@ -22,6 +21,7 @@
 
 #include "Overlay.h"
 #include "Camera.h"
+#include "Scene.h"
 
 #include "common.h"
 
@@ -34,7 +34,8 @@ void Application::init() {
 	glClearColor(0.5294f, 0.8078f, 0.9216f, 1.0f);
 	glEnable(GL_DEPTH_TEST);
 
-	mesh = std::make_unique<Mesh>(RESOURCE_DIR "sponza/sponza_small.obj");
+	scene = std::make_unique<Scene>();
+	scene->addMesh(RESOURCE_DIR "sponza/sponza_small.obj");
 
 	program.linkProgram(SHADER_DIR "simple.vert", SHADER_DIR "phong.frag");
 	voxelProgram.linkProgram(SHADER_DIR "voxelize.vert", SHADER_DIR "voxelize.frag", SHADER_DIR "voxelize.geom");
@@ -104,7 +105,7 @@ void Application::render(float dt) {
 
 		glUniform1i(voxelProgram.uniformLocation("axis_override"), settings.axisOverride);
 
-		mesh->draw(voxelProgram.getHandle());
+		scene->draw(voxelProgram.getHandle());
 		voxelProgram.unbind();
 
 		// Restore OpenGL state
@@ -151,7 +152,7 @@ void Application::render(float dt) {
 
 		glBindImageTexture(1, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 
-		mesh->draw(program.getHandle());
+		scene->draw(program.getHandle());
 		program.unbind();
 		if (settings.drawWireframe) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
@@ -222,7 +223,7 @@ void Application::renderSimpleVoxelization(float dt) {
 
 		glBindImageTexture(1, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 
-		mesh->draw(voxelProgram.getHandle());
+		scene->draw(voxelProgram.getHandle());
 		voxelProgram.unbind();
 
 		// Restore OpenGL state
@@ -261,7 +262,7 @@ void Application::renderSimpleVoxelization(float dt) {
 
 		glBindImageTexture(1, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 
-		mesh->draw(program.getHandle());
+		scene->draw(program.getHandle());
 		program.unbind();
 		GL_DEBUG_POP()
 	}

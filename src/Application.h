@@ -15,11 +15,11 @@
 #include <memory>
 
 #include "Graphics/GLHelper.h"
-#include "Graphics/Mesh.h"
 #include "Graphics/GLShaderProgram.h"
 
 #include "Overlay.h"
 #include "Camera.h"
+#include "Scene.h"
 
 #include "common.h"
 
@@ -51,7 +51,7 @@ private:
     int width, height;
     float near = 0.1f, far = 100.0f;
 
-    std::unique_ptr<Mesh> mesh = nullptr;
+    std::unique_ptr<Scene> scene = nullptr;
     GLShaderProgram program;
     
     GLShaderProgram voxelProgram;
