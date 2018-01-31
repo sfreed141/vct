@@ -20,6 +20,7 @@
 #include "Overlay.h"
 #include "Camera.h"
 #include "Scene.h"
+#include "TimerQueries.h"
 
 #include "common.h"
 
@@ -59,6 +60,7 @@ private:
     GLuint voxelColor = 0, voxelNormal = 0;
 
     Settings settings;
+	TimerQueries timers;
 
 	void renderSimpleVoxelization(float dt);
 };

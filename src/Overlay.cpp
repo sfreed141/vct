@@ -62,6 +62,7 @@ void Overlay::render(float dt) {
 
     const Camera &camera = app.camera;
     Settings &settings = app.settings;
+	TimerQueries &timers = app.timers;
 
     if (voxelSlice == 0) {
         glGenTextures(1, &voxelSlice);
@@ -79,7 +80,7 @@ void Overlay::render(float dt) {
     const int rowheight = 20;
     const nk_flags window_flags = NK_WINDOW_BORDER | NK_WINDOW_MOVABLE
         | NK_WINDOW_SCALABLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE;
-    if (nk_begin(ctx, "", nk_rect(10, 10, 400, 600), window_flags)) {
+    if (nk_begin(ctx, "", nk_rect(10, 10, 400, 700), window_flags)) {
 		nk_layout_row_dynamic(ctx, rowheight, 1);
 		nk_label(ctx, "WASD + Mouse: Movement", NK_TEXT_LEFT);
 		nk_label(ctx, "Left Ctrl: Toggle mouse capture", NK_TEXT_LEFT);
@@ -94,6 +95,13 @@ void Overlay::render(float dt) {
             totalMem /= 1024;
             availableMem /= 1024;
             nk_labelf(ctx, NK_TEXT_LEFT, "GPU Memory Usage: %d / %d MB", totalMem - availableMem, totalMem);
+
+			if (nk_tree_push(ctx, NK_TREE_NODE, "Timing Breakdown", NK_MAXIMIZED)) {
+				nk_labelf(ctx, NK_TEXT_LEFT, "Voxelize: %.2f ms", timers.getTime(TimerQueries::VOXELIZE_TIME));
+				nk_labelf(ctx, NK_TEXT_LEFT, "Render: %.2f ms", timers.getTime(TimerQueries::RENDER_TIME));
+
+				nk_tree_pop(ctx);
+			}
 
             nk_tree_pop(ctx);
         }
@@ -124,9 +132,6 @@ void Overlay::render(float dt) {
                     voxelSlice, GL_TEXTURE_2D, 0, 0, 0, 0,
                     app.voxelDim, app.voxelDim, 1
                 );
-
-                nk_layout_row_dynamic(ctx, rowheight, 1);
-                nk_label(ctx, "Voxel Grid Slicer", NK_TEXT_LEFT);
 
                 nk_layout_row_static(ctx, 64, 64, 1);
                 nk_image(ctx, voxelSliceImage);

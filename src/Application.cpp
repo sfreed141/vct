@@ -76,6 +76,7 @@ void Application::update(float dt) {
 void Application::render(float dt) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	timers.beginQuery(TimerQueries::VOXELIZE_TIME);
 	// Voxelize scene
 	{
 		GL_DEBUG_PUSH("Voxelize Scene")
@@ -119,7 +120,9 @@ void Application::render(float dt) {
 		}
 		GL_DEBUG_POP()
 	}
+	timers.endQuery();
 
+	timers.beginQuery(TimerQueries::RENDER_TIME);
 	// Render scene
 	{
 		GL_DEBUG_PUSH("Render Scene")
@@ -159,6 +162,9 @@ void Application::render(float dt) {
 		}
 		GL_DEBUG_POP()
 	}
+	timers.endQuery();
+
+	timers.getQueriesAndSwap();
 
 	// Render overlay
 	{
