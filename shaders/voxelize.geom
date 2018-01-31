@@ -24,16 +24,16 @@ uniform int axis_override = -1;
 void main() {
     // find dominant axis (using face normal)
     vec3 faceNormal = normalize(cross(gs_in[1].position - gs_in[0].position, gs_in[2].position - gs_in[0].position));
-	faceNormal = abs(faceNormal);
+	vec3 absNormal = abs(faceNormal);
 
     // since projecting onto std basis just find max component
     mat4 mvp;
     int axis;
-    if (faceNormal.x > faceNormal.y && faceNormal.x > faceNormal.z) {
+    if (absNormal.x > absNormal.y && absNormal.x > absNormal.z) {
         mvp = mvp_x;
         axis = 0;
     }
-    else if (faceNormal.y > faceNormal.x && faceNormal.y > faceNormal.z) {
+    else if (absNormal.y > absNormal.x && absNormal.y > absNormal.z) {
         mvp = mvp_y;
         axis = 1;
     }

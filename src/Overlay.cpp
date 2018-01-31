@@ -58,7 +58,7 @@ void Overlay::render(float dt) {
 
     nk_glfw3_new_frame();
 
-    /* overview(this->ctx); */
+    // overview(this->ctx);
 
     const Camera &camera = app.camera;
     Settings &settings = app.settings;
@@ -104,6 +104,8 @@ void Overlay::render(float dt) {
             nk_labelf(ctx, NK_TEXT_LEFT, "Camera Position: (%4.1f, %4.1f, %4.1f)", camera.position.x, camera.position.y, camera.position.z);
             nk_labelf(ctx, NK_TEXT_LEFT, "Camera Direction: (%4.1f, %4.1f, %4.1f)", camera.front.x, camera.front.y, camera.front.z);
 
+            nk_checkbox_label(ctx, "Normals", &settings.drawNormals);
+            nk_checkbox_label(ctx, "Dominant Axis", &settings.drawDominantAxis);
             nk_checkbox_label(ctx, "Wireframe", &settings.drawWireframe);
             nk_checkbox_label(ctx, "Voxels", &settings.drawVoxels);
             nk_checkbox_label(ctx, "Axes", &settings.drawAxes);
@@ -112,21 +114,25 @@ void Overlay::render(float dt) {
 			nk_labelf(ctx, NK_TEXT_LEFT, "Axis Override: %d", settings.axisOverride);
 			nk_slider_int(ctx, -1, &settings.axisOverride, 2, 1);
 
-            nk_layout_row_dynamic(ctx, rowheight, 1);
-            nk_label(ctx, "Voxel Grid Slicer", NK_TEXT_LEFT);
+            if (nk_tree_push(ctx, NK_TREE_NODE, "Voxel Grid Slicer", NK_MAXIMIZED)) {
+                static int slice = 0;
+                nk_layout_row_dynamic(ctx, rowheight, 2);
+                nk_labelf(ctx, NK_TEXT_LEFT, "Slice %d", slice);
+                nk_slider_int(ctx, 0, &slice, app.voxelDim - 1, 1);
+                glCopyImageSubData(
+                    app.voxelColor, GL_TEXTURE_3D, 0, 0, 0, slice,
+                    voxelSlice, GL_TEXTURE_2D, 0, 0, 0, 0,
+                    app.voxelDim, app.voxelDim, 1
+                );
 
-			nk_layout_row_dynamic(ctx, rowheight, 2);
-			static int slice = 0;
-			nk_labelf(ctx, NK_TEXT_LEFT, "Slice %d", slice);
-			nk_slider_int(ctx, 0, &slice, app.voxelDim - 1, 1);
-			glCopyImageSubData(
-				app.voxelColor, GL_TEXTURE_3D, 0, 0, 0, slice,
-				voxelSlice, GL_TEXTURE_2D, 0, 0, 0, 0,
-				app.voxelDim, app.voxelDim, 1
-			);
+                nk_layout_row_dynamic(ctx, rowheight, 1);
+                nk_label(ctx, "Voxel Grid Slicer", NK_TEXT_LEFT);
 
-            nk_layout_row_static(ctx, 64, 64, 1);
-            nk_image(ctx, voxelSliceImage);
+                nk_layout_row_static(ctx, 64, 64, 1);
+                nk_image(ctx, voxelSliceImage);
+
+                nk_tree_pop(ctx);
+            }
 
             nk_tree_pop(ctx);
         }
@@ -146,6 +152,7 @@ void Overlay::render(float dt) {
     nk_glfw3_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
 }
 
+#if 0
 // demo code from nuklear
 static int overview(struct nk_context *ctx) {
     /* window flags */
@@ -1345,3 +1352,4 @@ static int overview(struct nk_context *ctx) {
     nk_end(ctx);
     return !nk_window_is_closed(ctx, "Overview");
 }
+#endif

@@ -1,8 +1,8 @@
 #version 430 core
 
-#extension GL_NV_gpu_shader5: require
-#extension GL_NV_shader_atomic_float: require
-#extension GL_NV_shader_atomic_fp16_vector: require
+#extension GL_NV_gpu_shader5: enable
+#extension GL_NV_shader_atomic_float: enable
+#extension GL_NV_shader_atomic_fp16_vector: enable
 
 in GS_OUT {
     vec3 position;
@@ -26,12 +26,10 @@ void main() {
     // Swap components based on which axis it was projected on
     if (fs_in.axis == 0) {
         // looking down x axis
-        // voxelIndex = vec3(voxelIndex.z, voxelIndex.y, voxelDim - voxelIndex.x);
 		voxelIndex = vec3(voxelDim - voxelIndex.z, voxelIndex.y, voxelIndex.x);
     }
     else if (fs_in.axis == 1) {
         // looking down y axis
-        // voxelIndex = voxelIndex.yzx;
 		voxelIndex = vec3(voxelIndex.x, voxelIndex.z, voxelDim - voxelIndex.y);
     }
     else {

@@ -143,6 +143,9 @@ void Application::render(float dt) {
 		glUniform1i(program.uniformLocation("texture0"), 0);
 
 		glUniform1i(program.uniformLocation("voxelize"), settings.drawVoxels);
+		glUniform1i(program.uniformLocation("normals"), settings.drawNormals);
+		glUniform1i(program.uniformLocation("dominant_axis"), settings.drawDominantAxis);		
+
 		glUniform1i(program.uniformLocation("voxelDim"), voxelDim);
 
 		glBindImageTexture(1, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);

@@ -24,6 +24,8 @@
 #include "common.h"
 
 struct Settings {
+    int drawNormals = false;
+    int drawDominantAxis = false;
     int drawWireframe = false;
     int drawVoxels = false;
     int drawAxes = false;

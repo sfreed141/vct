@@ -8,7 +8,10 @@ in vec2 fragTexcoord;
 uniform sampler2D texture0;
 
 layout(binding = 1, rgba16f) uniform image3D voxelColor;
+
 uniform bool voxelize = false;
+uniform bool normals = false;
+uniform bool dominant_axis = false;
 
 uniform float shine;
 
@@ -56,6 +59,15 @@ void main() {
 		color.a = 1;
     }
     else {
-        color = vec4((ambient + diffuse + specular) * lightInt * color.rgb, 1);
+        if (normals) {
+            color = vec4(norm, 1);
+        }
+        else if (dominant_axis) {
+            norm = abs(norm);
+            color = vec4(step(vec3(max(max(norm.x, norm.y), norm.z)), norm.xyz), 1);
+        }
+        else {
+            color = vec4((ambient + diffuse + specular) * lightInt * color.rgb, 1);
+        }
     }
 }
