@@ -5,7 +5,10 @@
 
 void Camera::update(float dt) {
     float move_speed = speed * dt;
-    if (Keyboard::getKeyDown(GLFW_KEY_W))
+	if (Keyboard::getKeyDown(GLFW_KEY_LEFT_SHIFT))
+		move_speed *= 2;
+
+	if (Keyboard::getKeyDown(GLFW_KEY_W))
         position += move_speed * front;
     if (Keyboard::getKeyDown(GLFW_KEY_S))
         position -= move_speed * front;
@@ -13,6 +16,10 @@ void Camera::update(float dt) {
         position -= move_speed * glm::normalize(glm::cross(front, up));
     if (Keyboard::getKeyDown(GLFW_KEY_D))
         position += move_speed * glm::normalize(glm::cross(front, up));
+	if (Keyboard::getKeyDown(GLFW_KEY_SPACE))
+		position += move_speed * up;
+	if (Keyboard::getKeyDown(GLFW_KEY_C))
+		position -= move_speed * up;
 
     float xoffset = sensitivity * Mouse::getDeltaX();
     float yoffset = sensitivity * Mouse::getDeltaY();

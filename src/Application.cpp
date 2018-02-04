@@ -28,24 +28,26 @@
 GLuint make3DTexture(int size);
 
 void Application::init() {
+	// Setup for OpenGL
 	glfwGetFramebufferSize(window, &width, &height);
 	glViewport(0, 0, width, height);
-
 	glClearColor(0.5294f, 0.8078f, 0.9216f, 1.0f);
-	glEnable(GL_DEPTH_TEST);
 
-	scene = std::make_unique<Scene>();
-	scene->addMesh(RESOURCE_DIR "sponza/sponza_small.obj");
-
+	// Create shaders
 	program.linkProgram(SHADER_DIR "simple.vert", SHADER_DIR "phong.frag");
 	voxelProgram.linkProgram(SHADER_DIR "voxelize.vert", SHADER_DIR "voxelize.frag", SHADER_DIR "voxelize.geom");
-
-	camera.position = glm::vec3(5, 1, 0);
-	camera.yaw = 180.0f;
 
 	// Initialize voxel textures
 	voxelColor = make3DTexture(voxelDim);
 	voxelNormal = make3DTexture(voxelDim);
+
+	// Create scene
+	scene = std::make_unique<Scene>();
+	scene->addMesh(RESOURCE_DIR "sponza/sponza_small.obj");
+
+	// Camera setup
+	camera.position = glm::vec3(5, 1, 0);
+	camera.yaw = 180.0f;
 }
 
 void Application::update(float dt) {

@@ -7,6 +7,7 @@
 #include <vector>
 #include <algorithm>
 #include <cassert>
+#include <cmath>
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
@@ -48,6 +49,11 @@ void Mesh::loadMesh(const std::string &meshname) {
         // Default material
         materials.push_back(material_t());
 
+		float maxAnisotropy = 1.0f;
+		if (GLEW_EXT_texture_filter_anisotropic) {
+			glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
+		}
+
         // Load materials and store name->id map
         for (material_t &mp : materials) {
             if (!mp.diffuse_texname.empty() && textures.find(mp.diffuse_texname) == textures.end()) {
@@ -65,17 +71,20 @@ void Mesh::loadMesh(const std::string &meshname) {
                 }
 
                 GLuint texture_id;
-                glGenTextures(1, &texture_id);
-                glBindTexture(GL_TEXTURE_2D, texture_id);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glCreateTextures(GL_TEXTURE_2D, 1, &texture_id);
+                glTextureParameteri(texture_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+                glTextureParameteri(texture_id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+				glTextureParameterf(texture_id, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy);
+				GLint levels = (GLint)std::log2(std::max(width, height)) + 1;
                 if (components == 3) {
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+					glTextureStorage2D(texture_id, levels, GL_RGB8, width, height);
+					glTextureSubImage2D(texture_id, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, image);
                 }
                 else if (components == 4) {
-                    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+					glTextureStorage2D(texture_id, levels, GL_RGBA8, width, height);
+					glTextureSubImage2D(texture_id, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image); 
                 }
-                glBindTexture(GL_TEXTURE_2D, 0);
+				glGenerateTextureMipmap(texture_id);
                 stbi_image_free(image);
                 textures.insert(make_pair(mp.diffuse_texname, texture_id));
             }
