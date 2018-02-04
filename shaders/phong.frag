@@ -33,7 +33,7 @@ ivec3 voxelIndex(vec3 pos) {
 
     float x = voxelDim * ((pos.x - minx) / rangex);
     float y = voxelDim * ((pos.y - miny) / rangey);
-    float z = voxelDim * ((pos.z - minz) / rangez);
+    float z = voxelDim * (1 - (pos.z - minz) / rangez);
 
     return ivec3(x, y, z);
 }

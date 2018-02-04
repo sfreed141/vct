@@ -23,7 +23,8 @@ uniform int axis_override = -1;
 
 void main() {
     // find dominant axis (using face normal)
-    vec3 faceNormal = normalize(cross(gs_in[1].position - gs_in[0].position, gs_in[2].position - gs_in[0].position));
+    //vec3 faceNormal = normalize(cross(gs_in[1].position - gs_in[0].position, gs_in[2].position - gs_in[0].position));
+    vec3 faceNormal = normalize(gs_in[0].normal + gs_in[1].normal + gs_in[2].normal);
 	vec3 absNormal = abs(faceNormal);
 
     // since projecting onto std basis just find max component
@@ -55,7 +56,7 @@ void main() {
 		axis = 2;
 	}
 
-    // project vertices and emit vertices
+    // project and emit vertices
     for (int i = 0; i < 3; i++) {
         gl_Position = mvp * gl_in[i].gl_Position;
 

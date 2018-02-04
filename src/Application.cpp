@@ -93,7 +93,7 @@ void Application::render(float dt) {
 
 		glClearTexImage(voxelColor, 0, GL_RGBA, GL_FLOAT, nullptr);
 
-		glm::mat4 projection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.1f, 40.0f);
+		glm::mat4 projection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.0f, 40.0f);
 		glm::mat4 mvp_x = projection * glm::lookAt(glm::vec3(20, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 		glm::mat4 mvp_y = projection * glm::lookAt(glm::vec3(0, 20, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, -1));
 		glm::mat4 mvp_z = projection * glm::lookAt(glm::vec3(0, 0, 20), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));

@@ -16,36 +16,47 @@ layout(binding = 1, rgba16f) uniform image3D voxelNormal;
 
 uniform sampler2D diffuseTexture;
 
+// Map [-1, 1] -> [0, 1]
+vec3 ndcToUnit(vec3 p) { return (p + 1.0) * 0.5; }
+
+ivec3 getVoxelPosition() {
+	// get ndc
+	vec3 ndc = vec3(fs_in.position);
+
+	// map to unit
+	vec3 unit = ndcToUnit(ndc);
+
+	// swizzle based on projected axis
+	if (fs_in.axis == 0) {
+		// looking down x axis
+		unit = vec3(1 - unit.z, unit.y, unit.x);
+	}
+	else if (fs_in.axis == 1) {
+		// looking down y axis
+		unit = vec3(unit.x, 1 - unit.z, unit.y);
+	}
+	else {
+		// looking down z axis
+	}
+
+	// map to voxel index
+	vec3 voxelIndex = unit * imageSize(voxelColor).x;
+
+	return ivec3(voxelIndex);
+}
+
 void main() {
-    ivec3 voxelSize = imageSize(voxelColor);
-    float voxelDim = voxelSize.x;
-
-    // Get voxel index
-    vec3 voxelIndex = vec3(gl_FragCoord.xy, gl_FragCoord.z * voxelDim);
-
-    // Swap components based on which axis it was projected on
-    if (fs_in.axis == 0) {
-        // looking down x axis
-		voxelIndex = vec3(voxelDim - voxelIndex.z, voxelIndex.y, voxelIndex.x);
-    }
-    else if (fs_in.axis == 1) {
-        // looking down y axis
-		voxelIndex = vec3(voxelIndex.x, voxelIndex.z, voxelDim - voxelIndex.y);
-    }
-    else {
-        // looking down z axis
-		voxelIndex.z = voxelDim - voxelIndex.z;
-    }
+	ivec3 voxelIndex = getVoxelPosition();
 
     vec3 diffuseColor = texture(diffuseTexture, fs_in.texcoord).rgb;
 
     // Store value (must be atomic, use alpha component as count)
 #if GL_NV_shader_atomic_fp16_vector
-    imageAtomicAdd(voxelColor, ivec3(voxelIndex), f16vec4(diffuseColor, 1));
-    imageAtomicAdd(voxelNormal, ivec3(voxelIndex), f16vec4(fs_in.normal, 1));
+    imageAtomicAdd(voxelColor, voxelIndex, f16vec4(diffuseColor, 1));
+    imageAtomicAdd(voxelNormal, voxelIndex, f16vec4(fs_in.normal, 1));
 #else
 	// TODO
-    imageStore(voxelColor, ivec3(voxelIndex), f16vec4(diffuseColor, 1));
-    imageStore(voxelNormal, ivec3(voxelIndex), f16vec4(fs_in.normal, 1));
+    imageStore(voxelColor, voxelIndex, f16vec4(diffuseColor, 1));
+    imageStore(voxelNormal, voxelIndex, f16vec4(fs_in.normal, 1));
 #endif
 }
