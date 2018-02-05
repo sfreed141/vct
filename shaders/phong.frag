@@ -7,6 +7,8 @@ in vec2 fragTexcoord;
 // Diffuse color
 uniform sampler2D texture0;
 
+uniform sampler2D shadowmap;
+
 layout(binding = 1, rgba16f) uniform image3D voxelColor;
 
 uniform bool voxelize = false;
@@ -18,6 +20,7 @@ uniform float shine;
 uniform vec3 eye;
 uniform vec3 lightPos;
 uniform vec3 lightInt;
+uniform mat4 ls;
 
 out vec4 color;
 
@@ -38,6 +41,33 @@ ivec3 voxelIndex(vec3 pos) {
     return ivec3(x, y, z);
 }
 
+float shadowFactor(vec3 lsPosition) {
+	vec3 shifted = (lsPosition + 1.0) * 0.5;
+
+	float shadowFactor = 0;
+	float bias = 0.01;
+	float fragDepth = shifted.z + bias;
+
+	if (fragDepth > 1.0) {
+		return 0;
+	}
+
+	vec2 sampleOffset = 1.0 / textureSize(shadowmap, 0);
+
+	if (fragDepth > texture(shadowmap, shifted.xy).r)
+		shadowFactor += 0.2;
+	if (fragDepth > texture(shadowmap, shifted.xy + vec2(sampleOffset.x, sampleOffset.y)).r)
+		shadowFactor += 0.2;
+	if (fragDepth > texture(shadowmap, shifted.xy + vec2(sampleOffset.x, -sampleOffset.y)).r)
+		shadowFactor += 0.2;
+	if (fragDepth > texture(shadowmap, shifted.xy + vec2(-sampleOffset.x, sampleOffset.y)).r)
+		shadowFactor += 0.2;
+	if (fragDepth > texture(shadowmap, shifted.xy + vec2(-sampleOffset.x, -sampleOffset.y)).r)
+		shadowFactor += 0.2;
+
+    return shadowFactor;
+}
+
 void main() {
     color = texture(texture0, fragTexcoord);
 
@@ -51,6 +81,8 @@ void main() {
     float ambient = 0.2;
     float diffuse = max(dot(norm, light), 0);
     float specular = pow(vdotr, shine);
+
+	float shadowFactor = 1.0 - shadowFactor((ls * vec4(fragPosition, 1.0)).xyz);
 
     if (voxelize) {
         ivec3 i = voxelIndex(fragPosition);
@@ -67,7 +99,7 @@ void main() {
             color = vec4(step(vec3(max(max(norm.x, norm.y), norm.z)), norm.xyz), 1);
         }
         else {
-            color = vec4((ambient + diffuse + specular) * lightInt * color.rgb, 1);
+            color = vec4((ambient + shadowFactor * (diffuse + specular)) * lightInt * color.rgb, 1);
         }
     }
 }

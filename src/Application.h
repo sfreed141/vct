@@ -16,6 +16,7 @@
 
 #include "Graphics/GLHelper.h"
 #include "Graphics/GLShaderProgram.h"
+#include "Graphics/GLFramebuffer.h"
 
 #include "Overlay.h"
 #include "Camera.h"
@@ -58,6 +59,9 @@ private:
     GLShaderProgram voxelProgram;
     int voxelDim = 64;
     GLuint voxelColor = 0, voxelNormal = 0;
+
+	GLFramebuffer shadowmapFBO;
+	GLShaderProgram shadowmapProgram;
 
     Settings settings;
 	TimerQueries timers;

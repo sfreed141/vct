@@ -32,10 +32,29 @@ void Application::init() {
 	glfwGetFramebufferSize(window, &width, &height);
 	glViewport(0, 0, width, height);
 	glClearColor(0.5294f, 0.8078f, 0.9216f, 1.0f);
+	
+	// Setup framebuffers
+	shadowmapFBO.bind();
+	glm::vec4 borderColor{ 1.0f };
+	shadowmapFBO.attachTexture(
+		GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT,
+		width, height, 
+		GL_DEPTH_COMPONENT, GL_FLOAT,
+		GL_LINEAR, GL_LINEAR,
+		GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER,
+		&borderColor
+	);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	if (shadowmapFBO.getStatus() != GL_FRAMEBUFFER_COMPLETE) {
+		std::cerr << "shadowmapFBO not created successfully" << std::endl;
+	}
+	shadowmapFBO.unbind();
 
 	// Create shaders
 	program.linkProgram(SHADER_DIR "simple.vert", SHADER_DIR "phong.frag");
 	voxelProgram.linkProgram(SHADER_DIR "voxelize.vert", SHADER_DIR "voxelize.frag", SHADER_DIR "voxelize.geom");
+	shadowmapProgram.linkProgram(SHADER_DIR "simple.vert", SHADER_DIR "empty.frag");
 
 	// Initialize voxel textures
 	voxelColor = make3DTexture(voxelDim);
@@ -124,6 +143,37 @@ void Application::render(float dt) {
 	}
 	timers.endQuery();
 
+	// Generate shadowmap
+	glm::vec3 lightPos{ 0.0f, 30.0f, -5.0f };
+	glm::vec3 lightInt{ 1.0f, 1.0f, 1.0f };
+	const float lz_near = 0.1f, lz_far = 50.0f, l_boundary = 25.0f;
+	glm::mat4 lp = glm::ortho(-l_boundary, l_boundary, -l_boundary, l_boundary, lz_near, lz_far);
+	glm::mat4 lv = glm::lookAt(lightPos, glm::vec3(0), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 ls = lp * lv;
+	{
+		GL_DEBUG_PUSH("Shadowmap")
+		shadowmapFBO.bind();
+		glViewport(0, 0, width, height);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		glDisable(GL_BLEND);
+		glEnable(GL_CULL_FACE);
+		glCullFace(GL_FRONT);
+
+		glm::mat4 model;
+
+		shadowmapProgram.bind();
+		glUniformMatrix4fv(shadowmapProgram.uniformLocation("projection"), 1, GL_FALSE, glm::value_ptr(lp));
+		glUniformMatrix4fv(shadowmapProgram.uniformLocation("view"), 1, GL_FALSE, glm::value_ptr(lv));
+		glUniformMatrix4fv(shadowmapProgram.uniformLocation("model"), 1, GL_FALSE, glm::value_ptr(model));
+
+		scene->draw(shadowmapProgram.getHandle());
+
+		shadowmapProgram.unbind();
+		shadowmapFBO.unbind();
+		glCullFace(GL_BACK);
+		GL_DEBUG_POP()
+	}
+
 	timers.beginQuery(TimerQueries::RENDER_TIME);
 	// Render scene
 	{
@@ -131,9 +181,6 @@ void Application::render(float dt) {
 		glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
 		glm::mat4 view = camera.lookAt();
 		glm::mat4 model;
-
-		glm::vec3 lightPos{ 100.0f, 100.0f, 0.0f };
-		glm::vec3 lightInt{ 1.0f, 1.0f, 1.0f };
 
 		glViewport(0, 0, width, height);
 		glEnable(GL_DEPTH_TEST);
@@ -147,7 +194,12 @@ void Application::render(float dt) {
 		glUniform3fv(program.uniformLocation("eye"), 1, glm::value_ptr(camera.position));
 		glUniform3fv(program.uniformLocation("lightPos"), 1, glm::value_ptr(lightPos));
 		glUniform3fv(program.uniformLocation("lightInt"), 1, glm::value_ptr(lightInt));
+		glUniformMatrix4fv(program.uniformLocation("ls"), 1, GL_FALSE, glm::value_ptr(ls));
 		glUniform1i(program.uniformLocation("texture0"), 0);
+
+		GLuint shadowmap = shadowmapFBO.getTexture(0);
+		glBindTextureUnit(1, shadowmap);
+		glUniform1i(program.uniformLocation("shadowmap"), 1);
 
 		glUniform1i(program.uniformLocation("voxelize"), settings.drawVoxels);
 		glUniform1i(program.uniformLocation("normals"), settings.drawNormals);
