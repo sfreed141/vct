@@ -34,6 +34,7 @@ struct Settings {
 	int axisOverride = -1;
 
 	int conservativeRasterization = true;
+	int enableShadows = true;
 };
 
 class Application {
@@ -62,6 +63,8 @@ private:
 
 	GLFramebuffer shadowmapFBO;
 	GLShaderProgram shadowmapProgram;
+
+	GLShaderProgram injectRadianceProgram;
 
     Settings settings;
 	TimerQueries timers;

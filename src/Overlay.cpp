@@ -148,6 +148,7 @@ void Overlay::render(float dt) {
 			if (GLEW_NV_conservative_raster) {
 				nk_checkbox_label(ctx, "Conservative Rasterization", &settings.conservativeRasterization);
 			}
+			nk_checkbox_label(ctx, "Enable Shadows", &settings.enableShadows);
 
             nk_tree_pop(ctx);
         }

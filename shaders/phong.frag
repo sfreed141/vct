@@ -14,6 +14,7 @@ layout(binding = 1, rgba16f) uniform image3D voxelColor;
 uniform bool voxelize = false;
 uniform bool normals = false;
 uniform bool dominant_axis = false;
+uniform bool enableShadows = true;
 
 uniform float shine;
 
@@ -41,7 +42,7 @@ ivec3 voxelIndex(vec3 pos) {
     return ivec3(x, y, z);
 }
 
-float shadowFactor(vec3 lsPosition) {
+float calcShadowFactor(vec3 lsPosition) {
 	vec3 shifted = (lsPosition + 1.0) * 0.5;
 
 	float shadowFactor = 0;
@@ -82,13 +83,19 @@ void main() {
     float diffuse = max(dot(norm, light), 0);
     float specular = pow(vdotr, shine);
 
-	float shadowFactor = 1.0 - shadowFactor((ls * vec4(fragPosition, 1.0)).xyz);
+	float shadowFactor = 1.0;
+	if (enableShadows) {
+		shadowFactor = 1.0 - calcShadowFactor((ls * vec4(fragPosition, 1.0)).xyz);
+	}
 
     if (voxelize) {
         ivec3 i = voxelIndex(fragPosition);
         color = imageLoad(voxelColor, i).rgba;
-		color.rgb = color.rgb / color.a;
-		color.a = 1;
+
+		// TODO: hacky stuff to play around with
+		//color.rgb = color.rgb / color.a;
+		//color.a = 1;
+		if (color.a > 1) color = vec4(0,0,0,1);
     }
     else {
         if (normals) {

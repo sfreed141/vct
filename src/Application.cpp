@@ -55,6 +55,7 @@ void Application::init() {
 	program.linkProgram(SHADER_DIR "simple.vert", SHADER_DIR "phong.frag");
 	voxelProgram.linkProgram(SHADER_DIR "voxelize.vert", SHADER_DIR "voxelize.frag", SHADER_DIR "voxelize.geom");
 	shadowmapProgram.linkProgram(SHADER_DIR "simple.vert", SHADER_DIR "empty.frag");
+	injectRadianceProgram.linkProgram(SHADER_DIR "injectRadiance.comp");
 
 	// Initialize voxel textures
 	voxelColor = make3DTexture(voxelDim);
@@ -174,6 +175,32 @@ void Application::render(float dt) {
 		GL_DEBUG_POP()
 	}
 
+	// Inject radiance into voxel grid
+	{
+		GL_DEBUG_PUSH("Radiance Injection")
+
+		injectRadianceProgram.bind();
+
+		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+
+		GLuint shadowmap = shadowmapFBO.getTexture(0);
+		glBindTextureUnit(1, shadowmap);
+		glUniform1i(injectRadianceProgram.uniformLocation("shadowmap"), 1);
+
+		glm::mat4 lsInverse = glm::inverse(ls);
+		glUniformMatrix4fv(injectRadianceProgram.uniformLocation("lsInverse"), 1, GL_FALSE, glm::value_ptr(lsInverse));
+		glUniform3fv(injectRadianceProgram.uniformLocation("lightPos"), 1, glm::value_ptr(lightPos));
+		glUniform3fv(injectRadianceProgram.uniformLocation("lightInt"), 1, glm::value_ptr(lightInt));
+
+		// 2D workgroup should be the size of shadowmap, local_size = 16
+		glDispatchCompute((width + 16 - 1) / 16, (height + 16 - 1) / 16, 1);
+
+		injectRadianceProgram.unbind();
+
+		GL_DEBUG_POP()
+	}
+
 	timers.beginQuery(TimerQueries::RENDER_TIME);
 	// Render scene
 	{
@@ -203,7 +230,8 @@ void Application::render(float dt) {
 
 		glUniform1i(program.uniformLocation("voxelize"), settings.drawVoxels);
 		glUniform1i(program.uniformLocation("normals"), settings.drawNormals);
-		glUniform1i(program.uniformLocation("dominant_axis"), settings.drawDominantAxis);		
+		glUniform1i(program.uniformLocation("dominant_axis"), settings.drawDominantAxis);
+		glUniform1i(program.uniformLocation("enableShadows"), settings.enableShadows);
 
 		glUniform1i(program.uniformLocation("voxelDim"), voxelDim);
 

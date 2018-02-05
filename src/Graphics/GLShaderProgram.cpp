@@ -8,6 +8,10 @@ GLShaderProgram::GLShaderProgram() :
     handle(0)
     {}
 
+GLShaderProgram::GLShaderProgram(std::string computeSource) {
+    linkProgram(computeSource);
+}
+
 GLShaderProgram::GLShaderProgram(std::string vertSource, std::string fragSource) {
     linkProgram(vertSource, fragSource);
 }
@@ -18,6 +22,30 @@ GLShaderProgram::GLShaderProgram(std::string vertSource, std::string fragSource,
 
 GLShaderProgram::~GLShaderProgram() {
     glDeleteProgram(handle);
+}
+
+void GLShaderProgram::linkProgram(std::string computeSource) {
+	GLint success;
+	GLchar infoLog[512];
+
+	GLShader computeShader{ GL_COMPUTE_SHADER, computeSource };
+
+	GLuint program;
+	program = glCreateProgram();
+
+	glAttachShader(program, computeShader.getHandle());
+
+	glLinkProgram(program);
+	glGetProgramiv(program, GL_LINK_STATUS, &success);
+	if (!success) {
+		glGetProgramInfoLog(program, 512, NULL, infoLog);
+		std::cout
+			<< "ERROR::SHADER_PROGRAM::COMPILATION_FAILED\n"
+			<< infoLog
+			<< std::endl;
+	}
+
+	this->handle = program;
 }
 
 void GLShaderProgram::linkProgram(std::string vertSource, std::string fragSource) {
