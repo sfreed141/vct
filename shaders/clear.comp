@@ -1,0 +1,17 @@
+#version 430
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+layout(rgba16f, binding = 0) uniform image3D voxelColor;
+
+void main() {
+    ivec3 threadId = ivec3(gl_GlobalInvocationID.xyz);
+
+    if (any(greaterThan(threadId, imageSize(voxelColor).xyz))) {
+        return;
+    }
+
+    if (imageLoad(voxelColor, threadId).a >= 1) {
+        imageStore(voxelColor, threadId, vec4(0, 0, 0, 1));
+    }
+}

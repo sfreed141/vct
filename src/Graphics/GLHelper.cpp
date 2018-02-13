@@ -104,6 +104,8 @@ static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum
 	if (id == 131185) return;
 	// Ignore framebuffer creation info
 	if (id == 131169) return;
+	// Ignore allocation info
+	if (id == 131184) return;
 
 	std::cout << "DEBUG (" << id << "): " << message << std::endl;
 

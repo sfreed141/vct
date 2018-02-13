@@ -200,6 +200,23 @@ void Application::render(float dt) {
 
 		GL_DEBUG_POP()
 	}
+	
+#if 0
+	// TODO hacky solution to clear out unlit areas
+	{
+		static GLShaderProgram *p = nullptr;
+		if (!p) {
+			p = new GLShaderProgram(SHADER_DIR "clear.comp");
+		}
+		p->bind();
+		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+
+		glDispatchCompute(64 / 16, 64 / 16, 64 / 16);
+		p->unbind();
+	}
+
+#endif
+	glGenerateTextureMipmap(voxelColor);
 
 	timers.beginQuery(TimerQueries::RENDER_TIME);
 	// Render scene
@@ -235,7 +252,11 @@ void Application::render(float dt) {
 
 		glUniform1i(program.uniformLocation("voxelDim"), voxelDim);
 
-		glBindImageTexture(1, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+		//glBindImageTexture(1, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+
+		glBindTextureUnit(2, voxelColor);
+		glUniform1i(program.uniformLocation("voxelColor"), 2);
+		glUniform1i(program.uniformLocation("miplevel"), settings.miplevel);
 
 		scene->draw(program.getHandle());
 		program.unbind();
@@ -263,15 +284,17 @@ GLuint make3DTexture(int size) {
 	glGenTextures(1, &handle);
 	glBindTexture(GL_TEXTURE_3D, handle);
 
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
 	// Allocate and zero out texture memory
-	glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA16F, size, size, size, 0, GL_RGBA, GL_FLOAT, nullptr);
+	glTexStorage3D(GL_TEXTURE_3D, 4, GL_RGBA16F, size, size, size);
+	//glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA16F, size, size, size, 0, GL_RGBA, GL_FLOAT, nullptr);
 	glClearTexImage(handle, 0, GL_RGBA, GL_FLOAT, nullptr);
+	glGenerateMipmap(GL_TEXTURE_3D);
 
 	glBindTexture(GL_TEXTURE_3D, 0);
 

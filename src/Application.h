@@ -35,6 +35,8 @@ struct Settings {
 
 	int conservativeRasterization = true;
 	int enableShadows = true;
+
+	int miplevel = 0;
 };
 
 class Application {

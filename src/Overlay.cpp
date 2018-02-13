@@ -119,6 +119,10 @@ void Overlay::render(float dt) {
             nk_checkbox_label(ctx, "Axes", &settings.drawAxes);
 
             nk_layout_row_dynamic(ctx, rowheight, 2);
+			nk_labelf(ctx, NK_TEXT_LEFT, "Miplevel: %d", settings.miplevel);
+			nk_slider_int(ctx, 0, &settings.miplevel, 4, 1);
+
+            nk_layout_row_dynamic(ctx, rowheight, 2);
 			nk_labelf(ctx, NK_TEXT_LEFT, "Axis Override: %d", settings.axisOverride);
 			nk_slider_int(ctx, -1, &settings.axisOverride, 2, 1);
 
@@ -128,12 +132,12 @@ void Overlay::render(float dt) {
                 nk_labelf(ctx, NK_TEXT_LEFT, "Slice %d", slice);
                 nk_slider_int(ctx, 0, &slice, app.voxelDim - 1, 1);
                 glCopyImageSubData(
-                    app.voxelColor, GL_TEXTURE_3D, 0, 0, 0, slice,
+                    app.voxelColor, GL_TEXTURE_3D, settings.miplevel, 0, 0, slice,
                     voxelSlice, GL_TEXTURE_2D, 0, 0, 0, 0,
                     app.voxelDim, app.voxelDim, 1
                 );
 
-                nk_layout_row_static(ctx, 64, 64, 1);
+                nk_layout_row_static(ctx, 128, 128, 1);
                 nk_image(ctx, voxelSliceImage);
 
                 nk_tree_pop(ctx);
