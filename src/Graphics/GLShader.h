@@ -1,7 +1,7 @@
 #ifndef GLSHADER_H
 #define GLSHADER_H
 
-#include <glad/glad.h>
+#include <Graphics/opengl.h>
 #include <string>
 
 class GLShader {

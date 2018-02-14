@@ -1,4 +1,4 @@
-#include <glad/glad.h>
+#include <Graphics/opengl.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include "GLFramebuffer.h"

@@ -3,7 +3,7 @@
 #include <Camera.h>
 #include <Graphics/GLHelper.h>
 
-#include <glad/glad.h>
+#include <Graphics/opengl.h>
 #include <cmath>
 #include <climits>
 #include <ctime>

@@ -1,6 +1,6 @@
 #include "Application.h"
 
-#include <glad/glad.h>
+#include <Graphics/opengl.h>
 #include <GLFW/glfw3.h>
 
 #define GLM_FORCE_RADIANS

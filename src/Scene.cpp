@@ -1,6 +1,6 @@
 #include "Scene.h"
 
-#include <glad/glad.h>
+#include <Graphics/opengl.h>
 
 #include <string>
 #include <vector>

@@ -1,4 +1,4 @@
-#include <glad/glad.h>
+#include <Graphics/opengl.h>
 #include "GLQuad.h"
 
 static const float quad_vertices[] = {

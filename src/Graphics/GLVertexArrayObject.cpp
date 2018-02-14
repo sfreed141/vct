@@ -1,4 +1,4 @@
-#include <glad/glad.h>
+#include <Graphics/opengl.h>
 #include "GLVertexArrayObject.h"
 
 GLVertexArrayObject::GLVertexArrayObject() {

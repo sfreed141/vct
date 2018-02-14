@@ -1,7 +1,7 @@
 #ifndef GLBUFFER_H
 #define GLBUFFER_H
 
-#include <glad/glad.h>
+#include <Graphics/opengl.h>
 
 class GLBuffer {
 public:

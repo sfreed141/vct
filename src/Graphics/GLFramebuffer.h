@@ -1,7 +1,7 @@
 #ifndef GLFRAMEBUFFER_H
 #define GLFRAMEBUFFER_H
 
-#include <glad/glad.h>
+#include <Graphics/opengl.h>
 #include <glm/glm.hpp>
 #include <vector>
 

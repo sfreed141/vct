@@ -1,6 +1,6 @@
 #include "Mesh.h"
 
-#include <glad/glad.h>
+#include <Graphics/opengl.h>
 
 #include <iostream>
 #include <string>
