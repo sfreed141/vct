@@ -54,5 +54,6 @@ void main() {
     float diffuse = max(dot(normal, lightVector), 0);
 
     // Inject into voxel texture
+    // TODO: just passing color straight through right now for testing
     imageStore(voxelColor, voxelPosition, f16vec4(color));
 }

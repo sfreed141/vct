@@ -44,8 +44,8 @@ vec3 traceCone(vec3 position, vec3 direction, int steps) {
 	float alpha = 0;
 
 	for (int i = 0; i < steps && alpha < 0.95; i++) {
-		coneRadius = max(1.0, coneHeight * coneTanHalfAngle);
-		float lod = log2(2 * coneRadius);
+		coneRadius = coneHeight * coneTanHalfAngle;
+		float lod = log2(max(1.0, 2 * coneRadius));
 		vec4 sampleColor = textureLod(voxelColor, start + coneHeight * direction, lod);
 		float a = 1 - alpha;
 		color += sampleColor.rgb * a;
@@ -127,7 +127,8 @@ void main() {
 		// TODO: hacky stuff to play around with
 		//color.rgb = color.rgb / color.a;
 		//color.a = 1;
-		//if (color.a > 1) color = vec4(0,0,0,1);
+		if (color.a > 1) color.a = 1;
+		if (any(greaterThan(color.rgb, vec3(1)))) color.rgb = vec3(1, 0, 1);
     }
     else {
         if (normals) {

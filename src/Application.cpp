@@ -209,7 +209,7 @@ void Application::render(float dt) {
 		GL_DEBUG_POP()
 	}
 	
-#if 0
+#if 1
 	// TODO hacky solution to clear out unlit areas
 	{
 		static GLShaderProgram *p = nullptr;
@@ -219,12 +219,13 @@ void Application::render(float dt) {
 		p->bind();
 		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 
-		glDispatchCompute(64 / 16, 64 / 16, 64 / 16);
+		glDispatchCompute((voxelDim + 4 - 1) / 4, (voxelDim + 4 - 1) / 4, (voxelDim + 4 - 1) / 4);
+
 		glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 		p->unbind();
 	}
-
 #endif
+
 	glGenerateTextureMipmap(voxelColor);
 
 	timers.beginQuery(TimerQueries::RENDER_TIME);
