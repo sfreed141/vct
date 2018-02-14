@@ -25,6 +25,18 @@ Implementation of voxelization portion of Voxel Cone Tracing.
 
 ### Windows
 1. Install Visual Studio Community 2017. Make sure to install Visual C++ and enable the "Desktop development with C++" option.
-2. Clone (or download) [vcpkg](https://github.com/Microsoft/vcpkg) and follow installation directions. Then install glm and glfw3.
-3. Update the CMAKE_TOOLCHAIN_FILE variable in the CMakeSettings.json file.
-4. Good to go!
+2. Install dependencies using [vcpkg](https://github.com/Microsoft/vcpkg).
+    * Clone or download vcpkg to `C:\src\vcpkg`.
+    * Install vcpkg, integrate with Visual Studio, and install packages:
+    ```
+    C:\src\vcpkg> .\bootstrap-vcpkg.bat
+    C:\src\vcpkg> .\vcpkg.exe integrate install
+    C:\src\vcpkg> .\vcpkg.exe install glm glfw3
+    ```
+    You can also install x64 versions of the libraries:
+    ```
+    C:\src\vcpkg> .\vcpkg.exe install glm:x64-windows glfw3:x64-windows
+    ```
+3. If you didn't install vcpkg to `C:\src\vcpkg`, update the `CMAKE_TOOLCHAIN_FILE` variable in `CMakeSettings.json` appropriately.
+4. In Visual Studio, open the project by going to `File>Open>CMake...` and selecting the `CMakeLists.txt` file in the root project directory.
+5. Good to go!
