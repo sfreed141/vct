@@ -19,7 +19,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
 
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
-find_package(GLFW REQUIRED)
+find_package(glfw3 REQUIRED)
 
-include_directories(${PROJECT_NAME} ${GLFW_INCLUDE_DIR} ${OPENGL_INCLUDE_DIR} ${GLEW_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} ${GLFW_LIBRARY} ${OPENGL_gl_LIBRARY} ${GLEW_LIBRARIES})
+include_directories(${PROJECT_NAME}  ${OPENGL_INCLUDE_DIR} ${GLEW_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} glfw ${OPENGL_gl_LIBRARY} ${GLEW_LIBRARIES})
