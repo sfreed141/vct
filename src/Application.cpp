@@ -123,13 +123,17 @@ void Application::render(float dt) {
 		glUniformMatrix4fv(voxelProgram.uniformLocation("mvp_y"), 1, GL_FALSE, glm::value_ptr(mvp_y));
 		glUniformMatrix4fv(voxelProgram.uniformLocation("mvp_z"), 1, GL_FALSE, glm::value_ptr(mvp_z));
 
+		glUniform1i(voxelProgram.uniformLocation("axis_override"), settings.axisOverride);
+
 		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 
-		glUniform1i(voxelProgram.uniformLocation("axis_override"), settings.axisOverride);
-
 		scene->draw(voxelProgram.getHandle());
+
+		glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+		glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 		voxelProgram.unbind();
+
 
 		// Restore OpenGL state
 		glViewport(0, 0, width, height);
@@ -171,6 +175,7 @@ void Application::render(float dt) {
 
 		shadowmapProgram.unbind();
 		shadowmapFBO.unbind();
+
 		glCullFace(GL_BACK);
 		GL_DEBUG_POP()
 	}
@@ -196,6 +201,9 @@ void Application::render(float dt) {
 		// 2D workgroup should be the size of shadowmap, local_size = 16
 		glDispatchCompute((width + 16 - 1) / 16, (height + 16 - 1) / 16, 1);
 
+		glBindTextureUnit(1, 0);
+		glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+		glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 		injectRadianceProgram.unbind();
 
 		GL_DEBUG_POP()
@@ -212,6 +220,7 @@ void Application::render(float dt) {
 		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 
 		glDispatchCompute(64 / 16, 64 / 16, 64 / 16);
+		glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 		p->unbind();
 	}
 
@@ -259,7 +268,11 @@ void Application::render(float dt) {
 		glUniform1i(program.uniformLocation("miplevel"), settings.miplevel);
 
 		scene->draw(program.getHandle());
+
+		glBindTextureUnit(1, 0);
+		glBindTextureUnit(2, 0);
 		program.unbind();
+
 		if (settings.drawWireframe) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
@@ -292,8 +305,8 @@ GLuint make3DTexture(int size) {
 
 	// Allocate and zero out texture memory
 	glTexStorage3D(GL_TEXTURE_3D, 4, GL_RGBA16F, size, size, size);
-	//glTexImage3D(GL_TEXTURE_3D, 0, GL_RGBA16F, size, size, size, 0, GL_RGBA, GL_FLOAT, nullptr);
 	glClearTexImage(handle, 0, GL_RGBA, GL_FLOAT, nullptr);
+	
 	glGenerateMipmap(GL_TEXTURE_3D);
 
 	glBindTexture(GL_TEXTURE_3D, 0);

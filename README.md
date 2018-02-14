@@ -24,7 +24,7 @@ Implementation of voxelization portion of Voxel Cone Tracing.
 3. Good to go!
 
 ### Windows
-1. Install Visual Studio Community 2017. Make sure to install Visual C++.
+1. Install Visual Studio Community 2017. Make sure to install Visual C++ and enable the "Desktop development with C++" option.
 2. Clone (or download) [vcpkg](https://github.com/Microsoft/vcpkg) and follow installation directions. Then install glm, glfw3, and glew.
 3. Update the CMAKE_TOOLCHAIN_FILE variable in the CMakeSettings.json file.
 4. Good to go!
