@@ -1,7 +1,7 @@
 #ifndef GLQUAD_H
 #define GLQUAD_H
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 class GLQuad {
 public:

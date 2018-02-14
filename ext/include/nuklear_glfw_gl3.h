@@ -14,7 +14,7 @@
 #define NK_GLFW_GL3_H_
 
 #include <string.h>
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 enum nk_glfw_init_state{

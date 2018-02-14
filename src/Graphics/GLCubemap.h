@@ -1,7 +1,7 @@
 #ifndef GLCUBEMAP_H
 #define GLCUBEMAP_H
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <string>
 #include <vector>
 

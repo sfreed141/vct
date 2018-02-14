@@ -1,4 +1,4 @@
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include "GLQuad.h"
 
 static const float quad_vertices[] = {

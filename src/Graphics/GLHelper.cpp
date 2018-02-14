@@ -1,4 +1,4 @@
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include "GLHelper.h"
 #include <iostream>
@@ -87,7 +87,7 @@ void GLHelper::printUniformInfo(GLuint program) {
 }
 
 void GLHelper::getMemoryUsage(GLint &totalMem, GLint &availableMem) {
-    if (GLEW_NVX_gpu_memory_info) {
+    if (GLAD_GL_NVX_gpu_memory_info) {
         glGetIntegerv(GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX, &totalMem);
         glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &availableMem);
     }

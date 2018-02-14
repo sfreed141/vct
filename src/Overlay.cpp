@@ -3,7 +3,7 @@
 #include <Camera.h>
 #include <Graphics/GLHelper.h>
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <cmath>
 #include <climits>
 #include <ctime>
@@ -20,8 +20,8 @@
 #define NK_INCLUDE_DEFAULT_FONT
 #define NK_IMPLEMENTATION
 #define NK_GLFW_GL3_IMPLEMENTATION
-#include "nuklear.h"
-#include "nuklear_glfw_gl3.h"
+#include <nuklear.h>
+#include <nuklear_glfw_gl3.h>
 
 #define MAX_VERTEX_BUFFER 512 * 1024
 #define MAX_ELEMENT_BUFFER 128 * 1024
@@ -149,7 +149,7 @@ void Overlay::render(float dt) {
         if (nk_tree_push(ctx, NK_TREE_TAB, "Settings", NK_MAXIMIZED)) {
 			nk_layout_row_dynamic(ctx, rowheight, 1);
 
-			if (GLEW_NV_conservative_raster) {
+			if (GLAD_GL_NV_conservative_raster) {
 				nk_checkbox_label(ctx, "Conservative Rasterization", &settings.conservativeRasterization);
 			}
 			nk_checkbox_label(ctx, "Enable Shadows", &settings.enableShadows);

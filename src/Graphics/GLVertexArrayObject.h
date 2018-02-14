@@ -1,7 +1,7 @@
 #ifndef GLVERTEXARRAYOBJECT_H
 #define GLVERTEXARRAYOBJECT_H
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 class GLVertexArrayObject {
 public:

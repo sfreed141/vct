@@ -1,7 +1,7 @@
 #ifndef GLSHADERPROGRAM_H
 #define GLSHADERPROGRAM_H
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <string>
 
 class GLShaderProgram {

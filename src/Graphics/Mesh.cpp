@@ -1,6 +1,6 @@
 #include "Mesh.h"
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 
 #include <iostream>
 #include <string>
@@ -50,7 +50,7 @@ void Mesh::loadMesh(const std::string &meshname) {
         materials.push_back(material_t());
 
 		float maxAnisotropy = 1.0f;
-		if (GLEW_EXT_texture_filter_anisotropic) {
+		if (GLAD_GL_EXT_texture_filter_anisotropic) {
 			glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
 		}
 

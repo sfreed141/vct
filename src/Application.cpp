@@ -1,6 +1,6 @@
 #include "Application.h"
 
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #define GLM_FORCE_RADIANS
@@ -107,7 +107,7 @@ void Application::render(float dt) {
 		glDisable(GL_CULL_FACE);
 		glDepthMask(GL_FALSE);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-		if (GLEW_NV_conservative_raster && settings.conservativeRasterization) {
+		if (GLAD_GL_NV_conservative_raster && settings.conservativeRasterization) {
 			glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
 		}
 
@@ -141,7 +141,7 @@ void Application::render(float dt) {
 		glEnable(GL_CULL_FACE);
 		glDepthMask(GL_TRUE);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		if (GLEW_NV_conservative_raster && settings.conservativeRasterization) {
+		if (GLAD_GL_NV_conservative_raster && settings.conservativeRasterization) {
 			glDisable(GL_CONSERVATIVE_RASTERIZATION_NV);
 		}
 		GL_DEBUG_POP()
@@ -306,7 +306,7 @@ GLuint make3DTexture(int size) {
 	// Allocate and zero out texture memory
 	glTexStorage3D(GL_TEXTURE_3D, 4, GL_RGBA16F, size, size, size);
 	glClearTexImage(handle, 0, GL_RGBA, GL_FLOAT, nullptr);
-	
+
 	glGenerateMipmap(GL_TEXTURE_3D);
 
 	glBindTexture(GL_TEXTURE_3D, 0);

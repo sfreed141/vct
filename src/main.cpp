@@ -1,4 +1,4 @@
-#include <GL/glew.h>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <iostream>
@@ -63,9 +63,8 @@ GLFWwindow *init_window(unsigned width, unsigned height, const char *title) {
     glfwSetScrollCallback(window, GLFWHandler::scroll_callback);
     glfwSetCharCallback(window, GLFWHandler::char_callback);
 
-    glewExperimental = GL_TRUE;
-    if (glewInit() != GLEW_OK) {
-        std::cerr << "Failed to initialize GLEW" << std::endl;
+    if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
+        std::cerr << "Failed to initialize OpenGL context" << std::endl;
         exit(EXIT_FAILURE);
     }
 
