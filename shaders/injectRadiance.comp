@@ -53,7 +53,9 @@ void main() {
     vec3 lightVector = normalize(lightPos - worldPosition);
     float diffuse = max(dot(normal, lightVector), 0);
 
+	// TODO
+	// color.rgb = diffuse * lightInt * color.rgb;
+
     // Inject into voxel texture
-    // TODO: just passing color straight through right now for testing
     imageStore(voxelColor, voxelPosition, f16vec4(color));
 }

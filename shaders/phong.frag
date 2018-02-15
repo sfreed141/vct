@@ -9,8 +9,8 @@ uniform sampler2D texture0;
 
 uniform sampler2D shadowmap;
 
-//layout(binding = 1, rgba16f) uniform image3D voxelColor;
 uniform sampler3D voxelColor;
+uniform sampler3D voxelNormal;
 
 uniform bool voxelize = false;
 uniform bool normals = false;
@@ -32,6 +32,8 @@ out vec4 color;
 // experiment with cone aperture, lod scaling, steps vs distance vs alpha
 vec3 traceCone(vec3 position, vec3 direction, int steps) {
 	const float bias = 1.0;
+
+	direction /= 64.0;
 	vec3 start = position + bias * direction;
 	
 	const float coneAngle = 0.785398163; // pi/4
@@ -120,19 +122,19 @@ void main() {
 	}
 
     if (voxelize) {
-        ivec3 i = voxelIndex(fragPosition);
-        //color = imageLoad(voxelColor, i).rgba;
-		color = textureLod(voxelColor, vec3(i) / 64.0, miplevel).rgba;
-
-		// TODO: hacky stuff to play around with
-		//color.rgb = color.rgb / color.a;
-		//color.a = 1;
-		if (color.a > 1) color.a = 1;
-		if (any(greaterThan(color.rgb, vec3(1)))) color.rgb = vec3(1, 0, 1);
+		vec3 i = vec3(voxelIndex(fragPosition)) / 64.0;
+		
+		if (normals) {
+			vec3 normal = normalize(textureLod(voxelNormal, i, miplevel).rgb);
+			color = vec4(normal, 1);
+		}
+		else {
+			color = textureLod(voxelColor, i, miplevel).rgba;
+		}
     }
     else {
         if (normals) {
-            color = vec4(norm, 1);
+			color = vec4(norm, 1);
         }
         else if (dominant_axis) {
             norm = abs(norm);

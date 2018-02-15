@@ -112,6 +112,7 @@ void Application::render(float dt) {
 		}
 
 		glClearTexImage(voxelColor, 0, GL_RGBA, GL_FLOAT, nullptr);
+		glClearTexImage(voxelNormal, 0, GL_RGBA, GL_FLOAT, nullptr);
 
 		glm::mat4 projection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.0f, 40.0f);
 		glm::mat4 mvp_x = projection * glm::lookAt(glm::vec3(20, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
@@ -262,16 +263,18 @@ void Application::render(float dt) {
 
 		glUniform1i(program.uniformLocation("voxelDim"), voxelDim);
 
-		//glBindImageTexture(1, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
-
 		glBindTextureUnit(2, voxelColor);
 		glUniform1i(program.uniformLocation("voxelColor"), 2);
 		glUniform1i(program.uniformLocation("miplevel"), settings.miplevel);
+
+		glBindTextureUnit(3, voxelNormal);
+		glUniform1i(program.uniformLocation("voxelNormal"), 3);
 
 		scene->draw(program.getHandle());
 
 		glBindTextureUnit(1, 0);
 		glBindTextureUnit(2, 0);
+		glBindTextureUnit(3, 0);
 		program.unbind();
 
 		if (settings.drawWireframe) {
