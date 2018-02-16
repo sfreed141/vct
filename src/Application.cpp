@@ -58,8 +58,9 @@ void Application::init() {
 	injectRadianceProgram.attachAndLink({SHADER_DIR "injectRadiance.comp"});
 
 	// Initialize voxel textures
-	voxelColor = make3DTexture(voxelDim, 4, GL_RGBA16F, GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST);
-	voxelNormal = make3DTexture(voxelDim, 1, GL_RGBA16F, GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST);
+	GLenum voxelFormat = GLAD_GL_NV_shader_atomic_fp16_vector ? GL_RGBA16F : GL_RGBA8;
+	voxelColor = make3DTexture(voxelDim, 4, voxelFormat, GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST);
+	voxelNormal = make3DTexture(voxelDim, 1, voxelFormat, GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST);
 	voxelRadiance = make3DTexture(voxelDim, 4, GL_RGBA8, GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST);
 
 	// Create scene
@@ -130,8 +131,8 @@ void Application::render(float dt) {
 
 		voxelProgram.setUniform1i("axis_override", settings.axisOverride);
 
-		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
-		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GLAD_GL_NV_shader_atomic_fp16_vector ? GL_RGBA16F : GL_R32UI);
+		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GLAD_GL_NV_shader_atomic_fp16_vector ? GL_RGBA16F : GL_R32UI);
 
 		scene->draw(voxelProgram.getHandle());
 
@@ -187,7 +188,7 @@ void Application::render(float dt) {
 	timers.endQuery();
 
 	// Normalize voxelColor and voxelNormal textures (divides by alpha component)
-	{
+	if (GLAD_GL_NV_shader_atomic_fp16_vector) {
 		static GLShaderProgram *p = nullptr;
 		if (!p) {
 			p = new GLShaderProgram({SHADER_DIR "normalizeVoxels.comp"});
@@ -212,8 +213,8 @@ void Application::render(float dt) {
 
 		injectRadianceProgram.bind();
 
-		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
-		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
+		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_ONLY, GLAD_GL_NV_shader_atomic_fp16_vector ? GL_RGBA16F : GL_RGBA8);
+		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_ONLY, GLAD_GL_NV_shader_atomic_fp16_vector ? GL_RGBA16F : GL_RGBA8);
 		glBindImageTexture(2, voxelRadiance, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
 		GLuint shadowmap = shadowmapFBO.getTexture(0);

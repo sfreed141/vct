@@ -11,8 +11,13 @@ in GS_OUT {
     flat int axis;
 } fs_in;
 
-layout(binding = 0, rgba16f) uniform image3D voxelColor;
-layout(binding = 1, rgba16f) uniform image3D voxelNormal;
+#if GL_NV_shader_atomic_fp16_vector
+#define voxelLayout rgba16f
+#else
+#define voxelLayout r32ui
+#endif
+layout(binding = 0, voxelLayout) uniform image3D voxelColor;
+layout(binding = 1, voxelLayout) uniform image3D voxelNormal;
 
 uniform sampler2D diffuseTexture;
 
@@ -45,6 +50,37 @@ ivec3 getVoxelPosition() {
 	return ivec3(voxelIndex);
 }
 
+// From OpenGL Insights
+vec4 convRGBA8ToVec4(uint val) {
+	return vec4(
+		float(val & 0x000000FF),
+		float((val & 0x0000FF00) >> 8U),
+		float((val & 0x00FF0000) >> 16U),
+		float((val & 0xFF000000) >> 24U)
+	);
+}
+
+uint convVec4ToRGBA8(vec4 val) {
+	return (uint(val.w) & 0x000000FF) << 24U
+		| (uint(val.z) & 0x0000FF00) << 16U
+		| (uint(val.y) & 0x00FF0000) << 8U
+		| (uint(val.x) & 0xFF000000);
+}
+
+void imageAtomicRGBA8Avg(layout(r32ui) coherent volatile uimage3D imgUI, ivec3 coords, vec4 val) {
+	val.rgb *= 255.0;
+	uint newVal = convVec4ToRGBA8(val);
+	uint prevStoredVal = 0, curStoredVal;
+	while ((curStoredVal = imageAtomicCompSwap(imgUI, coords, prevStoredVal, newVal)) != prevStoredVal) {
+		prevStoredVal = curStoredVal;
+		vec4 rval = convRGBA8ToVec4(curStoredVal);
+		rval.xyz *= rval.w;
+		vec4 curValF = rval + val;
+		curValF.xyz /= curValF.w;
+		newVal = convVec4ToRGBA8(curValF);
+	}
+}
+
 void main() {
 	ivec3 voxelIndex = getVoxelPosition();
 
@@ -55,8 +91,7 @@ void main() {
     imageAtomicAdd(voxelColor, voxelIndex, f16vec4(diffuseColor, 1));
     imageAtomicAdd(voxelNormal, voxelIndex, f16vec4(fs_in.normal, 1));
 #else
-	// TODO
-    imageStore(voxelColor, voxelIndex, f16vec4(diffuseColor, 1));
-    imageStore(voxelNormal, voxelIndex, f16vec4(fs_in.normal, 1));
+	imageAtomicRGBA8Avg(voxelColor, voxelIndex, vec4(diffuseColor, 1));
+	imageAtomicRGBA8Avg(voxelNormal, voxelIndex, vec4(fs_in.normal, 1));
 #endif
 }
