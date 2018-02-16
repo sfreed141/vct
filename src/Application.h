@@ -30,6 +30,7 @@ struct Settings {
     int drawDominantAxis = false;
     int drawWireframe = false;
     int drawVoxels = false;
+    int drawRadiance = false;
     int drawAxes = false;
 	int axisOverride = -1;
 
@@ -65,7 +66,7 @@ private:
     
     GLShaderProgram voxelProgram;
     int voxelDim = 64;
-    GLuint voxelColor = 0, voxelNormal = 0;
+    GLuint voxelColor = 0, voxelNormal = 0, voxelRadiance = 0;
 
 	GLFramebuffer shadowmapFBO;
 	GLShaderProgram shadowmapProgram;

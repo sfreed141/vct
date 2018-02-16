@@ -116,6 +116,7 @@ void Overlay::render(float dt) {
             nk_checkbox_label(ctx, "Dominant Axis", &settings.drawDominantAxis);
             nk_checkbox_label(ctx, "Wireframe", &settings.drawWireframe);
             nk_checkbox_label(ctx, "Voxels", &settings.drawVoxels);
+            nk_checkbox_label(ctx, "Radiance", &settings.drawRadiance);
             nk_checkbox_label(ctx, "Axes", &settings.drawAxes);
 
             nk_layout_row_dynamic(ctx, rowheight, 2);

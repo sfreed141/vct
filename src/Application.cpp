@@ -60,6 +60,24 @@ void Application::init() {
 	// Initialize voxel textures
 	voxelColor = make3DTexture(voxelDim);
 	voxelNormal = make3DTexture(voxelDim);
+	{
+		glGenTextures(1, &voxelRadiance);
+		glBindTexture(GL_TEXTURE_3D, voxelRadiance);
+
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+		// Allocate and zero out texture memory
+		glTexStorage3D(GL_TEXTURE_3D, 4, GL_RGBA8, voxelDim, voxelDim, voxelDim);
+		glClearTexImage(voxelRadiance, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+		glGenerateMipmap(GL_TEXTURE_3D);
+
+		glBindTexture(GL_TEXTURE_3D, 0);
+	}
 
 	// Create scene
 	scene = std::make_unique<Scene>();
@@ -181,14 +199,34 @@ void Application::render(float dt) {
 		GL_DEBUG_POP()
 	}
 
+	// Normalize voxelColor and voxelNormal textures (divides by alpha component)
+	{
+		static GLShaderProgram *p = nullptr;
+		if (!p) {
+			p = new GLShaderProgram(SHADER_DIR "normalizeVoxels.comp");
+		}
+		p->bind();
+		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+
+		glDispatchCompute((voxelDim + 4 - 1) / 4, (voxelDim + 4 - 1) / 4, (voxelDim + 4 - 1) / 4);
+
+		glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+		glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+		p->unbind();
+	}
+
 	// Inject radiance into voxel grid
 	{
 		GL_DEBUG_PUSH("Radiance Injection")
 
+		glClearTexImage(voxelRadiance, 0, GL_RGBA, GL_FLOAT, nullptr);
+
 		injectRadianceProgram.bind();
 
-		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
-		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
+		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
+		glBindImageTexture(2, voxelRadiance, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
 		GLuint shadowmap = shadowmapFBO.getTexture(0);
 		glBindTextureUnit(1, shadowmap);
@@ -203,31 +241,17 @@ void Application::render(float dt) {
 		glDispatchCompute((width + 16 - 1) / 16, (height + 16 - 1) / 16, 1);
 
 		glBindTextureUnit(1, 0);
-		glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
-		glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+		glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
+		glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
+		glBindImageTexture(2, 0, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 		injectRadianceProgram.unbind();
 
 		GL_DEBUG_POP()
 	}
-	
-#if 1
-	// TODO hacky solution to clear out unlit areas
-	{
-		static GLShaderProgram *p = nullptr;
-		if (!p) {
-			p = new GLShaderProgram(SHADER_DIR "clear.comp");
-		}
-		p->bind();
-		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
-
-		glDispatchCompute((voxelDim + 4 - 1) / 4, (voxelDim + 4 - 1) / 4, (voxelDim + 4 - 1) / 4);
-
-		glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
-		p->unbind();
-	}
-#endif
 
 	glGenerateTextureMipmap(voxelColor);
+	glGenerateTextureMipmap(voxelNormal);
+	glGenerateTextureMipmap(voxelRadiance);
 
 	timers.beginQuery(TimerQueries::RENDER_TIME);
 	// Render scene
@@ -259,6 +283,7 @@ void Application::render(float dt) {
 		glUniform1i(program.uniformLocation("voxelize"), settings.drawVoxels);
 		glUniform1i(program.uniformLocation("normals"), settings.drawNormals);
 		glUniform1i(program.uniformLocation("dominant_axis"), settings.drawDominantAxis);
+		glUniform1i(program.uniformLocation("radiance"), settings.drawRadiance);
 
 		glUniform1i(program.uniformLocation("enableShadows"), settings.enableShadows);
 		glUniform1i(program.uniformLocation("enableIndirect"), settings.enableIndirect);
@@ -275,11 +300,15 @@ void Application::render(float dt) {
 		glBindTextureUnit(3, voxelNormal);
 		glUniform1i(program.uniformLocation("voxelNormal"), 3);
 
+		glBindTextureUnit(4, voxelRadiance);
+		glUniform1i(program.uniformLocation("voxelRadiance"), 4);
+
 		scene->draw(program.getHandle());
 
 		glBindTextureUnit(1, 0);
 		glBindTextureUnit(2, 0);
 		glBindTextureUnit(3, 0);
+		glBindTextureUnit(4, 0);
 		program.unbind();
 
 		if (settings.drawWireframe) {

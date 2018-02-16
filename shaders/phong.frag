@@ -11,10 +11,12 @@ uniform sampler2D shadowmap;
 
 uniform sampler3D voxelColor;
 uniform sampler3D voxelNormal;
+uniform sampler3D voxelRadiance;
 
 uniform bool voxelize = false;
 uniform bool normals = false;
 uniform bool dominant_axis = false;
+uniform bool radiance = false;
 
 uniform bool enableShadows = true;
 uniform bool enableIndirect = false;
@@ -133,8 +135,11 @@ void main() {
 			vec3 normal = normalize(textureLod(voxelNormal, i, miplevel).rgb);
 			color = vec4(normal, 1);
 		}
+		else if (radiance) {
+			color = textureLod(voxelRadiance, i, miplevel).rgba;
+		}
 		else {
-			color = textureLod(voxelColor, i, miplevel).rgba;
+			color = textureLod(voxelColor, i, miplevel).rgba;			
 		}
     }
     else {

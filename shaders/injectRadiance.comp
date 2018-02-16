@@ -4,8 +4,9 @@
 
 layout(local_size_x = 16, local_size_y = 16) in;
 
-layout(rgba16f, binding = 0) uniform image3D voxelColor;
-layout(rgba16f, binding = 1) uniform image3D voxelNormal;
+layout(rgba16f, binding = 0) uniform readonly image3D voxelColor;
+layout(rgba16f, binding = 1) uniform readonly image3D voxelNormal;
+layout(rgba8, binding = 2) uniform writeonly image3D voxelRadiance;
 
 uniform sampler2D shadowmap;
 
@@ -47,7 +48,6 @@ void main() {
 
     // Calculate diffuse lighting
     vec4 color = imageLoad(voxelColor, voxelPosition);
-    color.rgba /= color.a;
     vec3 normal = normalize(imageLoad(voxelNormal, voxelPosition).xyz);
 
     vec3 lightVector = normalize(lightPos - worldPosition);
@@ -57,5 +57,6 @@ void main() {
 	// color.rgb = diffuse * lightInt * color.rgb;
 
     // Inject into voxel texture
-    imageStore(voxelColor, voxelPosition, f16vec4(color));
+    // imageStore(voxelColor, voxelPosition, f16vec4(color));
+    imageStore(voxelRadiance, voxelPosition, color);
 }
