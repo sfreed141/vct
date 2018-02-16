@@ -259,7 +259,12 @@ void Application::render(float dt) {
 		glUniform1i(program.uniformLocation("voxelize"), settings.drawVoxels);
 		glUniform1i(program.uniformLocation("normals"), settings.drawNormals);
 		glUniform1i(program.uniformLocation("dominant_axis"), settings.drawDominantAxis);
+
 		glUniform1i(program.uniformLocation("enableShadows"), settings.enableShadows);
+		glUniform1i(program.uniformLocation("enableIndirect"), settings.enableIndirect);
+		glUniform1i(program.uniformLocation("enableDiffuse"), settings.enableDiffuse);
+		glUniform1i(program.uniformLocation("enableSpecular"), settings.enableSpecular);
+		glUniform1f(program.uniformLocation("ambientScale"), settings.ambientScale);
 
 		glUniform1i(program.uniformLocation("voxelDim"), voxelDim);
 

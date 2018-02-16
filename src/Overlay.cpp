@@ -153,6 +153,13 @@ void Overlay::render(float dt) {
 				nk_checkbox_label(ctx, "Conservative Rasterization", &settings.conservativeRasterization);
 			}
 			nk_checkbox_label(ctx, "Enable Shadows", &settings.enableShadows);
+			nk_checkbox_label(ctx, "Enable Indirect", &settings.enableIndirect);
+			nk_checkbox_label(ctx, "Enable Diffuse", &settings.enableDiffuse);
+			nk_checkbox_label(ctx, "Enable Specular", &settings.enableSpecular);
+            
+            nk_layout_row_dynamic(ctx, rowheight, 2);
+            nk_labelf(ctx, NK_TEXT_LEFT, "Ambient Scale: %0.1f", settings.ambientScale);
+            nk_slider_float(ctx, 0.0, &settings.ambientScale, 1.0, 0.1);
 
             nk_tree_pop(ctx);
         }

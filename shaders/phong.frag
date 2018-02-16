@@ -15,7 +15,12 @@ uniform sampler3D voxelNormal;
 uniform bool voxelize = false;
 uniform bool normals = false;
 uniform bool dominant_axis = false;
+
 uniform bool enableShadows = true;
+uniform bool enableIndirect = false;
+uniform bool enableDiffuse = true;
+uniform bool enableSpecular = true;
+uniform float ambientScale = 0.2;
 
 uniform float shine;
 
@@ -109,10 +114,10 @@ void main() {
     vec3 light = normalize(lightPos - fragPosition);
     vec3 view = normalize(eye - fragPosition);
 
-    vec3 h = normalize(0.5 * (view + light));
+    vec3 h = normalize(view + light);
     float vdotr = max(dot(norm, h), 0);
 
-    float ambient = 0.2;
+    float ambient = ambientScale;
     float diffuse = max(dot(norm, light), 0);
     float specular = pow(vdotr, shine);
 
@@ -141,7 +146,19 @@ void main() {
             color = vec4(step(vec3(max(max(norm.x, norm.y), norm.z)), norm.xyz), 1);
         }
         else {
-            color = vec4((ambient + shadowFactor * (diffuse + specular)) * lightInt * color.rgb, 1);
+			float directLighting = 0.0;
+			directLighting += enableDiffuse ? diffuse : 0.0;
+			directLighting += enableSpecular ? specular : 0.0;
+			
+			if (enableIndirect) {
+				vec3 voxelPosition = vec3(voxelIndex(fragPosition)) / 64.0;
+				vec3 indirect = vec3(0);
+				indirect += ambientScale * textureLod(voxelColor, voxelPosition, miplevel).rgb;
+				color = vec4(indirect + shadowFactor * directLighting * lightInt * color.rgb, 1);
+			}
+			else {
+				color = vec4((ambient + shadowFactor * directLighting) * lightInt * color.rgb, 1);
+			}
 
 			#if 0
 			vec3 voxelPosition = vec3(voxelIndex(fragPosition)) / 64.0;
