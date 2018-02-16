@@ -112,14 +112,14 @@ void Overlay::render(float dt) {
             nk_labelf(ctx, NK_TEXT_LEFT, "Camera Position: (%4.1f, %4.1f, %4.1f)", camera.position.x, camera.position.y, camera.position.z);
             nk_labelf(ctx, NK_TEXT_LEFT, "Camera Direction: (%4.1f, %4.1f, %4.1f)", camera.front.x, camera.front.y, camera.front.z);
 
-            nk_checkbox_label(ctx, "Normals", &settings.drawNormals);
-            nk_checkbox_label(ctx, "Dominant Axis", &settings.drawDominantAxis);
-            nk_checkbox_label(ctx, "Wireframe", &settings.drawWireframe);
+            nk_layout_row_dynamic(ctx, rowheight, 2);
             nk_checkbox_label(ctx, "Voxels", &settings.drawVoxels);
+            nk_checkbox_label(ctx, "Dominant Axis", &settings.drawDominantAxis);
+            nk_checkbox_label(ctx, "Normals", &settings.drawNormals);
+            nk_checkbox_label(ctx, "Wireframe", &settings.drawWireframe);
             nk_checkbox_label(ctx, "Radiance", &settings.drawRadiance);
             nk_checkbox_label(ctx, "Axes", &settings.drawAxes);
 
-            nk_layout_row_dynamic(ctx, rowheight, 2);
 			nk_labelf(ctx, NK_TEXT_LEFT, "Miplevel: %d", settings.miplevel);
 			nk_slider_int(ctx, 0, &settings.miplevel, 3, 1);
 

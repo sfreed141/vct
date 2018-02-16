@@ -25,7 +25,7 @@
 
 #include "common.h"
 
-GLuint make3DTexture(int size);
+GLuint make3DTexture(GLsizei size, GLsizei levels, GLenum internalFormat, GLint minFilter, GLint magFilter);
 
 void Application::init() {
 	// Setup for OpenGL
@@ -58,26 +58,9 @@ void Application::init() {
 	injectRadianceProgram.linkProgram(SHADER_DIR "injectRadiance.comp");
 
 	// Initialize voxel textures
-	voxelColor = make3DTexture(voxelDim);
-	voxelNormal = make3DTexture(voxelDim);
-	{
-		glGenTextures(1, &voxelRadiance);
-		glBindTexture(GL_TEXTURE_3D, voxelRadiance);
-
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-		// Allocate and zero out texture memory
-		glTexStorage3D(GL_TEXTURE_3D, 4, GL_RGBA8, voxelDim, voxelDim, voxelDim);
-		glClearTexImage(voxelRadiance, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-
-		glGenerateMipmap(GL_TEXTURE_3D);
-
-		glBindTexture(GL_TEXTURE_3D, 0);
-	}
+	voxelColor = make3DTexture(voxelDim, 4, GL_RGBA16F, GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST);
+	voxelNormal = make3DTexture(voxelDim, 1, GL_RGBA16F, GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST);
+	voxelRadiance = make3DTexture(voxelDim, 4, GL_RGBA8, GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST);
 
 	// Create scene
 	scene = std::make_unique<Scene>();
@@ -328,24 +311,25 @@ void Application::render(float dt) {
 	}
 }
 
-// Create an empty (zeroed) 3D texture with dimensions of size (in bytes)
-GLuint make3DTexture(int size) {
+// Create a 3D texture
+GLuint make3DTexture(GLsizei size, GLsizei levels, GLenum internalFormat, GLint minFilter, GLint magFilter) {
 	GLuint handle;
 
 	glGenTextures(1, &handle);
 	glBindTexture(GL_TEXTURE_3D, handle);
 
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST);
-	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, minFilter);
+	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, magFilter);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 
-	// Allocate and zero out texture memory
-	glTexStorage3D(GL_TEXTURE_3D, 4, GL_RGBA16F, size, size, size);
-	glClearTexImage(handle, 0, GL_RGBA, GL_FLOAT, nullptr);
+	glTexStorage3D(GL_TEXTURE_3D, levels, internalFormat, size, size, size);
+	glClearTexImage(handle, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
 
-	glGenerateMipmap(GL_TEXTURE_3D);
+	if (levels > 1) {
+		glGenerateMipmap(GL_TEXTURE_3D);
+	}
 
 	glBindTexture(GL_TEXTURE_3D, 0);
 
