@@ -8,6 +8,7 @@
 #include <cmath>
 #include <sstream>
 #include <fstream>
+#include <unordered_map>
 
 static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
 
@@ -308,4 +309,21 @@ bool GLHelper::checkShaderProgramStatus(GLuint program) {
 // Check if framebuffer is complete.
 bool GLHelper::checkFramebufferComplete(GLuint fbo) {
     return glCheckNamedFramebufferStatus(fbo, GL_FRAMEBUFFER);
+}
+
+// Returns macro corresponding to shader type based on file extension, 0 if invalid
+GLenum GLHelper::shaderTypeFromExtension(const std::string &filename) {
+    std::unordered_map<std::string, GLenum> extToType {
+        {"vert", GL_VERTEX_SHADER},
+        {"tesc", GL_TESS_CONTROL_SHADER},
+        {"tese", GL_TESS_EVALUATION_SHADER},
+        {"geom", GL_GEOMETRY_SHADER},
+        {"frag", GL_FRAGMENT_SHADER},
+        {"comp", GL_COMPUTE_SHADER}
+    };
+
+    size_t pos = filename.find_last_of('.');
+    std::string ext = (pos == std::string::npos) ? filename : filename.substr(pos + 1);
+    
+    return (extToType.count(ext) != 0) ? extToType[ext] : 0;
 }

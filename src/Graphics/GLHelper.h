@@ -24,6 +24,8 @@ public:
     static bool checkShaderStatus(GLuint shader);
     static bool checkShaderProgramStatus(GLuint program);
     static bool checkFramebufferComplete(GLuint fbo);
+    
+    static GLenum shaderTypeFromExtension(const std::string &filename);
 };
 
 #endif
