@@ -12,12 +12,12 @@ in GS_OUT {
 } fs_in;
 
 #if GL_NV_shader_atomic_fp16_vector
-#define voxelLayout rgba16f
+layout(binding = 0, rgba16f) uniform image3D voxelColor;
+layout(binding = 1, rgba16f) uniform image3D voxelNormal;
 #else
-#define voxelLayout r32ui
+layout(binding = 0, r32ui) uniform uimage3D voxelColor;
+layout(binding = 1, r32ui) uniform uimage3D voxelNormal;
 #endif
-layout(binding = 0, voxelLayout) uniform image3D voxelColor;
-layout(binding = 1, voxelLayout) uniform image3D voxelNormal;
 
 uniform sampler2D diffuseTexture;
 
