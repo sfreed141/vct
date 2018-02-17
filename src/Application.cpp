@@ -220,6 +220,8 @@ void Application::render(float dt) {
 		glUniform3fv(injectRadianceProgram.uniformLocation("lightPos"), 1, glm::value_ptr(lightPos));
 		glUniform3fv(injectRadianceProgram.uniformLocation("lightInt"), 1, glm::value_ptr(lightInt));
 
+		glUniform1i(injectRadianceProgram.uniformLocation("voxelDim"), voxelDim);
+
 		// 2D workgroup should be the size of shadowmap, local_size = 16
 		glDispatchCompute((width + 16 - 1) / 16, (height + 16 - 1) / 16, 1);
 
@@ -279,6 +281,7 @@ void Application::render(float dt) {
 		glBindTextureUnit(2, voxelColor);
 		glUniform1i(program.uniformLocation("voxelColor"), 2);
 		glUniform1i(program.uniformLocation("miplevel"), settings.miplevel);
+		glUniform1i(program.uniformLocation("voxelDim"), voxelDim);
 
 		glBindTextureUnit(3, voxelNormal);
 		glUniform1i(program.uniformLocation("voxelNormal"), 3);

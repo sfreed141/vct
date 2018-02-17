@@ -32,6 +32,7 @@ uniform vec3 lightInt;
 uniform mat4 ls;
 
 uniform int miplevel = 0;
+uniform int voxelDim;
 
 out vec4 color;
 
@@ -40,7 +41,7 @@ out vec4 color;
 vec3 traceCone(vec3 position, vec3 direction, int steps) {
 	const float bias = 1.0;
 
-	direction /= 64.0;
+	direction /= voxelDim;
 	vec3 start = position + bias * direction;
 	
 	const float coneAngle = 0.785398163; // pi/4
@@ -69,7 +70,6 @@ ivec3 voxelIndex(vec3 pos) {
     const float minx = -20, maxx = 20,
         miny = -20, maxy = 20,
         minz = -20, maxz = 20;
-    const int voxelDim = 64;
 
     float rangex = maxx - minx;
     float rangey = maxy - miny;
@@ -129,7 +129,7 @@ void main() {
 	}
 
     if (voxelize) {
-		vec3 i = vec3(voxelIndex(fragPosition)) / 64.0;
+		vec3 i = vec3(voxelIndex(fragPosition)) / voxelDim;
 		
 		if (normals) {
 			vec3 normal = normalize(textureLod(voxelNormal, i, miplevel).rgb);
@@ -156,7 +156,7 @@ void main() {
 			directLighting += enableSpecular ? specular : 0.0;
 			
 			if (enableIndirect) {
-				vec3 voxelPosition = vec3(voxelIndex(fragPosition)) / 64.0;
+				vec3 voxelPosition = vec3(voxelIndex(fragPosition)) / voxelDim;
 				vec3 indirect = vec3(0);
 				indirect += ambientScale * textureLod(voxelColor, voxelPosition, miplevel).rgb;
 				color = vec4(indirect + shadowFactor * directLighting * lightInt * color.rgb, 1);
@@ -166,7 +166,7 @@ void main() {
 			}
 
 			#if 0
-			vec3 voxelPosition = vec3(voxelIndex(fragPosition)) / 64.0;
+			vec3 voxelPosition = vec3(voxelIndex(fragPosition)) / voxelDim;
 			vec3 indirect = vec3(0);
 			indirect += traceCone(voxelPosition, norm, 8);
 
