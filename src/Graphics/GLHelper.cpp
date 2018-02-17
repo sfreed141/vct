@@ -1,9 +1,13 @@
 #include <Graphics/opengl.h>
 #include <GLFW/glfw3.h>
+#include <stb_image.h>
 #include "GLHelper.h"
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cmath>
+#include <sstream>
+#include <fstream>
 
 static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
 
@@ -144,4 +148,164 @@ static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum
 	}
 
 	std::cout << std::endl << std::endl;
+}
+
+// Creates texture and loads it with data from provided image file.
+GLuint GLHelper::createTextureFromImage(const std::string &imagename) {
+    int width, height, channels;
+    unsigned char *image = stbi_load(imagename.c_str(), &width, &height, &channels, 0);
+    if (image == NULL) {
+        std::cerr
+            << "ERROR::TEXTURE::LOAD_FAILED::"
+            << imagename
+            << std::endl;
+    }
+
+    GLuint texture_id;
+    glCreateTextures(GL_TEXTURE_2D, 1, &texture_id);
+
+    glTextureParameteri(texture_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+    glTextureParameteri(texture_id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureParameteri(texture_id, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(texture_id, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    if (GLAD_GL_EXT_texture_filter_anisotropic) {
+        float maxAnisotropy = 1.0f;
+        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
+        glTextureParameterf(texture_id, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy);
+    }
+
+    GLint levels = (GLint)std::log2(std::max(width, height)) + 1;
+    if (channels == 3) {
+        glTextureStorage2D(texture_id, levels, GL_RGB8, width, height);
+        glTextureSubImage2D(texture_id, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, image);
+    }
+    else if (channels == 4) {
+        glTextureStorage2D(texture_id, levels, GL_RGBA8, width, height);
+        glTextureSubImage2D(texture_id, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image); 
+    }
+
+    glGenerateTextureMipmap(texture_id);
+
+    stbi_image_free(image);
+
+    return texture_id;
+}
+
+// Creates cubemap from provided image files.
+GLuint GLHelper::createCubemap(const std::vector<std::string> &imagenames) {
+    GLuint handle;
+    glCreateTextures(GL_TEXTURE_CUBE_MAP, 1, &handle);
+
+    glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+    glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTextureParameteri(handle, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(handle, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTextureParameteri(handle, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    int width, height, channels;
+    unsigned char *image;
+
+    for (int i = 0; i < 6; i++) {
+        image = stbi_load(imagenames[i].c_str(), &width, &height, &channels, 3);
+        if (image == NULL) {
+            std::cerr
+                << "ERROR::CUBEMAP::LOAD_FAILED::"
+                << imagenames[i]
+                << std::endl;
+        }
+        
+        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
+
+        stbi_image_free(image);
+    }
+
+    return handle;
+}
+
+// Reads contents of file into a string.
+std::string GLHelper::readText(const std::string &filename) {
+    std::ifstream ifs {filename};
+    
+    std::stringstream buffer;
+    buffer << ifs.rdbuf();
+
+    ifs.close();
+
+    return buffer.str();
+}
+
+// Create a shader from a single file.
+GLuint GLHelper::createShaderFromFile(GLenum shaderType, const std::string &filename) {
+    std::string str = GLHelper::readText(filename);
+    const char *shaderString = str.c_str();
+
+    return GLHelper::createShaderFromString(shaderType, shaderString);
+}
+
+// Create a shader from the provided string.
+GLuint GLHelper::createShaderFromString(GLenum shaderType, const char *shaderText) {
+    GLuint shader;
+    
+    shader = glCreateShader(shaderType);
+
+    glShaderSource(shader, 1, &shaderText, NULL);
+    glCompileShader(shader);
+    
+    GLHelper::checkShaderStatus(shader);
+
+    return shader;
+}
+
+// Check compile status of shader. Prints error message if compilation failed.
+bool GLHelper::checkShaderStatus(GLuint shader) {
+    GLint success, shaderType;
+    GLchar infoLog[512];
+
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success) {
+        glGetShaderInfoLog(shader, 512, NULL, infoLog);
+        glGetShaderiv(shader, GL_SHADER_TYPE, &shaderType);
+        const char *shaderTypeString;
+        switch (shaderType) {
+            case GL_VERTEX_SHADER: shaderTypeString = "VERTEX"; break;
+            case GL_TESS_CONTROL_SHADER: shaderTypeString = "TESS_CONTROL"; break;
+            case GL_TESS_EVALUATION_SHADER: shaderTypeString = "TESS_EVALUATION"; break;
+            case GL_GEOMETRY_SHADER: shaderTypeString = "GEOMETRY"; break;
+            case GL_FRAGMENT_SHADER: shaderTypeString = "FRAGMENT"; break;
+            case GL_COMPUTE_SHADER: shaderTypeString = "COMPUTE"; break;
+            default: shaderTypeString = "UNKNOWN"; break;
+        }
+
+        std::cerr
+            << "ERROR::SHADER::"
+            << shaderTypeString
+            << "::COMPILATION_FAILED\n"
+            << infoLog
+            << std::endl;
+    }
+
+    return success;
+}
+
+// Check link status of shader program. Prints error message if linking failed.
+bool GLHelper::checkShaderProgramStatus(GLuint program) {
+    GLint success;
+	GLchar infoLog[512];
+
+    glGetProgramiv(program, GL_LINK_STATUS, &success);
+	if (!success) {
+		glGetProgramInfoLog(program, 512, NULL, infoLog);
+		std::cerr
+			<< "ERROR::SHADER_PROGRAM::COMPILATION_FAILED\n"
+			<< infoLog
+			<< std::endl;
+	}
+
+    return success;
+}
+
+// Check if framebuffer is complete.
+bool GLHelper::checkFramebufferComplete(GLuint fbo) {
+    return glCheckNamedFramebufferStatus(fbo, GL_FRAMEBUFFER);
 }

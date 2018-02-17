@@ -3,6 +3,7 @@
 #include <iostream>
 #include "GLShaderProgram.h"
 #include "GLShader.h"
+#include "GLHelper.h"
 
 GLShaderProgram::GLShaderProgram() :
     handle(0)
@@ -25,9 +26,6 @@ GLShaderProgram::~GLShaderProgram() {
 }
 
 void GLShaderProgram::linkProgram(std::string computeSource) {
-	GLint success;
-	GLchar infoLog[512];
-
 	GLShader computeShader{ GL_COMPUTE_SHADER, computeSource };
 
 	GLuint program;
@@ -36,14 +34,8 @@ void GLShaderProgram::linkProgram(std::string computeSource) {
 	glAttachShader(program, computeShader.getHandle());
 
 	glLinkProgram(program);
-	glGetProgramiv(program, GL_LINK_STATUS, &success);
-	if (!success) {
-		glGetProgramInfoLog(program, 512, NULL, infoLog);
-		std::cout
-			<< "ERROR::SHADER_PROGRAM::COMPILATION_FAILED\n"
-			<< infoLog
-			<< std::endl;
-	}
+
+	GLHelper::checkShaderProgramStatus(program);
 
 	this->handle = program;
 }
@@ -53,9 +45,6 @@ void GLShaderProgram::linkProgram(std::string vertSource, std::string fragSource
 }
 
 void GLShaderProgram::linkProgram(std::string vertSource, std::string fragSource, std::string geomSource) {
-	GLint success;
-	GLchar infoLog[512];
-
 	GLShader vertexShader{ GL_VERTEX_SHADER, vertSource };
 	GLShader fragmentShader{ GL_FRAGMENT_SHADER, fragSource };
 	GLShader geometryShader{ GL_GEOMETRY_SHADER, geomSource };
@@ -68,17 +57,8 @@ void GLShaderProgram::linkProgram(std::string vertSource, std::string fragSource
 	glAttachShader(program, geometryShader.getHandle());
 
 	glLinkProgram(program);
-	glGetProgramiv(program, GL_LINK_STATUS, &success);
-	if (!success) {
-		glGetProgramInfoLog(program, 512, NULL, infoLog);
-		std::cout
-			<< "ERROR::SHADER_PROGRAM::COMPILATION_FAILED\n"
-			<< infoLog
-			<< std::endl;
-	}
-
-	// glDeleteShader(vertexShader);
-	// glDeleteShader(fragmentShader);
+	
+	GLHelper::checkShaderProgramStatus(program);
 
 	this->handle = program;
 }
@@ -100,9 +80,6 @@ GLint GLShaderProgram::uniformLocation(const GLchar *name) {
 }
 
 GLuint GLShaderProgram::createProgram(std::string vertSource, std::string fragSource) {
-    GLint success;
-    GLchar infoLog[512];
-    
     GLShader vertexShader {GL_VERTEX_SHADER, vertSource};
     GLShader fragmentShader {GL_FRAGMENT_SHADER, fragSource};
 
@@ -111,18 +88,10 @@ GLuint GLShaderProgram::createProgram(std::string vertSource, std::string fragSo
 
     glAttachShader(program, vertexShader.getHandle());
     glAttachShader(program, fragmentShader.getHandle());
-    glLinkProgram(program);
-    glGetProgramiv(program, GL_LINK_STATUS, &success);
-    if (!success) {
-        glGetProgramInfoLog(program, 512, NULL, infoLog);
-        std::cout
-            << "ERROR::SHADER_PROGRAM::COMPILATION_FAILED\n"
-            << infoLog
-            << std::endl;
-    }
 
-    // glDeleteShader(vertexShader);
-    // glDeleteShader(fragmentShader);
+    glLinkProgram(program);
+
+	GLHelper::checkShaderProgramStatus(program);
 
     return program;
 }
