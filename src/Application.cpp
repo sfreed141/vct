@@ -151,6 +151,7 @@ void Application::render(float dt) {
 	timers.endQuery();
 
 	// Generate shadowmap
+	timers.beginQuery(TimerQueries::SHADOWMAP_TIME);
 	glm::vec3 lightPos{ 0.0f, 30.0f, -5.0f };
 	glm::vec3 lightInt{ 1.0f, 1.0f, 1.0f };
 	const float lz_near = 0.1f, lz_far = 50.0f, l_boundary = 25.0f;
@@ -181,6 +182,7 @@ void Application::render(float dt) {
 		glCullFace(GL_BACK);
 		GL_DEBUG_POP()
 	}
+	timers.endQuery();
 
 	// Normalize voxelColor and voxelNormal textures (divides by alpha component)
 	{
@@ -200,6 +202,7 @@ void Application::render(float dt) {
 	}
 
 	// Inject radiance into voxel grid
+	timers.beginQuery(TimerQueries::RADIANCE_TIME);
 	{
 		GL_DEBUG_PUSH("Radiance Injection")
 
@@ -233,6 +236,7 @@ void Application::render(float dt) {
 
 		GL_DEBUG_POP()
 	}
+	timers.endQuery();
 
 	glGenerateTextureMipmap(voxelColor);
 	glGenerateTextureMipmap(voxelNormal);

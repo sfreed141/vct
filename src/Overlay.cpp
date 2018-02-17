@@ -98,6 +98,8 @@ void Overlay::render(float dt) {
 
 			if (nk_tree_push(ctx, NK_TREE_NODE, "Timing Breakdown", NK_MAXIMIZED)) {
 				nk_labelf(ctx, NK_TEXT_LEFT, "Voxelize: %.2f ms", timers.getTime(TimerQueries::VOXELIZE_TIME));
+				nk_labelf(ctx, NK_TEXT_LEFT, "Shadowmap: %.2f ms", timers.getTime(TimerQueries::SHADOWMAP_TIME));
+				nk_labelf(ctx, NK_TEXT_LEFT, "Radiance: %.2f ms", timers.getTime(TimerQueries::RADIANCE_TIME));
 				nk_labelf(ctx, NK_TEXT_LEFT, "Render: %.2f ms", timers.getTime(TimerQueries::RENDER_TIME));
 
 				nk_tree_pop(ctx);
