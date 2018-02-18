@@ -3,28 +3,37 @@
 
 #include <Graphics/opengl.h>
 #include <string>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <initializer_list>
+#include <unordered_map>
 
 class GLShaderProgram {
 public:
     GLShaderProgram();
-    GLShaderProgram(std::string computeSource);
-    GLShaderProgram(std::string vertSource, std::string fragSource);
-	GLShaderProgram(std::string vertSource, std::string fragSource, std::string geomSource);
+    GLShaderProgram(std::initializer_list<const std::string> shaderFiles);
     ~GLShaderProgram();
 
-    void linkProgram(std::string computeSource);
-    void linkProgram(std::string vertSource, std::string fragSource);
-	void linkProgram(std::string vertSource, std::string fragSource, std::string geomSource);
+    GLShaderProgram &attachShader(const std::string &shaderFile);
+    GLShaderProgram &attachShader(GLenum shaderType, const std::string &shaderFile);
+    void linkProgram();
+    void attachAndLink(std::initializer_list<const std::string> shaderFiles);
     GLuint getHandle() const;
 
     void bind() const;
     void unbind() const;
+
     GLint uniformLocation(const GLchar *name);
+
+    void setUniform1f(const GLchar *name, GLfloat v) { glUniform1f(uniformLocation(name), v); }
+    void setUniform1i(const GLchar *name, GLint v) { glUniform1i(uniformLocation(name), v); }
+    void setUniform1ui(const GLchar *name, GLuint v) { glUniform1ui(uniformLocation(name), v); }
+    void setUniform3fv(const GLchar *name, const glm::vec3 &v) { glUniform3fv(uniformLocation(name), 1, glm::value_ptr(v)); }
+    void setUniformMatrix4fv(const GLchar *name, const glm::mat4 &v) { glUniformMatrix4fv(uniformLocation(name), 1, GL_FALSE, glm::value_ptr(v)); }
 
 private:
     GLuint handle;
-
-    static GLuint createProgram(std::string vertSource, std::string fragSource);
+    std::unordered_map<std::string, GLint> uniforms;
 };
 
 #endif

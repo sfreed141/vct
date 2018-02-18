@@ -63,6 +63,8 @@ GLFWwindow *init_window(unsigned width, unsigned height, const char *title) {
     glfwSetScrollCallback(window, GLFWHandler::scroll_callback);
     glfwSetCharCallback(window, GLFWHandler::char_callback);
 
+    glfwSwapInterval(0);
+
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
         std::cerr << "Failed to initialize OpenGL context" << std::endl;
         exit(EXIT_FAILURE);

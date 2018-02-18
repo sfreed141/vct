@@ -52,10 +52,10 @@ void Application::init() {
 	shadowmapFBO.unbind();
 
 	// Create shaders
-	program.linkProgram(SHADER_DIR "simple.vert", SHADER_DIR "phong.frag");
-	voxelProgram.linkProgram(SHADER_DIR "voxelize.vert", SHADER_DIR "voxelize.frag", SHADER_DIR "voxelize.geom");
-	shadowmapProgram.linkProgram(SHADER_DIR "simple.vert", SHADER_DIR "empty.frag");
-	injectRadianceProgram.linkProgram(SHADER_DIR "injectRadiance.comp");
+	program.attachAndLink({SHADER_DIR "simple.vert", SHADER_DIR "phong.frag"});
+	voxelProgram.attachAndLink({SHADER_DIR "voxelize.vert", SHADER_DIR "voxelize.frag", SHADER_DIR "voxelize.geom"});
+	shadowmapProgram.attachAndLink({SHADER_DIR "simple.vert", SHADER_DIR "empty.frag"});
+	injectRadianceProgram.attachAndLink({SHADER_DIR "injectRadiance.comp"});
 
 	// Initialize voxel textures
 	voxelColor = make3DTexture(voxelDim, 4, GL_RGBA16F, GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST);
@@ -121,11 +121,11 @@ void Application::render(float dt) {
 		glm::mat4 mvp_z = projection * glm::lookAt(glm::vec3(0, 0, 20), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
 		voxelProgram.bind();
-		glUniformMatrix4fv(voxelProgram.uniformLocation("mvp_x"), 1, GL_FALSE, glm::value_ptr(mvp_x));
-		glUniformMatrix4fv(voxelProgram.uniformLocation("mvp_y"), 1, GL_FALSE, glm::value_ptr(mvp_y));
-		glUniformMatrix4fv(voxelProgram.uniformLocation("mvp_z"), 1, GL_FALSE, glm::value_ptr(mvp_z));
+		voxelProgram.setUniformMatrix4fv("mvp_x", mvp_x);
+		voxelProgram.setUniformMatrix4fv("mvp_y", mvp_y);
+		voxelProgram.setUniformMatrix4fv("mvp_z", mvp_z);
 
-		glUniform1i(voxelProgram.uniformLocation("axis_override"), settings.axisOverride);
+		voxelProgram.setUniform1i("axis_override", settings.axisOverride);
 
 		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
@@ -170,9 +170,9 @@ void Application::render(float dt) {
 		glm::mat4 model;
 
 		shadowmapProgram.bind();
-		glUniformMatrix4fv(shadowmapProgram.uniformLocation("projection"), 1, GL_FALSE, glm::value_ptr(lp));
-		glUniformMatrix4fv(shadowmapProgram.uniformLocation("view"), 1, GL_FALSE, glm::value_ptr(lv));
-		glUniformMatrix4fv(shadowmapProgram.uniformLocation("model"), 1, GL_FALSE, glm::value_ptr(model));
+		shadowmapProgram.setUniformMatrix4fv("projection", lp);
+		shadowmapProgram.setUniformMatrix4fv("view", lv);
+		shadowmapProgram.setUniformMatrix4fv("model", model);
 
 		scene->draw(shadowmapProgram.getHandle());
 
@@ -188,7 +188,7 @@ void Application::render(float dt) {
 	{
 		static GLShaderProgram *p = nullptr;
 		if (!p) {
-			p = new GLShaderProgram(SHADER_DIR "normalizeVoxels.comp");
+			p = new GLShaderProgram({SHADER_DIR "normalizeVoxels.comp"});
 		}
 		p->bind();
 		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
@@ -216,14 +216,14 @@ void Application::render(float dt) {
 
 		GLuint shadowmap = shadowmapFBO.getTexture(0);
 		glBindTextureUnit(1, shadowmap);
-		glUniform1i(injectRadianceProgram.uniformLocation("shadowmap"), 1);
+		injectRadianceProgram.setUniform1i("shadowmap", 1);
 
 		glm::mat4 lsInverse = glm::inverse(ls);
-		glUniformMatrix4fv(injectRadianceProgram.uniformLocation("lsInverse"), 1, GL_FALSE, glm::value_ptr(lsInverse));
-		glUniform3fv(injectRadianceProgram.uniformLocation("lightPos"), 1, glm::value_ptr(lightPos));
-		glUniform3fv(injectRadianceProgram.uniformLocation("lightInt"), 1, glm::value_ptr(lightInt));
+		injectRadianceProgram.setUniformMatrix4fv("lsInverse", lsInverse);
+		injectRadianceProgram.setUniform3fv("lightPos", lightPos);
+		injectRadianceProgram.setUniform3fv("lightInt", lightInt);
 
-		glUniform1i(injectRadianceProgram.uniformLocation("voxelDim"), voxelDim);
+		injectRadianceProgram.setUniform1i("voxelDim", voxelDim);
 
 		// 2D workgroup should be the size of shadowmap, local_size = 16
 		glDispatchCompute((width + 16 - 1) / 16, (height + 16 - 1) / 16, 1);
@@ -256,42 +256,42 @@ void Application::render(float dt) {
 		glPolygonMode(GL_FRONT_AND_BACK, settings.drawWireframe ? GL_LINE : GL_FILL);
 
 		program.bind();
-		glUniformMatrix4fv(program.uniformLocation("projection"), 1, GL_FALSE, glm::value_ptr(projection));
-		glUniformMatrix4fv(program.uniformLocation("view"), 1, GL_FALSE, glm::value_ptr(view));
-		glUniformMatrix4fv(program.uniformLocation("model"), 1, GL_FALSE, glm::value_ptr(model));
-		glUniform3fv(program.uniformLocation("eye"), 1, glm::value_ptr(camera.position));
-		glUniform3fv(program.uniformLocation("lightPos"), 1, glm::value_ptr(lightPos));
-		glUniform3fv(program.uniformLocation("lightInt"), 1, glm::value_ptr(lightInt));
-		glUniformMatrix4fv(program.uniformLocation("ls"), 1, GL_FALSE, glm::value_ptr(ls));
-		glUniform1i(program.uniformLocation("texture0"), 0);
+		program.setUniformMatrix4fv("projection", projection);
+		program.setUniformMatrix4fv("view", view);
+		program.setUniformMatrix4fv("model", model);
+		program.setUniform3fv("eye", camera.position);
+		program.setUniform3fv("lightPos", lightPos);
+		program.setUniform3fv("lightInt", lightInt);
+		program.setUniformMatrix4fv("ls", ls);
+		program.setUniform1i("texture0", 0);
 
 		GLuint shadowmap = shadowmapFBO.getTexture(0);
 		glBindTextureUnit(1, shadowmap);
-		glUniform1i(program.uniformLocation("shadowmap"), 1);
+		program.setUniform1i("shadowmap", 1);
 
-		glUniform1i(program.uniformLocation("voxelize"), settings.drawVoxels);
-		glUniform1i(program.uniformLocation("normals"), settings.drawNormals);
-		glUniform1i(program.uniformLocation("dominant_axis"), settings.drawDominantAxis);
-		glUniform1i(program.uniformLocation("radiance"), settings.drawRadiance);
+		program.setUniform1i("voxelize", settings.drawVoxels);
+		program.setUniform1i("normals", settings.drawNormals);
+		program.setUniform1i("dominant_axis", settings.drawDominantAxis);
+		program.setUniform1i("radiance", settings.drawRadiance);
 
-		glUniform1i(program.uniformLocation("enableShadows"), settings.enableShadows);
-		glUniform1i(program.uniformLocation("enableIndirect"), settings.enableIndirect);
-		glUniform1i(program.uniformLocation("enableDiffuse"), settings.enableDiffuse);
-		glUniform1i(program.uniformLocation("enableSpecular"), settings.enableSpecular);
-		glUniform1f(program.uniformLocation("ambientScale"), settings.ambientScale);
+		program.setUniform1i("enableShadows", settings.enableShadows);
+		program.setUniform1i("enableIndirect", settings.enableIndirect);
+		program.setUniform1i("enableDiffuse", settings.enableDiffuse);
+		program.setUniform1i("enableSpecular", settings.enableSpecular);
+		program.setUniform1f("ambientScale", settings.ambientScale);
 
-		glUniform1i(program.uniformLocation("voxelDim"), voxelDim);
+		program.setUniform1i("voxelDim", voxelDim);
 
 		glBindTextureUnit(2, voxelColor);
-		glUniform1i(program.uniformLocation("voxelColor"), 2);
-		glUniform1i(program.uniformLocation("miplevel"), settings.miplevel);
-		glUniform1i(program.uniformLocation("voxelDim"), voxelDim);
+		program.setUniform1i("voxelColor", 2);
+		program.setUniform1i("miplevel", settings.miplevel);
+		program.setUniform1i("voxelDim", voxelDim);
 
 		glBindTextureUnit(3, voxelNormal);
-		glUniform1i(program.uniformLocation("voxelNormal"), 3);
+		program.setUniform1i("voxelNormal", 3);
 
 		glBindTextureUnit(4, voxelRadiance);
-		glUniform1i(program.uniformLocation("voxelRadiance"), 4);
+		program.setUniform1i("voxelRadiance", 4);
 
 		scene->draw(program.getHandle());
 
@@ -366,13 +366,13 @@ void Application::renderSimpleVoxelization(float dt) {
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 
 		voxelProgram.bind();
-		glUniformMatrix4fv(voxelProgram.uniformLocation("projection"), 1, GL_FALSE, glm::value_ptr(projection));
-		glUniformMatrix4fv(voxelProgram.uniformLocation("view"), 1, GL_FALSE, glm::value_ptr(view));
-		glUniformMatrix4fv(voxelProgram.uniformLocation("model"), 1, GL_FALSE, glm::value_ptr(model));
-		glUniform3fv(voxelProgram.uniformLocation("eye"), 1, glm::value_ptr(camera.position));
-		glUniform3fv(voxelProgram.uniformLocation("lightPos"), 1, glm::value_ptr(lightPos));
-		glUniform3fv(voxelProgram.uniformLocation("lightInt"), 1, glm::value_ptr(lightInt));
-		glUniform1i(voxelProgram.uniformLocation("texture0"), 0);
+		voxelProgram.setUniformMatrix4fv("projection", projection);
+		voxelProgram.setUniformMatrix4fv("view", view);
+		voxelProgram.setUniformMatrix4fv("model", model);
+		voxelProgram.setUniform3fv("eye", camera.position);
+		voxelProgram.setUniform3fv("lightPos", lightPos);
+		voxelProgram.setUniform3fv("lightInt", lightInt);
+		voxelProgram.setUniform1i("texture0", 0);
 
 		glBindImageTexture(1, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 
@@ -403,15 +403,15 @@ void Application::renderSimpleVoxelization(float dt) {
 		glEnable(GL_CULL_FACE);
 
 		program.bind();
-		glUniformMatrix4fv(program.uniformLocation("projection"), 1, GL_FALSE, glm::value_ptr(projection));
-		glUniformMatrix4fv(program.uniformLocation("view"), 1, GL_FALSE, glm::value_ptr(view));
-		glUniformMatrix4fv(program.uniformLocation("model"), 1, GL_FALSE, glm::value_ptr(model));
-		glUniform3fv(program.uniformLocation("eye"), 1, glm::value_ptr(camera.position));
-		glUniform3fv(program.uniformLocation("lightPos"), 1, glm::value_ptr(lightPos));
-		glUniform3fv(program.uniformLocation("lightInt"), 1, glm::value_ptr(lightInt));
-		glUniform1i(program.uniformLocation("texture0"), 0);
+		program.setUniformMatrix4fv("projection", projection);
+		program.setUniformMatrix4fv("view", view);
+		program.setUniformMatrix4fv("model", model);
+		program.setUniform3fv("eye", camera.position);
+		program.setUniform3fv("lightPos", lightPos);
+		program.setUniform3fv("lightInt", lightInt);
+		program.setUniform1i("texture0", 0);
 
-		glUniform1i(program.uniformLocation("voxelize"), settings.drawVoxels);
+		program.setUniform1i("voxelize", settings.drawVoxels);
 
 		glBindImageTexture(1, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 
