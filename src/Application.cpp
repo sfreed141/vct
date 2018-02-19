@@ -65,6 +65,7 @@ void Application::init() {
 	// Create scene
 	scene = std::make_unique<Scene>();
 	scene->addMesh(RESOURCE_DIR "sponza/sponza_small.obj");
+	scene->addMesh(RESOURCE_DIR "nanosuit/nanosuit.obj", glm::scale(glm::mat4(1.0f), glm::vec3(0.25f)));
 
 	// Camera setup
 	camera.position = glm::vec3(5, 1, 0);

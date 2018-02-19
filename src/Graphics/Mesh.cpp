@@ -1,6 +1,7 @@
 #include "Mesh.h"
 
 #include <Graphics/opengl.h>
+#include <glm/glm.hpp>
 
 #include <iostream>
 #include <string>
@@ -102,6 +103,11 @@ void Mesh::loadMesh(const std::string &meshname) {
             d.vertexCount += shape.mesh.indices.size();
         }
 
+        struct Vertex {
+            glm::vec3 position, normal;
+            glm::vec2 texcoord;
+            glm::vec3 tangent, bitangent;
+        };
         for (auto &d : drawables) {
             if (d.vertexCount > 0) {
                 glGenVertexArrays(1, &d.vao);
@@ -110,14 +116,18 @@ void Mesh::loadMesh(const std::string &meshname) {
                 glBindVertexArray(d.vao);
                 glBindBuffer(GL_ARRAY_BUFFER, d.buf);
 
-                glBufferData(GL_ARRAY_BUFFER, d.vertexCount * sizeof(float) * 8, nullptr, GL_STATIC_DRAW);
+                glBufferData(GL_ARRAY_BUFFER, d.vertexCount * sizeof(Vertex), nullptr, GL_STATIC_DRAW);
 
-                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), 0);
-                glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (GLvoid *)(3 * sizeof(float)));
-                glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (GLvoid *)(6 * sizeof(float)));
+                glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid *)offsetof(Vertex, position));
+                glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid *)offsetof(Vertex, normal));
+                glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid *)offsetof(Vertex, texcoord));
+                glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid *)offsetof(Vertex, tangent));
+                glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (GLvoid *)offsetof(Vertex, bitangent));
                 glEnableVertexAttribArray(0);
                 glEnableVertexAttribArray(1);
                 glEnableVertexAttribArray(2);
+                glEnableVertexAttribArray(3);
+                glEnableVertexAttribArray(4);
 
                 glBindVertexArray(0);
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -136,30 +146,58 @@ void Mesh::loadMesh(const std::string &meshname) {
             auto &d = drawables[material_id];
 
             if (d.vertexCount > 0) {
-                vector<float> vertices;
-                for (const auto &index : shape.mesh.indices) {
-                    float v0, v1, v2, n0, n1, n2, t0, t1;
-                    v0 = attrib.vertices[3 * index.vertex_index];
-                    v1 = attrib.vertices[3 * index.vertex_index + 1];
-                    v2 = attrib.vertices[3 * index.vertex_index + 2];
-                    if (index.normal_index >= 0) {
-                        n0 = attrib.normals[3 * index.normal_index];
-                        n1 = attrib.normals[3 * index.normal_index + 1];
-                        n2 = attrib.normals[3 * index.normal_index + 2];
-                    }
-                    if (index.texcoord_index >= 0) {
-                        t0 = attrib.texcoords[2 * index.texcoord_index];
-                        t1 = attrib.texcoords[2 * index.texcoord_index + 1];
+                vector<Vertex> vertices;
+
+
+                size_t index_offset = 0;
+                for (size_t f = 0; f < shape.mesh.num_face_vertices.size(); f++) {
+                    int fv = shape.mesh.num_face_vertices[f];
+                    assert(fv == 3);
+
+                    Vertex tri[3];
+                    for (size_t v = 0; v < fv; v++) {
+                        index_t index = shape.mesh.indices[index_offset + v];
+
+                        tri[v].position[0] = attrib.vertices[3 * index.vertex_index];
+                        tri[v].position[1] = attrib.vertices[3 * index.vertex_index + 1];
+                        tri[v].position[2] = attrib.vertices[3 * index.vertex_index + 2];
+                        if (index.normal_index >= 0) {
+                            tri[v].normal[0] = attrib.normals[3 * index.normal_index];
+                            tri[v].normal[1] = attrib.normals[3 * index.normal_index + 1];
+                            tri[v].normal[2] = attrib.normals[3 * index.normal_index + 2];
+                        }
+                        if (index.texcoord_index >= 0) {
+                            tri[v].texcoord[0] = attrib.texcoords[2 * index.texcoord_index];
+                            tri[v].texcoord[1] = attrib.texcoords[2 * index.texcoord_index + 1];
+                        }
                     }
 
-                    vertices.insert(end(vertices), {v0, v1, v2, n0, n1, n2, t0, t1});
+                    // https://learnopengl.com/Advanced-Lighting/Normal-Mapping
+                    glm::vec3 edge1 = tri[1].position - tri[0].position;
+                    glm::vec3 edge2 = tri[2].position - tri[0].position;
+                    glm::vec2 deltaUV1 = tri[1].texcoord - tri[0].texcoord;
+                    glm::vec2 deltaUV2 = tri[2].texcoord - tri[0].texcoord;
+                    float invDeterminant = 1.0f / (deltaUV1.x * deltaUV2.y - deltaUV2.x * deltaUV1.y);
+                    glm::vec3 tangent, bitangent;
+                    tangent.x = invDeterminant * (deltaUV2.y * edge1.x - deltaUV1.y * edge2.x);
+                    tangent.y = invDeterminant * (deltaUV2.y * edge1.y - deltaUV1.y * edge2.y);
+                    tangent.z = invDeterminant * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
+                    bitangent.x = invDeterminant * (deltaUV2.x * edge1.x - deltaUV1.x * edge2.x);
+                    bitangent.y = invDeterminant * (deltaUV2.x * edge1.y - deltaUV1.x * edge2.y);
+                    bitangent.z = invDeterminant * (deltaUV2.x * edge1.z - deltaUV1.x * edge2.z);
+                    tri[0].tangent = tri[1].tangent = tri[2].tangent = glm::normalize(tangent);
+                    tri[0].bitangent = tri[1].bitangent = tri[2].bitangent = glm::normalize(bitangent);
+
+                    vertices.insert(end(vertices), {tri[0], tri[1], tri[2]});
+
+                    index_offset += fv;
                 }
 
                 glBindVertexArray(d.vao);
                 glBindBuffer(GL_ARRAY_BUFFER, d.buf);
-                glBufferSubData(GL_ARRAY_BUFFER, lastwrite[material_id], vertices.size() * sizeof(float), vertices.data());
-                lastwrite[material_id] += vertices.size() * sizeof(float);
-                assert(lastwrite[material_id] <= d.vertexCount * sizeof(float) * 8);
+                glBufferSubData(GL_ARRAY_BUFFER, lastwrite[material_id], vertices.size() * sizeof(Vertex), vertices.data());
+                lastwrite[material_id] += vertices.size() * sizeof(Vertex);
+                assert(lastwrite[material_id] <= d.vertexCount * sizeof(Vertex));
 
                 glBindVertexArray(0);
                 glBindBuffer(GL_ARRAY_BUFFER, 0);

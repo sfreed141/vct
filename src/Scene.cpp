@@ -1,6 +1,8 @@
 #include "Scene.h"
 
 #include <Graphics/opengl.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <string>
 #include <vector>
@@ -16,12 +18,13 @@ Scene::Scene(std::initializer_list<const std::string> meshnames) {
 	}
 }
 
-void Scene::addMesh(const std::string &meshname) {
-	meshes.push_back(std::make_unique<Mesh>(meshname));
+void Scene::addMesh(const std::string &meshname, const glm::mat4 &model) {
+	nodes.push_back({std::make_unique<Mesh>(meshname), model});
 }
 
 void Scene::draw(GLuint program) const {
-	for (const auto &mesh : meshes) {
-		mesh->draw(program);
+	for (const auto &node : nodes) {
+		glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(node.model));
+		node.mesh->draw(program);
 	}
 }
