@@ -22,6 +22,11 @@ public:
 		glDeleteQueries(QUERY_COUNT, queryID[queryFrontBuffer]);
 	}
 
+	TimerQueries(const TimerQueries &other) = delete;
+	TimerQueries &operator=(const TimerQueries &other) = delete;
+	TimerQueries(TimerQueries &&other) = delete;
+	TimerQueries &operator=(TimerQueries &&other) = delete;
+
 	void beginQuery(QueryType type) { glBeginQuery(GL_TIME_ELAPSED, queryID[queryBackBuffer][type]); }
 
 	void endQuery() { glEndQuery(GL_TIME_ELAPSED); }

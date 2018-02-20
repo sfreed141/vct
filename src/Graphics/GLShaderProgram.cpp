@@ -31,7 +31,7 @@ GLShaderProgram &GLShaderProgram::attachShader(GLenum shaderType, const std::str
 
 void GLShaderProgram::linkProgram() {
 	glLinkProgram(handle);
-	GLHelper::checkShaderStatus(handle);
+	GLHelper::checkShaderProgramStatus(handle);
 }
 
 void GLShaderProgram::attachAndLink(std::initializer_list<const std::string> shaderFiles) {

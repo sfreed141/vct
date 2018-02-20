@@ -176,7 +176,7 @@ GLuint GLHelper::createTextureFromImage(const std::string &imagename) {
         glTextureParameterf(texture_id, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy);
     }
 
-    GLint levels = (GLint)std::log2(std::max(width, height)) + 1;
+    GLint levels = (GLint)std::log2(std::fmax(width, height)) + 1;
     if (channels == 3) {
         glTextureStorage2D(texture_id, levels, GL_RGB8, width, height);
         glTextureSubImage2D(texture_id, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, image);
@@ -241,7 +241,12 @@ GLuint GLHelper::createShaderFromFile(GLenum shaderType, const std::string &file
     std::string str = GLHelper::readText(filename);
     const char *shaderString = str.c_str();
 
-    return GLHelper::createShaderFromString(shaderType, shaderString);
+	GLuint shader = GLHelper::createShaderFromString(shaderType, shaderString);
+	if (shader == 0) {
+		std::cerr << "\tin shader " << filename << std::endl;
+	}
+
+	return shader;
 }
 
 // Create a shader from the provided string.
@@ -253,7 +258,10 @@ GLuint GLHelper::createShaderFromString(GLenum shaderType, const char *shaderTex
     glShaderSource(shader, 1, &shaderText, NULL);
     glCompileShader(shader);
     
-    GLHelper::checkShaderStatus(shader);
+	if (!GLHelper::checkShaderStatus(shader)) {
+		glDeleteShader(shader);
+		shader = 0;
+	}
 
     return shader;
 }
@@ -324,6 +332,6 @@ GLenum GLHelper::shaderTypeFromExtension(const std::string &filename) {
 
     size_t pos = filename.find_last_of('.');
     std::string ext = (pos == std::string::npos) ? filename : filename.substr(pos + 1);
-    
+
     return (extToType.count(ext) != 0) ? extToType[ext] : 0;
 }

@@ -10,6 +10,13 @@ public:
 	GLFramebuffer();
 	~GLFramebuffer();
 
+	GLFramebuffer(const GLFramebuffer &) = delete;
+	GLFramebuffer &operator=(const GLFramebuffer &) = delete;
+
+	// TODO add move constructor and move assignment
+	GLFramebuffer(GLFramebuffer &&other) = delete;
+	GLFramebuffer &operator=(GLFramebuffer &&other) = delete;
+
 	void attachTexture(GLenum attachment, GLint internalFormat, GLsizei width, GLsizei height, GLenum format, GLenum type, GLint minFilter = GL_NEAREST, GLint magFilter = GL_NEAREST, GLint wrapS = GL_REPEAT, GLint wrapT = GL_REPEAT, const glm::vec4 *borderColor = nullptr);
 	void attachRenderbuffer(GLenum attachment, GLenum internalFormat, GLsizei width, GLsizei height);
 

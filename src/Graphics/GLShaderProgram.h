@@ -14,6 +14,13 @@ public:
     GLShaderProgram(std::initializer_list<const std::string> shaderFiles);
     ~GLShaderProgram();
 
+	GLShaderProgram(const GLShaderProgram &other) = delete;
+	GLShaderProgram &operator=(const GLShaderProgram &other) = delete;
+
+	// TODO add move constructor and move assignment
+	GLShaderProgram(GLShaderProgram &&other) = delete;
+	GLShaderProgram &operator=(GLShaderProgram &&other) = delete;
+
     GLShaderProgram &attachShader(const std::string &shaderFile);
     GLShaderProgram &attachShader(GLenum shaderType, const std::string &shaderFile);
     void linkProgram();
