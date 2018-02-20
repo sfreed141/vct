@@ -77,7 +77,7 @@ void Overlay::render(float dt) {
         voxelSliceImage = nk_image_id((int)voxelSlice);
     }
 
-    const int rowheight = 20;
+    const float rowheight = 20.0f;
     const nk_flags window_flags = NK_WINDOW_BORDER | NK_WINDOW_MOVABLE
         | NK_WINDOW_SCALABLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE;
     if (nk_begin(ctx, "", nk_rect(10, 10, 400, 700), window_flags)) {
@@ -162,7 +162,7 @@ void Overlay::render(float dt) {
             
             nk_layout_row_dynamic(ctx, rowheight, 2);
             nk_labelf(ctx, NK_TEXT_LEFT, "Ambient Scale: %0.1f", settings.ambientScale);
-            nk_slider_float(ctx, 0.0, &settings.ambientScale, 1.0, 0.1);
+            nk_slider_float(ctx, 0.0f, &settings.ambientScale, 1.0f, 0.1f);
 
             nk_tree_pop(ctx);
         }
