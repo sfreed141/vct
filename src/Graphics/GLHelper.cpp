@@ -154,7 +154,7 @@ static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum
 // Creates texture and loads it with data from provided image file.
 GLuint GLHelper::createTextureFromImage(const std::string &imagename) {
     int width, height, channels;
-    unsigned char *image = stbi_load(imagename.c_str(), &width, &height, &channels, 0);
+    unsigned char *image = stbi_load(imagename.c_str(), &width, &height, &channels, STBI_default);
     if (image == NULL) {
         std::cerr
             << "ERROR::TEXTURE::LOAD_FAILED::"

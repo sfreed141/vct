@@ -1,11 +1,25 @@
 #version 450 core
 
-in vec3 fragPosition;
-in vec3 fragNormal;
-in vec2 fragTexcoord;
+#define NORMAL_MAP
+
+in VS_OUT {
+    vec3 fragPosition;
+    vec3 fragNormal;
+    vec2 fragTexcoord;
+
+#ifdef NORMAL_MAP
+    vec3 tangentLightPos;
+    vec3 tangentViewPos;
+    vec3 tangentFragPos;
+#endif
+} fs_in;
 
 // Diffuse color
 uniform sampler2D texture0;
+
+#ifdef NORMAL_MAP
+layout(binding = 5) uniform sampler2D normalMap;
+#endif
 
 uniform sampler2D shadowmap;
 
@@ -19,6 +33,7 @@ uniform bool dominant_axis = false;
 uniform bool radiance = false;
 
 uniform bool enableShadows = true;
+uniform bool enableNormalMap = true;
 uniform bool enableIndirect = false;
 uniform bool enableDiffuse = true;
 uniform bool enableSpecular = true;
@@ -110,11 +125,23 @@ float calcShadowFactor(vec3 lsPosition) {
 }
 
 void main() {
-    color = texture(texture0, fragTexcoord);
+    color = texture(texture0, fs_in.fragTexcoord);
 
-    vec3 norm = normalize(fragNormal);
-    vec3 light = normalize(lightPos - fragPosition);
-    vec3 view = normalize(eye - fragPosition);
+	vec3 norm, light, view;
+#ifdef NORMAL_MAP
+	if (enableNormalMap) {
+		norm = texture(normalMap, fs_in.fragTexcoord).rgb;
+		norm = normalize(norm * 2.0 - 1.0);
+		light = normalize(fs_in.tangentLightPos - fs_in.tangentFragPos);
+		view = normalize(fs_in.tangentViewPos - fs_in.tangentFragPos);
+	}
+	else
+#endif
+	{
+		norm = normalize(fs_in.fragNormal);
+		light = normalize(lightPos - fs_in.fragPosition);
+		view = normalize(eye - fs_in.fragPosition);
+	}
 
     vec3 h = normalize(view + light);
     float vdotr = max(dot(norm, h), 0);
@@ -125,11 +152,11 @@ void main() {
 
 	float shadowFactor = 1.0;
 	if (enableShadows) {
-		shadowFactor = 1.0 - calcShadowFactor((ls * vec4(fragPosition, 1.0)).xyz);
+		shadowFactor = 1.0 - calcShadowFactor((ls * vec4(fs_in.fragPosition, 1.0)).xyz);
 	}
 
     if (voxelize) {
-		vec3 i = vec3(voxelIndex(fragPosition)) / voxelDim;
+		vec3 i = vec3(voxelIndex(fs_in.fragPosition)) / voxelDim;
 		
 		if (normals) {
 			vec3 normal = normalize(textureLod(voxelNormal, i, miplevel).rgb);
@@ -156,7 +183,7 @@ void main() {
 			directLighting += enableSpecular ? specular : 0.0;
 			
 			if (enableIndirect) {
-				vec3 voxelPosition = vec3(voxelIndex(fragPosition)) / voxelDim;
+				vec3 voxelPosition = vec3(voxelIndex(fs_in.fragPosition)) / voxelDim;
 				vec3 indirect = vec3(0);
 				indirect += ambientScale * textureLod(voxelColor, voxelPosition, miplevel).rgb;
 				color = vec4(indirect + shadowFactor * directLighting * lightInt * color.rgb, 1);
@@ -166,7 +193,7 @@ void main() {
 			}
 
 			#if 0
-			vec3 voxelPosition = vec3(voxelIndex(fragPosition)) / voxelDim;
+			vec3 voxelPosition = vec3(voxelIndex(fs_in.fragPosition)) / voxelDim;
 			vec3 indirect = vec3(0);
 			indirect += traceCone(voxelPosition, norm, 8);
 

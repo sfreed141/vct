@@ -11,6 +11,10 @@
 
 #include <Graphics/Mesh.h>
 
+struct Light {
+	glm::vec3 position, intensity;
+};
+
 class Scene {
 public:
 	Scene();
@@ -20,6 +24,9 @@ public:
 	void addMesh(const std::string &meshname, const glm::mat4 &model = glm::mat4());
 	void draw(GLuint program) const;
 
+	Light &getMainlight() { return mainlight; }
+	void setMainlight(const glm::vec3 &position, const glm::vec3 &intensity);
+
 private:
 	struct SceneNode {
 		std::unique_ptr<Mesh> mesh;
@@ -27,6 +34,7 @@ private:
 	};
 
 	std::vector<SceneNode> nodes;
+	Light mainlight;
 };
 
 #endif

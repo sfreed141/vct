@@ -1,6 +1,7 @@
 #include "Mesh.h"
 
 #include <Graphics/opengl.h>
+#include <Graphics/GLHelper.h>
 #include <glm/glm.hpp>
 
 #include <iostream>
@@ -24,10 +25,6 @@ Mesh::Mesh(const std::string &meshname) {
 
 // modified from https://github.com/syoyo/tinyobjloader/blob/master/examples/viewer/viewer.cc
 void Mesh::loadMesh(const std::string &meshname) {
-//    attrib_t attrib;
-//    vector<shape_t> shapes;
-//    vector<material_t> materials;
-
     string err;
     string basedir = meshname.substr(0, meshname.find_last_of('/') + 1);
     bool status = LoadObj(&attrib, &shapes, &materials, &err, meshname.c_str(), basedir.c_str());
@@ -50,44 +47,30 @@ void Mesh::loadMesh(const std::string &meshname) {
         // Default material
         materials.push_back(material_t());
 
-		float maxAnisotropy = 1.0f;
-		if (GLAD_GL_EXT_texture_filter_anisotropic) {
-			glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
-		}
-
         // Load materials and store name->id map
         for (material_t &mp : materials) {
             if (!mp.diffuse_texname.empty() && textures.find(mp.diffuse_texname) == textures.end()) {
-                int width, height, components;
-
                 string texture_name = mp.diffuse_texname;
 #ifndef _WIN32
                 replace(begin(texture_name), end(texture_name), '\\', '/');
 #endif
                 texture_name = basedir + texture_name;
-                unsigned char *image = stbi_load(texture_name.c_str(), &width, &height, &components, STBI_default);
-                if (image == nullptr) {
-                    cerr << "Unable to load texture: " << texture_name << endl;
-                    return;
-                }
-
-                GLuint texture_id;
-                glCreateTextures(GL_TEXTURE_2D, 1, &texture_id);
-                glTextureParameteri(texture_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-                glTextureParameteri(texture_id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-				glTextureParameterf(texture_id, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy);
-				GLint levels = (GLint)std::log2(std::max(width, height)) + 1;
-                if (components == 3) {
-					glTextureStorage2D(texture_id, levels, GL_RGB8, width, height);
-					glTextureSubImage2D(texture_id, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, image);
-                }
-                else if (components == 4) {
-					glTextureStorage2D(texture_id, levels, GL_RGBA8, width, height);
-					glTextureSubImage2D(texture_id, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image); 
-                }
-				glGenerateTextureMipmap(texture_id);
-                stbi_image_free(image);
+                GLuint texture_id = GLHelper::createTextureFromImage(texture_name);
+                
                 textures.insert(make_pair(mp.diffuse_texname, texture_id));
+                std::cerr << "loaded " << mp.diffuse_texname << std::endl;
+            }
+
+            if (!mp.bump_texname.empty() && textures.find(mp.bump_texname) == textures.end()) {
+                string texture_name = mp.bump_texname;
+#ifndef _WIN32
+                replace(begin(texture_name), end(texture_name), '\\', '/');
+#endif
+                texture_name = basedir + texture_name;
+                GLuint texture_id = GLHelper::createTextureFromImage(texture_name);
+                
+                textures.insert(make_pair(mp.bump_texname, texture_id));
+                std::cerr << "loaded " << mp.bump_texname << std::endl;
             }
         }
 
@@ -210,18 +193,35 @@ void Mesh::loadMesh(const std::string &meshname) {
 }
 
 void Mesh::draw(GLuint program) const {
-    glActiveTexture(GL_TEXTURE0);
+    GLint enableNormalMapLocation = glGetUniformLocation(program, "enableNormalMap");
+    GLint enableNormalMap;
+    glGetUniformiv(program, enableNormalMapLocation, &enableNormalMap);
 
     for (const auto &d : drawables) {
-        string texture_name = materials[d.material_id].diffuse_texname;
-        GLuint texture_id = textures.at(texture_name);
+        const auto &diffuse_texname = materials[d.material_id].diffuse_texname;
+        const auto &bump_texname = materials[d.material_id].bump_texname;
+
+        GLuint diffuse_texture = textures.at(materials[d.material_id].diffuse_texname);
+        GLuint bump_texture;
+        if (textures.count(bump_texname) == 0) {
+            bump_texture = 0;
+            glUniform1i(enableNormalMapLocation, false);
+        }
+        else {
+            bump_texture = textures.at(bump_texname);
+            glUniform1i(enableNormalMapLocation, enableNormalMap);
+        }
 
         glBindVertexArray(d.vao);
-        glBindTexture(GL_TEXTURE_2D, texture_id);
+        glBindTextureUnit(0, diffuse_texture);
+        glBindTextureUnit(5, bump_texture);
         glUniform1f(glGetUniformLocation(program, "shine"), materials[d.material_id].shininess);
         glDrawArrays(GL_TRIANGLES, 0, d.vertexCount);
     }
 
-    glBindTexture(GL_TEXTURE_2D, 0);
+    glUniform1i(enableNormalMapLocation, enableNormalMap);
+
+    glBindTextureUnit(0, 0);
+    glBindTextureUnit(5, 0);
     glBindVertexArray(0);
 }

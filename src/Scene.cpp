@@ -28,3 +28,8 @@ void Scene::draw(GLuint program) const {
 		node.mesh->draw(program);
 	}
 }
+
+void Scene::setMainlight(const glm::vec3 &position, const glm::vec3 &intensity) {
+	mainlight.position = position;
+	mainlight.intensity = intensity;
+}

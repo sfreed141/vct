@@ -36,6 +36,7 @@ struct Settings {
 
 	int conservativeRasterization = true;
 	int enableShadows = true;
+    int enableNormalMap = true;
     int enableIndirect = false;
     int enableDiffuse = true;
     int enableSpecular = true;

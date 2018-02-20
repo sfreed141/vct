@@ -114,6 +114,13 @@ void Overlay::render(float dt) {
             nk_labelf(ctx, NK_TEXT_LEFT, "Camera Position: (%4.1f, %4.1f, %4.1f)", camera.position.x, camera.position.y, camera.position.z);
             nk_labelf(ctx, NK_TEXT_LEFT, "Camera Direction: (%4.1f, %4.1f, %4.1f)", camera.front.x, camera.front.y, camera.front.z);
 
+            auto &lightPos = app.scene->getMainlight().position;
+            nk_label(ctx, "Light Position",NK_TEXT_LEFT);
+            nk_layout_row_dynamic(ctx, rowheight, 3);
+            nk_property_float(ctx, "x: ", -100.0f, &lightPos.x, 100.0f, 1.0f, 0.2f);
+            nk_property_float(ctx, "y: ", -100.0f, &lightPos.y, 100.0f, 1.0f, 0.2f);
+            nk_property_float(ctx, "z: ", -100.0f, &lightPos.z, 100.0f, 1.0f, 0.2f);
+
             nk_layout_row_dynamic(ctx, rowheight, 2);
             nk_checkbox_label(ctx, "Voxels", &settings.drawVoxels);
             nk_checkbox_label(ctx, "Dominant Axis", &settings.drawDominantAxis);
@@ -156,6 +163,7 @@ void Overlay::render(float dt) {
 				nk_checkbox_label(ctx, "Conservative Rasterization", &settings.conservativeRasterization);
 			}
 			nk_checkbox_label(ctx, "Enable Shadows", &settings.enableShadows);
+			nk_checkbox_label(ctx, "Enable Normal Map", &settings.enableNormalMap);
 			nk_checkbox_label(ctx, "Enable Indirect", &settings.enableIndirect);
 			nk_checkbox_label(ctx, "Enable Diffuse", &settings.enableDiffuse);
 			nk_checkbox_label(ctx, "Enable Specular", &settings.enableSpecular);

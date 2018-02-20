@@ -52,7 +52,7 @@ void Application::init() {
 	shadowmapFBO.unbind();
 
 	// Create shaders
-	program.attachAndLink({SHADER_DIR "simple.vert", SHADER_DIR "phong.frag"});
+	program.attachAndLink({SHADER_DIR "phong.vert", SHADER_DIR "phong.frag"});
 	voxelProgram.attachAndLink({SHADER_DIR "voxelize.vert", SHADER_DIR "voxelize.frag", SHADER_DIR "voxelize.geom"});
 	shadowmapProgram.attachAndLink({SHADER_DIR "simple.vert", SHADER_DIR "empty.frag"});
 	injectRadianceProgram.attachAndLink({SHADER_DIR "injectRadiance.comp"});
@@ -66,6 +66,7 @@ void Application::init() {
 	scene = std::make_unique<Scene>();
 	scene->addMesh(RESOURCE_DIR "sponza/sponza_small.obj");
 	scene->addMesh(RESOURCE_DIR "nanosuit/nanosuit.obj", glm::scale(glm::mat4(1.0f), glm::vec3(0.25f)));
+	scene->setMainlight({0.0f, 30.0f, -5.0f}, {1.0f, 1.0f, 1.0f});
 
 	// Camera setup
 	camera.position = glm::vec3(5, 1, 0);
@@ -153,11 +154,10 @@ void Application::render(float dt) {
 
 	// Generate shadowmap
 	timers.beginQuery(TimerQueries::SHADOWMAP_TIME);
-	glm::vec3 lightPos{ 0.0f, 30.0f, -5.0f };
-	glm::vec3 lightInt{ 1.0f, 1.0f, 1.0f };
+	Light mainlight = scene->getMainlight();
 	const float lz_near = 0.1f, lz_far = 50.0f, l_boundary = 25.0f;
 	glm::mat4 lp = glm::ortho(-l_boundary, l_boundary, -l_boundary, l_boundary, lz_near, lz_far);
-	glm::mat4 lv = glm::lookAt(lightPos, glm::vec3(0), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 lv = glm::lookAt(mainlight.position, glm::vec3(0), glm::vec3(0.0f, 1.0f, 0.0f));
 	glm::mat4 ls = lp * lv;
 	{
 		GL_DEBUG_PUSH("Shadowmap")
@@ -221,8 +221,8 @@ void Application::render(float dt) {
 
 		glm::mat4 lsInverse = glm::inverse(ls);
 		injectRadianceProgram.setUniformMatrix4fv("lsInverse", lsInverse);
-		injectRadianceProgram.setUniform3fv("lightPos", lightPos);
-		injectRadianceProgram.setUniform3fv("lightInt", lightInt);
+		injectRadianceProgram.setUniform3fv("lightPos", mainlight.position);
+		injectRadianceProgram.setUniform3fv("lightInt", mainlight.intensity);
 
 		injectRadianceProgram.setUniform1i("voxelDim", voxelDim);
 
@@ -261,8 +261,8 @@ void Application::render(float dt) {
 		program.setUniformMatrix4fv("view", view);
 		program.setUniformMatrix4fv("model", model);
 		program.setUniform3fv("eye", camera.position);
-		program.setUniform3fv("lightPos", lightPos);
-		program.setUniform3fv("lightInt", lightInt);
+		program.setUniform3fv("lightPos", mainlight.position);
+		program.setUniform3fv("lightInt", mainlight.intensity);
 		program.setUniformMatrix4fv("ls", ls);
 		program.setUniform1i("texture0", 0);
 
@@ -276,6 +276,7 @@ void Application::render(float dt) {
 		program.setUniform1i("radiance", settings.drawRadiance);
 
 		program.setUniform1i("enableShadows", settings.enableShadows);
+		program.setUniform1i("enableNormalMap", settings.enableNormalMap);
 		program.setUniform1i("enableIndirect", settings.enableIndirect);
 		program.setUniform1i("enableDiffuse", settings.enableDiffuse);
 		program.setUniform1i("enableSpecular", settings.enableSpecular);
@@ -342,89 +343,4 @@ GLuint make3DTexture(GLsizei size, GLsizei levels, GLenum internalFormat, GLint 
 	glBindTexture(GL_TEXTURE_3D, 0);
 
 	return handle;
-}
-
-// Render scene and voxelize hacky way
-//	program.linkProgram(SHADER_DIR "simple.vert", SHADER_DIR "phong.frag");
-//	voxelProgram.linkProgram(SHADER_DIR "simple.vert", SHADER_DIR "phongVoxel.frag");
-void Application::renderSimpleVoxelization(float dt) {
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	// Voxelize scene
-	{
-		GL_DEBUG_PUSH("Voxelize Scene")
-		glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
-		glm::mat4 view = camera.lookAt();
-		glm::mat4 model;
-
-		glm::vec3 lightPos{ 100.0f, 100.0f, 0.0f };
-		glm::vec3 lightInt{ 1.0f, 1.0f, 1.0f };
-
-		glViewport(0, 0, width, height);
-		glDisable(GL_DEPTH_TEST);
-		glDisable(GL_CULL_FACE);
-		glDepthMask(GL_FALSE);
-		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-
-		voxelProgram.bind();
-		voxelProgram.setUniformMatrix4fv("projection", projection);
-		voxelProgram.setUniformMatrix4fv("view", view);
-		voxelProgram.setUniformMatrix4fv("model", model);
-		voxelProgram.setUniform3fv("eye", camera.position);
-		voxelProgram.setUniform3fv("lightPos", lightPos);
-		voxelProgram.setUniform3fv("lightInt", lightInt);
-		voxelProgram.setUniform1i("texture0", 0);
-
-		glBindImageTexture(1, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
-
-		scene->draw(voxelProgram.getHandle());
-		voxelProgram.unbind();
-
-		// Restore OpenGL state
-		glViewport(0, 0, width, height);
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
-		glDepthMask(GL_TRUE);
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		GL_DEBUG_POP()
-	}
-
-	// Render scene
-	{
-		GL_DEBUG_PUSH("Render Scene")
-		glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
-		glm::mat4 view = camera.lookAt();
-		glm::mat4 model;
-
-		glm::vec3 lightPos{ 100.0f, 100.0f, 0.0f };
-		glm::vec3 lightInt{ 1.0f, 1.0f, 1.0f };
-
-		glViewport(0, 0, width, height);
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
-
-		program.bind();
-		program.setUniformMatrix4fv("projection", projection);
-		program.setUniformMatrix4fv("view", view);
-		program.setUniformMatrix4fv("model", model);
-		program.setUniform3fv("eye", camera.position);
-		program.setUniform3fv("lightPos", lightPos);
-		program.setUniform3fv("lightInt", lightInt);
-		program.setUniform1i("texture0", 0);
-
-		program.setUniform1i("voxelize", settings.drawVoxels);
-
-		glBindImageTexture(1, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
-
-		scene->draw(program.getHandle());
-		program.unbind();
-		GL_DEBUG_POP()
-	}
-
-	// Render overlay
-	{
-		GL_DEBUG_PUSH("Render Overlay")
-		ui.render(dt);
-		GL_DEBUG_POP()
-	}
 }
