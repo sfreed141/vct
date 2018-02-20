@@ -40,6 +40,9 @@ void main() {
     vec3 T = normalize(vec3(model * vec4(tangent, 0)));
     vec3 B = normalize(vec3(model * vec4(bitangent, 0)));
     vec3 N = normalize(vec3(model * vec4(normal, 0)));
+    // re-orthogonalize
+    // T = normalize(T - dot(T, N) * N);
+    // B = cross(N, T);
     mat3 TBN = transpose(mat3(T, B, N));
     vs_out.tangentLightPos = TBN * lightPos;
     vs_out.tangentViewPos = TBN * eye;

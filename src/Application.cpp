@@ -71,6 +71,7 @@ void Application::init() {
 	// Camera setup
 	camera.position = glm::vec3(5, 1, 0);
 	camera.yaw = 180.0f;
+	camera.update(0.0f);
 }
 
 void Application::update(float dt) {

@@ -2,6 +2,7 @@
 #define MESH_H
 
 #include <Graphics/opengl.h>
+#include <glm/glm.hpp>
 
 #include <string>
 #include <vector>
@@ -9,11 +10,17 @@
 
 #include <tiny_obj_loader.h>
 
-typedef struct {
-    GLuint vao, buf;
-    GLsizei vertexCount;
+struct Vertex {
+    glm::vec3 position, normal;
+    glm::vec2 texcoord;
+    glm::vec3 tangent, bitangent;
+};
+
+struct Drawable {
     size_t material_id;
-} Drawable;
+    std::vector<GLuint> indices;
+    GLuint ebo;
+};
 
 class Mesh {
 public:
@@ -29,6 +36,9 @@ private:
     std::vector<tinyobj::material_t> materials;
     std::map<std::string, GLuint> textures;
     std::vector<Drawable> drawables;
+    std::vector<Vertex> vertices;
+
+    GLuint vao;
 };
 
 #endif
