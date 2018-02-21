@@ -47,7 +47,7 @@ void Application::init() {
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
 	if (shadowmapFBO.getStatus() != GL_FRAMEBUFFER_COMPLETE) {
-		std::cerr << "shadowmapFBO not created successfully" << std::endl;
+		LOG_ERROR("shadowmapFBO not created successfully");
 	}
 	shadowmapFBO.unbind();
 

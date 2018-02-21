@@ -17,6 +17,7 @@
 #include <stb_image.h>
 
 #include <unordered_map>
+#include <common.h>
 
 using namespace std;
 using namespace tinyobj;
@@ -40,19 +41,21 @@ void Mesh::loadMesh(const std::string &meshname) {
     bool status = LoadObj(&attrib, &shapes, &materials, &err, meshname.c_str(), basedir.c_str());
 
     if (!err.empty()) {
-        cerr << err << endl;
+        LOG_ERROR(err);
     }
 
     if (!status) {
-        cerr << "Failed to load mesh: " << meshname << endl;
+        LOG_ERROR("Failed to load mesh: ", meshname);
     }
     else {
-        printf("Loaded mesh %s\n", meshname.c_str());
-        printf("# of vertices  = %d\n", (int)(attrib.vertices.size()) / 3);
-        printf("# of normals   = %d\n", (int)(attrib.normals.size()) / 3);
-        printf("# of texcoords = %d\n", (int)(attrib.texcoords.size()) / 2);
-        printf("# of materials = %d\n", (int)materials.size());
-        printf("# of shapes    = %d\n", (int)shapes.size());
+        LOG_INFO(
+            "\n\tLoaded mesh ", meshname, "\n",
+            "\t# of vertices  = ", (int)(attrib.vertices.size()) / 3, "\n",
+            "\t# of normals   = ", (int)(attrib.normals.size()) / 3, "\n",
+            "\t# of texcoords = ", (int)(attrib.texcoords.size()) / 2, "\n",
+            "\t# of materials = ", (int)materials.size(), "\n",
+            "\t# of shapes    = ", (int)shapes.size()
+        );
 
         // Load materials and store name->id map
         for (material_t &mp : materials) {
@@ -64,7 +67,7 @@ void Mesh::loadMesh(const std::string &meshname) {
                 GLuint texture_id = GLHelper::createTextureFromImage(texture_name);
                 
                 textures.insert(make_pair(mp.diffuse_texname, texture_id));
-                std::cerr << "loaded diffuse " << mp.diffuse_texname << std::endl;
+                LOG_INFO("loaded diffuse ", mp.diffuse_texname);
             }
 
             if (!mp.bump_texname.empty() && textures.find(mp.bump_texname) == textures.end()) {
@@ -75,7 +78,7 @@ void Mesh::loadMesh(const std::string &meshname) {
                 int width, height, channels;
                 unsigned char *image = stbi_load(texture_name.c_str(), &width, &height, &channels, STBI_default);
                 if (image == nullptr) {
-                    std::cerr << "ERROR::TEXTURE::LOAD_FAILED::" << texture_name << std::endl;
+                    LOG_ERROR("TEXTURE::LOAD_FAILED::", texture_name);
                     continue;
                 }
                 else if (channels == 3 || channels == 4) {
@@ -106,10 +109,10 @@ void Mesh::loadMesh(const std::string &meshname) {
                     glGenerateTextureMipmap(texture_id);
 
                     textures.insert(make_pair(mp.bump_texname, texture_id));
-                    std::cerr << "loaded normal map " << mp.bump_texname << std::endl;
+                    LOG_INFO("loaded normal map ", mp.bump_texname);
                 }
                 else {
-                    std::cerr << "Bump map " << texture_name << " not supported, convert it to normal map" << std::endl;
+                    LOG_WARN("Bump map ", texture_name, " not supported, convert it to normal map");
                 }
                 stbi_image_free(image);
             }

@@ -1,6 +1,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include "log.h"
+
 #define OPENGL_VERSION_MAJOR 4
 #define OPENGL_VERSION_MINOR 5
 

@@ -16,6 +16,7 @@ int main() {
     Application app {window};
 
     app.init();
+    LOG_INFO("Application initialized");
 
     float dt, lastFrame = 0.0f;
     while (!glfwWindowShouldClose(window)) {
@@ -30,6 +31,8 @@ int main() {
 
         glfwSwapBuffers(window);
     }
+
+    LOG_INFO("Exitting...");
 
     glfwTerminate();
 
@@ -50,7 +53,8 @@ GLFWwindow *init_window(unsigned width, unsigned height, const char *title) {
 
     GLFWwindow *window = glfwCreateWindow(width, height, title, nullptr, nullptr);
     if (window == nullptr) {
-        std::cerr << "Failed to create GLFW window" << std::endl;
+        LOG_ERROR("Failed to create GLFW window");
+
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
@@ -66,7 +70,7 @@ GLFWwindow *init_window(unsigned width, unsigned height, const char *title) {
     glfwSwapInterval(0);
 
     if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) {
-        std::cerr << "Failed to initialize OpenGL context" << std::endl;
+        LOG_ERROR("Failed to initialize OpenGL context");
         exit(EXIT_FAILURE);
     }
 

@@ -9,6 +9,7 @@
 #include <sstream>
 #include <fstream>
 #include <unordered_map>
+#include <common.h>
 
 static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
 
@@ -156,10 +157,7 @@ GLuint GLHelper::createTextureFromImage(const std::string &imagename) {
     int width, height, channels;
     unsigned char *image = stbi_load(imagename.c_str(), &width, &height, &channels, STBI_default);
     if (image == NULL) {
-        std::cerr
-            << "ERROR::TEXTURE::LOAD_FAILED::"
-            << imagename
-            << std::endl;
+        LOG_ERROR("TEXTURE::LOAD_FAILED::", imagename);
     }
 
     GLuint texture_id;
@@ -210,10 +208,7 @@ GLuint GLHelper::createCubemap(const std::vector<std::string> &imagenames) {
     for (int i = 0; i < 6; i++) {
         image = stbi_load(imagenames[i].c_str(), &width, &height, &channels, 3);
         if (image == NULL) {
-            std::cerr
-                << "ERROR::CUBEMAP::LOAD_FAILED::"
-                << imagenames[i]
-                << std::endl;
+            LOG_ERROR("CUBEMAP::LOAD_FAILED::", imagenames[i]);
         }
         
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
@@ -286,12 +281,7 @@ bool GLHelper::checkShaderStatus(GLuint shader) {
             default: shaderTypeString = "UNKNOWN"; break;
         }
 
-        std::cerr
-            << "ERROR::SHADER::"
-            << shaderTypeString
-            << "::COMPILATION_FAILED\n"
-            << infoLog
-            << std::endl;
+        LOG_ERROR("SHADER::", shaderTypeString, "::COMPILATION_FAILED\n", infoLog);
     }
 
     return success;
@@ -305,10 +295,7 @@ bool GLHelper::checkShaderProgramStatus(GLuint program) {
     glGetProgramiv(program, GL_LINK_STATUS, &success);
 	if (!success) {
 		glGetProgramInfoLog(program, 512, NULL, infoLog);
-		std::cerr
-			<< "ERROR::SHADER_PROGRAM::COMPILATION_FAILED\n"
-			<< infoLog
-			<< std::endl;
+		LOG_ERROR("SHADER_PROGRAM::COMPILATION_FAILED\n", infoLog);
 	}
 
     return success;
