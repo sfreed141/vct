@@ -3,6 +3,12 @@
 
 #include <stdio.h>
 
+#ifdef _WIN32
+// Windows hates colors :(
+// maybe worth adding... https://docs.microsoft.com/en-us/windows/console/console-virtual-terminal-sequences
+#define ASCII_RST ""
+static const char *logColors[] = { "", "", "", "", "" };
+#else
 #define ASCII_CSI "\x1b["
 #define ASCII_RED "\x1b[31m"
 #define ASCII_GRN "\x1b[32m"
@@ -13,9 +19,12 @@
 #define ASCII_WHT "\x1b[37m"
 #define ASCII_RST "\x1b[0m"
 
+static const char *logColors[] = { ASCII_RST, ASCII_BLU, ASCII_GRN, ASCII_YEL, ASCII_RED };
+#endif
+
+
 enum LogLevel { TRACE, DEBUG, INFO, WARN, ERROR };
 static const char *logStrings[] = { "TRACE", "DEBUG", "INFO", "WARN", "ERROR" };
-static const char *logColors[] = { ASCII_RST, ASCII_BLU, ASCII_GRN, ASCII_YEL, ASCII_RED };
 
 #define LOG_TRACE(...) LOG(TRACE, __FILE__, __LINE__, __VA_ARGS__)
 #define LOG_DEBUG(...) LOG(DEBUG, __FILE__, __LINE__, __VA_ARGS__)
