@@ -55,8 +55,8 @@ void GLHelper::printUniformInfo(GLuint program) {
     GLint uniformCount;
     glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &uniformCount);
     
-	std::vector<GLuint> uniformIndices{ (GLuint)uniformCount };
-    std::vector<std::string> uniformNames{ (GLuint)uniformCount };
+	std::vector<GLuint> uniformIndices((GLuint)uniformCount);
+    std::vector<std::string> uniformNames((GLuint)uniformCount);
     for (int i = 0; i < uniformCount; i++) {
         uniformIndices[i] = i;
 
@@ -67,12 +67,12 @@ void GLHelper::printUniformInfo(GLuint program) {
         uniformNames[i] = std::string(uniformName);
     }
 
-	std::vector<GLint> uniformType{ uniformCount };
-    std::vector<GLint> uniformSize{ uniformCount };
-    std::vector<GLint> uniformBlockIndex{ uniformCount };
-    std::vector<GLint> uniformOffset{ uniformCount };
-    std::vector<GLint> uniformArrayStride{ uniformCount };
-    std::vector<GLint> uniformMatrixStride{ uniformCount };
+	std::vector<GLint> uniformType(uniformCount);
+    std::vector<GLint> uniformSize(uniformCount);
+    std::vector<GLint> uniformBlockIndex(uniformCount);
+    std::vector<GLint> uniformOffset(uniformCount);
+    std::vector<GLint> uniformArrayStride(uniformCount);
+    std::vector<GLint> uniformMatrixStride(uniformCount);
 
     glGetActiveUniformsiv(program, uniformCount, uniformIndices.data(), GL_UNIFORM_TYPE, uniformType.data());
     glGetActiveUniformsiv(program, uniformCount, uniformIndices.data(), GL_UNIFORM_SIZE, uniformSize.data());
@@ -123,7 +123,7 @@ static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum
 		case GL_DEBUG_SOURCE_THIRD_PARTY: std::cout << "Third Party"; break;
 		case GL_DEBUG_SOURCE_APPLICATION: std::cout << "Application"; break;
 		case GL_DEBUG_SOURCE_OTHER: std::cout << "Other"; break;
-		default: std::cout << "Unkown"; break;
+		default: std::cout << "Unknown"; break;
 	}
 
 	std::cout << std::endl << "Type: ";
