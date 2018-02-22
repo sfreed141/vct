@@ -151,7 +151,7 @@ void Mesh::loadMesh(const std::string &meshname) {
                 auto &d = drawables[material_id];
 
                 // Store pointers to each vertex so we can process per-face attributes later
-                vector<size_t> tri {fv, 0};
+                vector<size_t> tri (fv, 0);
 
                 // Loop through each vertex of the current face
                 for (size_t v = 0; v < fv; v++) {

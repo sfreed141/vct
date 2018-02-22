@@ -17,11 +17,11 @@ enum LogLevel { TRACE, DEBUG, INFO, WARN, ERROR };
 static const char *logStrings[] = { "TRACE", "DEBUG", "INFO", "WARN", "ERROR" };
 static const char *logColors[] = { ASCII_RST, ASCII_BLU, ASCII_GRN, ASCII_YEL, ASCII_RED };
 
-#define LOG_TRACE(args...) LOG(TRACE, __FILE__, __LINE__, args)
-#define LOG_DEBUG(args...) LOG(DEBUG, __FILE__, __LINE__, args)
-#define LOG_INFO(args...) LOG(INFO, __FILE__, __LINE__, args)
-#define LOG_WARN(args...) LOG(WARN, __FILE__, __LINE__, args)
-#define LOG_ERROR(args...) LOG(ERROR, __FILE__, __LINE__, args)
+#define LOG_TRACE(...) LOG(TRACE, __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_DEBUG(...) LOG(DEBUG, __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_INFO(...) LOG(INFO, __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_WARN(...) LOG(WARN, __FILE__, __LINE__, __VA_ARGS__)
+#define LOG_ERROR(...) LOG(ERROR, __FILE__, __LINE__, __VA_ARGS__)
 
 // c++ magic https://en.wikipedia.org/wiki/Variadic_template
 struct pass {
