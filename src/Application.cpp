@@ -131,8 +131,7 @@ void Application::render(float dt) {
 
 		voxelProgram.setUniform1i("axis_override", settings.axisOverride);
 
-		// GLenum voxelFormat = GLAD_GL_NV_shader_atomic_fp16_vector ? GL_RGBA16F : GL_R32UI;
-		GLenum voxelFormat = GLAD_GL_NV_shader_atomic_fp16_vector ? GL_RGBA16F : GL_RGBA8;
+		GLenum voxelFormat = GLAD_GL_NV_shader_atomic_fp16_vector ? GL_RGBA16F : GL_R32UI;
 		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, voxelFormat);
 		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, voxelFormat);
 
