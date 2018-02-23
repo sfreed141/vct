@@ -49,32 +49,40 @@ uniform mat4 ls;
 uniform int miplevel = 0;
 uniform int voxelDim;
 
+uniform int vctSteps;
+uniform float vctConeAngle;
+uniform float vctBias;
+uniform float vctConeInitialHeight;
+uniform float vctLodOffset;
+
 out vec4 color;
 
 // based on https://github.com/godotengine/godot/blob/master/drivers/gles3/shaders/scene.glsl
 // experiment with cone aperture, lod scaling, steps vs distance vs alpha
 vec3 traceCone(vec3 position, vec3 direction, int steps) {
-	const float bias = 1.0;
+	// const float bias = 1.0;
+	float bias = vctBias;
 
 	direction /= voxelDim;
 	vec3 start = position + bias * direction;
 	
-	const float coneAngle = 0.785398163; // pi/4
-	float coneTanHalfAngle = tan(coneAngle / 2.0);
+	float coneAngle = vctConeAngle;
+	// float coneTanHalfAngle = tan(coneAngle / 2.0);
 
-	float coneHeight = 1;
+	float coneHeight = vctConeInitialHeight;
 	float coneRadius;
 
 	vec3 color = vec3(0);
 	float alpha = 0;
 
 	for (int i = 0; i < steps && alpha < 0.95; i++) {
-		coneRadius = coneHeight * coneTanHalfAngle;
+		coneRadius = coneHeight * tan(coneAngle / 2.0);
 		float lod = log2(max(1.0, 2 * coneRadius));
-		vec4 sampleColor = textureLod(voxelColor, start + coneHeight * direction, lod);
-		float a = 1 - alpha;
-		color += sampleColor.rgb * a;
-		alpha += a * sampleColor.a;
+		vec4 sampleColor = textureLod(voxelColor, start + coneHeight * direction, lod + vctLodOffset);
+		// float a = 1 - alpha;
+		// color += sampleColor.rgb * a;
+		// alpha += a * sampleColor.a;
+		color += sampleColor.rgb * sampleColor.a;
 		coneHeight += coneRadius;
 	}
 
@@ -185,7 +193,8 @@ void main() {
 			if (enableIndirect) {
 				vec3 voxelPosition = vec3(voxelIndex(fs_in.fragPosition)) / voxelDim;
 				vec3 indirect = vec3(0);
-				indirect += ambientScale * textureLod(voxelColor, voxelPosition, miplevel).rgb;
+				indirect += ambientScale * traceCone(voxelPosition, norm, vctSteps);
+				// indirect += ambientScale * textureLod(voxelColor, voxelPosition, miplevel).rgb;
 				color = vec4(indirect + shadowFactor * directLighting * lightInt * color.rgb, 1);
 			}
 			else {

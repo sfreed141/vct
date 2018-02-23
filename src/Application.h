@@ -37,12 +37,18 @@ struct Settings {
 	int conservativeRasterization = true;
 	int enableShadows = true;
     int enableNormalMap = true;
-    int enableIndirect = false;
-    int enableDiffuse = true;
-    int enableSpecular = true;
+    int enableIndirect = true;
+    int enableDiffuse = false;
+    int enableSpecular = false;
     float ambientScale = 0.2f;
 
 	int miplevel = 0;
+
+    int vctSteps = 1;
+    float vctConeAngle = 0.784398163f;
+    float vctBias = 1.0f;
+    float vctConeInitialHeight = 1.0f;
+    float vctLodOffset = 0.0f;
 };
 
 class Application {

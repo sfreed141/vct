@@ -172,6 +172,14 @@ void Overlay::render(float dt) {
             nk_labelf(ctx, NK_TEXT_LEFT, "Ambient Scale: %0.1f", settings.ambientScale);
             nk_slider_float(ctx, 0.0f, &settings.ambientScale, 1.0f, 0.1f);
 
+            nk_layout_row_dynamic(ctx, rowheight, 2);
+            nk_property_int(ctx, "vctSteps", 0, &settings.vctSteps, 16, 1, 0.1f);
+            nk_property_float(ctx, "vctBias", 0.0f, &settings.vctBias, 10.0f, 0.1f, 0.05f);
+            nk_property_float(ctx, "vctConeAngle", 0.0f, &settings.vctConeAngle, 10.0f, 0.1f, 0.05f);
+            nk_property_float(ctx, "vctLodOffset", 0.0f, &settings.vctLodOffset, 4.0f, 0.1f, 0.05f);
+            nk_layout_row_dynamic(ctx, rowheight, 1);
+            nk_property_float(ctx, "vctConeInitialHeight", 0.0f, &settings.vctConeInitialHeight, 10.0f, 0.1f, 0.05f);
+
             nk_tree_pop(ctx);
         }
     }

@@ -299,6 +299,12 @@ void Application::render(float dt) {
 		glBindTextureUnit(4, voxelRadiance);
 		program.setUniform1i("voxelRadiance", 4);
 
+		program.setUniform1i("vctSteps", settings.vctSteps);
+		program.setUniform1f("vctBias", settings.vctBias);
+		program.setUniform1f("vctConeAngle", settings.vctConeAngle);
+		program.setUniform1f("vctConeInitialHeight", settings.vctConeInitialHeight);
+		program.setUniform1f("vctLodOffset", settings.vctLodOffset);
+
 		scene->draw(program.getHandle());
 
 		glBindTextureUnit(1, 0);
