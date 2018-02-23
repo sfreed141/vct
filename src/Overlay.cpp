@@ -97,7 +97,7 @@ void Overlay::render(float dt) {
             availableMem /= 1024;
             nk_labelf(ctx, NK_TEXT_LEFT, "GPU Memory Usage: %d / %d MB", totalMem - availableMem, totalMem);
 
-			if (nk_tree_push(ctx, NK_TREE_NODE, "Timing Breakdown", NK_MAXIMIZED)) {
+			if (nk_tree_push(ctx, NK_TREE_NODE, "Timing Breakdown", NK_MINIMIZED)) {
 				nk_labelf(ctx, NK_TEXT_LEFT, "Voxelize: %.2f ms", timers.getTime(TimerQueries::VOXELIZE_TIME));
 				nk_labelf(ctx, NK_TEXT_LEFT, "Shadowmap: %.2f ms", timers.getTime(TimerQueries::SHADOWMAP_TIME));
 				nk_labelf(ctx, NK_TEXT_LEFT, "Radiance: %.2f ms", timers.getTime(TimerQueries::RADIANCE_TIME));
@@ -128,16 +128,17 @@ void Overlay::render(float dt) {
             nk_checkbox_label(ctx, "Normals", &settings.drawNormals);
             nk_checkbox_label(ctx, "Wireframe", &settings.drawWireframe);
             nk_checkbox_label(ctx, "Radiance", &settings.drawRadiance);
-            nk_checkbox_label(ctx, "Axes", &settings.drawAxes);
+            // nk_checkbox_label(ctx, "Axes", &settings.drawAxes);
 
+            nk_layout_row_dynamic(ctx, rowheight, 2);
 			nk_labelf(ctx, NK_TEXT_LEFT, "Miplevel: %d", settings.miplevel);
 			nk_slider_int(ctx, 0, &settings.miplevel, 3, 1);
 
-            nk_layout_row_dynamic(ctx, rowheight, 2);
-			nk_labelf(ctx, NK_TEXT_LEFT, "Axis Override: %d", settings.axisOverride);
-			nk_slider_int(ctx, -1, &settings.axisOverride, 2, 1);
+            // nk_layout_row_dynamic(ctx, rowheight, 2);
+			// nk_labelf(ctx, NK_TEXT_LEFT, "Axis Override: %d", settings.axisOverride);
+			// nk_slider_int(ctx, -1, &settings.axisOverride, 2, 1);
 
-            if (nk_tree_push(ctx, NK_TREE_NODE, "Voxel Grid Slicer", NK_MAXIMIZED)) {
+            if (nk_tree_push(ctx, NK_TREE_NODE, "Voxel Grid Slicer", NK_MINIMIZED)) {
                 static int slice = 0;
                 nk_layout_row_dynamic(ctx, rowheight, 2);
                 nk_labelf(ctx, NK_TEXT_LEFT, "Slice %d", slice);
@@ -174,7 +175,7 @@ void Overlay::render(float dt) {
             nk_slider_float(ctx, 0.0f, &settings.ambientScale, 1.0f, 0.1f);
 
             nk_layout_row_dynamic(ctx, rowheight, 2);
-            nk_property_int(ctx, "vctSteps", 0, &settings.vctSteps, 16, 1, 0.1f);
+            nk_property_int(ctx, "vctSteps", 0, &settings.vctSteps, 16, 1, 1.0f);
             nk_property_float(ctx, "vctBias", 0.0f, &settings.vctBias, 10.0f, 0.1f, 0.05f);
             nk_property_float(ctx, "vctConeAngle", 0.0f, &settings.vctConeAngle, 10.0f, 0.1f, 0.05f);
             nk_property_float(ctx, "vctLodOffset", 0.0f, &settings.vctLodOffset, 4.0f, 0.1f, 0.05f);

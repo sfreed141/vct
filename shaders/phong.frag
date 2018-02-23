@@ -59,7 +59,7 @@ out vec4 color;
 
 // based on https://github.com/godotengine/godot/blob/master/drivers/gles3/shaders/scene.glsl
 // experiment with cone aperture, lod scaling, steps vs distance vs alpha
-vec3 traceCone(vec3 position, vec3 direction, int steps) {
+vec3 traceCone(sampler3D voxelTexture, vec3 position, vec3 direction, int steps) {
 	// const float bias = 1.0;
 	float bias = vctBias;
 
@@ -78,7 +78,7 @@ vec3 traceCone(vec3 position, vec3 direction, int steps) {
 	for (int i = 0; i < steps && alpha < 0.95; i++) {
 		coneRadius = coneHeight * tan(coneAngle / 2.0);
 		float lod = log2(max(1.0, 2 * coneRadius));
-		vec4 sampleColor = textureLod(voxelColor, start + coneHeight * direction, lod + vctLodOffset);
+		vec4 sampleColor = textureLod(voxelTexture, start + coneHeight * direction, lod + vctLodOffset);
 		// float a = 1 - alpha;
 		// color += sampleColor.rgb * a;
 		// alpha += a * sampleColor.a;
@@ -193,8 +193,9 @@ void main() {
 			if (enableIndirect) {
 				vec3 voxelPosition = vec3(voxelIndex(fs_in.fragPosition)) / voxelDim;
 				vec3 indirect = vec3(0);
-				indirect += ambientScale * traceCone(voxelPosition, norm, vctSteps);
-				// indirect += ambientScale * textureLod(voxelColor, voxelPosition, miplevel).rgb;
+				indirect += traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, norm, vctSteps);
+				// indirect += textureLod(radiance ? voxelRadiance : voxelColor, voxelPosition, miplevel).rgb;
+				indirect *= ambientScale;
 				color = vec4(indirect + shadowFactor * directLighting * lightInt * color.rgb, 1);
 			}
 			else {
