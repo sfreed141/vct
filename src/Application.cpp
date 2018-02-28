@@ -15,6 +15,7 @@
 
 #include "Graphics/GLHelper.h"
 #include "Graphics/GLShaderProgram.h"
+#include "Graphics/GLQuad.h"
 
 #include "Input/Keyboard.h"
 #include "Input/Mouse.h"
@@ -29,6 +30,8 @@
 #define SHADOWMAP_HEIGHT 4096
 
 GLuint make3DTexture(GLsizei size, GLsizei levels, GLenum internalFormat, GLint minFilter, GLint magFilter);
+
+void view2DTexture(GLuint texture);
 
 void Application::init() {
 	// Setup for OpenGL
@@ -80,6 +83,8 @@ void Application::init() {
 	camera.position = glm::vec3(5, 1, 0);
 	camera.yaw = 180.0f;
 	camera.update(0.0f);
+
+    GLQuad::init();
 }
 
 void Application::update(float dt) {
@@ -329,6 +334,11 @@ void Application::render(float dt) {
 
 	timers.getQueriesAndSwap();
 
+	// hacky view of shadowmap
+	if (settings.drawShadowmap) {
+		view2DTexture(shadowmapFBO.getTexture(0));
+	}
+
 	// Render overlay
 	{
 		GL_DEBUG_PUSH("Render Overlay")
@@ -360,4 +370,48 @@ GLuint make3DTexture(GLsizei size, GLsizei levels, GLenum internalFormat, GLint 
 	glBindTexture(GL_TEXTURE_3D, 0);
 
 	return handle;
+}
+
+// Dirty function that renders a texture to a full screen quad.
+void view2DTexture(GLuint texture) {
+	static const GLchar *vert =
+		"#version 330\n"
+		"layout(location = 0) in vec3 pos;\n"
+		"layout(location = 1) in vec2 tc;\n"
+		"out vec2 fragTexcoord;\n"
+		"void main() {\n"
+		"gl_Position = vec4(pos, 1);\n"
+		"fragTexcoord = vec2(tc.x, 1 - tc.y);\n"
+		"}\n";
+
+	static const GLchar *frag =
+		"#version 420\n"
+		"in vec2 fragTexcoord;\n"
+		"out vec4 color;\n"
+		"layout(binding = 0) uniform sampler2D texture0;\n"
+		"void main() {\n"
+		"color = vec4(texture(texture0, fragTexcoord).rgb, 1);\n"
+		"}\n";
+
+	static GLuint program = 0;
+	if (program == 0) {
+		GLuint shaders[2];
+		shaders[0] = GLHelper::createShaderFromString(GL_VERTEX_SHADER, vert);
+		shaders[1] = GLHelper::createShaderFromString(GL_FRAGMENT_SHADER, frag);
+		program = glCreateProgram();
+		glAttachShader(program, shaders[0]);
+		glAttachShader(program, shaders[1]);
+		glLinkProgram(program);
+		if (!GLHelper::checkShaderProgramStatus(program)) {
+			LOG_ERROR("Quad debug shader compilation failed");
+		}
+	}
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glUseProgram(program);
+
+	glBindTextureUnit(0, texture);
+	GLQuad::draw();
+
+	glUseProgram(0);
 }

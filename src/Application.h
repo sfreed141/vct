@@ -33,6 +33,7 @@ struct Settings {
     int drawRadiance = false;
     int drawAxes = false;
 	int axisOverride = -1;
+    int drawShadowmap = false;
 
 	int conservativeRasterization = true;
 	int enableShadows = true;
