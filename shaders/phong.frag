@@ -193,7 +193,7 @@ void main() {
 			if (enableIndirect) {
 				vec3 voxelPosition = vec3(voxelIndex(fs_in.fragPosition)) / voxelDim;
 				vec3 indirect = vec3(0);
-				indirect += traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, norm, vctSteps);
+				indirect += traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, fs_in.fragNormal, vctSteps);
 				// indirect += textureLod(radiance ? voxelRadiance : voxelColor, voxelPosition, miplevel).rgb;
 				indirect *= ambientScale;
 				color = vec4(indirect + shadowFactor * directLighting * lightInt * color.rgb, 1);

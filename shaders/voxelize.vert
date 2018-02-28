@@ -10,10 +10,12 @@ out VS_OUT {
     vec2 texcoord;
 } vs_out;
 
-void main() {
-    vs_out.position = vertPosition;
-    vs_out.normal = vertNormal;
-    vs_out.texcoord = vertTexcoord;
+uniform mat4 model;
 
-    gl_Position = vec4(vertPosition, 1);
+void main() {
+    gl_Position = model * vec4(vertPosition, 1.0);
+
+    vs_out.position = vec3(gl_Position);
+    vs_out.normal = vec3(model * vec4(vertNormal, 0.0));
+    vs_out.texcoord = vertTexcoord;
 }
