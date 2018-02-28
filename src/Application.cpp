@@ -25,6 +25,9 @@
 
 #include "common.h"
 
+#define SHADOWMAP_WIDTH 4096
+#define SHADOWMAP_HEIGHT 4096
+
 GLuint make3DTexture(GLsizei size, GLsizei levels, GLenum internalFormat, GLint minFilter, GLint magFilter);
 
 void Application::init() {
@@ -38,7 +41,7 @@ void Application::init() {
 	glm::vec4 borderColor{ 1.0f };
 	shadowmapFBO.attachTexture(
 		GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT,
-		width, height, 
+		SHADOWMAP_WIDTH, SHADOWMAP_HEIGHT,
 		GL_DEPTH_COMPONENT, GL_FLOAT,
 		GL_LINEAR, GL_LINEAR,
 		GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER,
@@ -162,14 +165,14 @@ void Application::render(float dt) {
 	// Generate shadowmap
 	timers.beginQuery(TimerQueries::SHADOWMAP_TIME);
 	Light mainlight = scene->getMainlight();
-	const float lz_near = 0.1f, lz_far = 50.0f, l_boundary = 25.0f;
+	const float lz_near = 0.0f, lz_far = 50.0f, l_boundary = 25.0f;
 	glm::mat4 lp = glm::ortho(-l_boundary, l_boundary, -l_boundary, l_boundary, lz_near, lz_far);
 	glm::mat4 lv = glm::lookAt(mainlight.position, glm::vec3(0), glm::vec3(0.0f, 1.0f, 0.0f));
 	glm::mat4 ls = lp * lv;
 	{
 		GL_DEBUG_PUSH("Shadowmap")
 		shadowmapFBO.bind();
-		glViewport(0, 0, width, height);
+		glViewport(0, 0, SHADOWMAP_WIDTH, SHADOWMAP_HEIGHT);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		glDisable(GL_BLEND);
 		glEnable(GL_CULL_FACE);
@@ -235,7 +238,7 @@ void Application::render(float dt) {
 		injectRadianceProgram.setUniform1i("voxelDim", voxelDim);
 
 		// 2D workgroup should be the size of shadowmap, local_size = 16
-		glDispatchCompute((width + 16 - 1) / 16, (height + 16 - 1) / 16, 1);
+		glDispatchCompute((SHADOWMAP_WIDTH + 16 - 1) / 16, (SHADOWMAP_HEIGHT + 16 - 1) / 16, 1);
 
 		glBindTextureUnit(1, 0);
 		glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
