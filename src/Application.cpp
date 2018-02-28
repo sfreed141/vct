@@ -53,9 +53,13 @@ void Application::init() {
 
 	// Create shaders
 	program.attachAndLink({SHADER_DIR "phong.vert", SHADER_DIR "phong.frag"});
+	program.setObjectLabel("Phong");
 	voxelProgram.attachAndLink({SHADER_DIR "voxelize.vert", SHADER_DIR "voxelize.frag", SHADER_DIR "voxelize.geom"});
+	voxelProgram.setObjectLabel("Voxelize");
 	shadowmapProgram.attachAndLink({SHADER_DIR "simple.vert", SHADER_DIR "empty.frag"});
+	shadowmapProgram.setObjectLabel("Shadowmap");
 	injectRadianceProgram.attachAndLink({SHADER_DIR "injectRadiance.comp"});
+	injectRadianceProgram.setObjectLabel("Inject Radiance");
 
 	// Initialize voxel textures
 	GLenum voxelFormat = GLAD_GL_NV_shader_atomic_fp16_vector ? GL_RGBA16F : GL_RGBA8;
@@ -193,6 +197,7 @@ void Application::render(float dt) {
 		static GLShaderProgram *p = nullptr;
 		if (!p) {
 			p = new GLShaderProgram({SHADER_DIR "normalizeVoxels.comp"});
+			p->setObjectLabel("Normalize Voxels");
 		}
 		p->bind();
 		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);

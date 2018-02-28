@@ -53,6 +53,10 @@ void GLShaderProgram::unbind() const {
     glUseProgram(0);
 }
 
+void GLShaderProgram::setObjectLabel(const std::string &label) {
+	glObjectLabel(GL_PROGRAM, handle, label.size(), label.c_str());
+}
+
 GLint GLShaderProgram::uniformLocation(const GLchar *name) {
 	if (uniforms.count(name) == 0) {
 		uniforms[name] = glGetUniformLocation(handle, name);
