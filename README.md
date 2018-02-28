@@ -1,6 +1,5 @@
-# Voxelize
-
-Implementation of voxelization portion of Voxel Cone Tracing.
+# Voxel Cone Tracing
+Implementation of global illumination using voxel cone tracing.
 
 ## References
 * [Interactive Indirect Illumination Using Voxel Cone Tracing](https://research.nvidia.com/publication/interactive-indirect-illumination-using-voxel-cone-tracing)
