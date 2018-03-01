@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(voxelize)
+project(vct)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_CXX_STANDARD 14)

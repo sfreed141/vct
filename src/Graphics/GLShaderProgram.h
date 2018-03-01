@@ -17,7 +17,6 @@ public:
 	GLShaderProgram(const GLShaderProgram &other) = delete;
 	GLShaderProgram &operator=(const GLShaderProgram &other) = delete;
 
-	// TODO add move constructor and move assignment
 	GLShaderProgram(GLShaderProgram &&other) = delete;
 	GLShaderProgram &operator=(GLShaderProgram &&other) = delete;
 
@@ -30,7 +29,7 @@ public:
     void bind() const;
     void unbind() const;
 
-    GLint uniformLocation(const GLchar *name);
+    GLint uniformLocation(const GLchar *name) const;
 
     void setUniform1f(const GLchar *name, GLfloat v) { glUniform1f(uniformLocation(name), v); }
     void setUniform1i(const GLchar *name, GLint v) { glUniform1i(uniformLocation(name), v); }
@@ -43,6 +42,7 @@ public:
 private:
     GLuint handle;
     std::unordered_map<std::string, GLint> uniforms;
+    bool linkStatus = false;
 };
 
 #endif
