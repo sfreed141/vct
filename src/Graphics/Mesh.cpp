@@ -3,6 +3,7 @@
 #include <Graphics/opengl.h>
 #include <Graphics/GLHelper.h>
 #include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 #include <iostream>
 #include <string>
@@ -11,6 +12,7 @@
 #include <cassert>
 #include <cmath>
 #include <chrono>
+#include <limits>
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
@@ -128,6 +130,9 @@ void Mesh::loadMesh(const std::string &meshname) {
             drawables[i].material_id = i;
         }
 
+        min = glm::vec3(numeric_limits<float>::max());
+        max = glm::vec3(numeric_limits<float>::min());
+
         unordered_map<string, size_t> vertexMap;
         vertexMap.clear();
         vertices.clear();
@@ -209,7 +214,13 @@ void Mesh::loadMesh(const std::string &meshname) {
         for (Vertex &v : vertices) {
             v.tangent = glm::normalize(v.tangent);
             v.bitangent = glm::normalize(v.bitangent);
+
+            min = glm::min(min, v.position);
+            max = glm::max(max, v.position);
         }
+
+        glm::vec3 extents = max - min;
+        radius = glm::max(glm::max(extents.x, extents.y), extents.z) / 2.0f;
 
         for (Drawable &d : drawables) {
             glGenBuffers(1, &d.ebo);
@@ -244,12 +255,15 @@ void Mesh::loadMesh(const std::string &meshname) {
         auto end = chrono::high_resolution_clock::now();
         chrono::duration<double> diff = end - start;
         LOG_INFO(
-            "\n\tLoaded mesh ", meshname, " in ", diff.count(), " seconds\n",
-            "\t# of vertices  = ", (int)(attrib.vertices.size()) / 3, "\n",
-            "\t# of normals   = ", (int)(attrib.normals.size()) / 3, "\n",
-            "\t# of texcoords = ", (int)(attrib.texcoords.size()) / 2, "\n",
-            "\t# of materials = ", (int)materials.size(), "\n",
-            "\t# of shapes    = ", (int)shapes.size()
+            "\n\tLoaded mesh ", meshname, " in ", diff.count(), " seconds",
+            "\n\t# of vertices  = ", (int)(attrib.vertices.size()) / 3,
+            "\n\t# of normals   = ", (int)(attrib.normals.size()) / 3,
+            "\n\t# of texcoords = ", (int)(attrib.texcoords.size()) / 2,
+            "\n\t# of materials = ", (int)materials.size(),
+            "\n\t# of shapes    = ", (int)shapes.size(),
+            "\n\tmin = ", glm::to_string(min),
+            "\n\tmax = ", glm::to_string(max),
+            "\n\tradius = ", radius
         );
     }
 }

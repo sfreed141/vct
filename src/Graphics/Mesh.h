@@ -30,6 +30,11 @@ public:
 
     void loadMesh(const std::string &meshname);
 
+    const glm::vec3 &getMin() const { return min; }
+    const glm::vec3 &getMax() const { return max; }
+    glm::vec3 getExtents() const { return max - min; }
+    float getRadius() const { return radius; }
+
 private:
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -37,6 +42,8 @@ private:
     std::map<std::string, GLuint> textures;
     std::vector<Drawable> drawables;
     std::vector<Vertex> vertices;
+    glm::vec3 min, max;
+    float radius;
 
     GLuint vao;
 };
