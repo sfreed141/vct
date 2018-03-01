@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cmath>
+#include <chrono>
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tiny_obj_loader.h>
@@ -48,14 +49,7 @@ void Mesh::loadMesh(const std::string &meshname) {
         LOG_ERROR("Failed to load mesh: ", meshname);
     }
     else {
-        LOG_INFO(
-            "\n\tLoaded mesh ", meshname, "\n",
-            "\t# of vertices  = ", (int)(attrib.vertices.size()) / 3, "\n",
-            "\t# of normals   = ", (int)(attrib.normals.size()) / 3, "\n",
-            "\t# of texcoords = ", (int)(attrib.texcoords.size()) / 2, "\n",
-            "\t# of materials = ", (int)materials.size(), "\n",
-            "\t# of shapes    = ", (int)shapes.size()
-        );
+        auto start = chrono::high_resolution_clock::now();
 
         // Load materials and store name->id map
         for (material_t &mp : materials) {
@@ -246,6 +240,17 @@ void Mesh::loadMesh(const std::string &meshname) {
 
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        auto end = chrono::high_resolution_clock::now();
+        chrono::duration<double> diff = end - start;
+        LOG_INFO(
+            "\n\tLoaded mesh ", meshname, " in ", diff.count(), " seconds\n",
+            "\t# of vertices  = ", (int)(attrib.vertices.size()) / 3, "\n",
+            "\t# of normals   = ", (int)(attrib.normals.size()) / 3, "\n",
+            "\t# of texcoords = ", (int)(attrib.texcoords.size()) / 2, "\n",
+            "\t# of materials = ", (int)materials.size(), "\n",
+            "\t# of shapes    = ", (int)shapes.size()
+        );
     }
 }
 
