@@ -69,15 +69,18 @@ void Application::init() {
 
 	// Initialize voxel textures
 	GLenum voxelFormat = GLAD_GL_NV_shader_atomic_fp16_vector ? GL_RGBA16F : GL_RGBA8;
-	voxelColor = make3DTexture(voxelDim, 4, voxelFormat, GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST);
-	voxelNormal = make3DTexture(voxelDim, 1, voxelFormat, GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST);
-	voxelRadiance = make3DTexture(voxelDim, 4, GL_RGBA8, GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST);
+	voxelColor = make3DTexture(voxelDim, 4, voxelFormat, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
+	voxelNormal = make3DTexture(voxelDim, 1, voxelFormat, GL_NEAREST, GL_NEAREST);
+	voxelRadiance = make3DTexture(voxelDim, 4, GL_RGBA8, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
 
 	// Create scene
 	scene = std::make_unique<Scene>();
-	scene->addMesh(RESOURCE_DIR "sponza/sponza_small.obj");
+	scene->addMesh(RESOURCE_DIR "sponza2/sponza.obj", glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)));
 	scene->addMesh(RESOURCE_DIR "nanosuit/nanosuit.obj", glm::scale(glm::mat4(1.0f), glm::vec3(0.25f)));
-	scene->setMainlight({0.0f, 30.0f, -5.0f}, {1.0f, 1.0f, 1.0f});
+	// scene->addMesh(RESOURCE_DIR "cube.obj");
+	// scene->addMesh(RESOURCE_DIR "cube.obj", glm::translate(glm::scale(glm::mat4(), glm::vec3(5)), glm::vec3(0,-2,0)));
+	// scene->addMesh(RESOURCE_DIR "sphere.obj", glm::translate(glm::mat4(), glm::vec3(2.5,0,0)));
+	scene->setMainlight({12.0f, 40.0f, -7.0f}, {-0.38f, -0.88f, 0.2f}, {1.0f, 1.0f, 1.0f});
 
 	// Camera setup
 	camera.position = glm::vec3(5, 1, 0);
@@ -170,9 +173,9 @@ void Application::render(float dt) {
 	// Generate shadowmap
 	timers.beginQuery(TimerQueries::SHADOWMAP_TIME);
 	Light mainlight = scene->getMainlight();
-	const float lz_near = 0.0f, lz_far = 50.0f, l_boundary = 25.0f;
+	const float lz_near = 0.0f, lz_far = 100.0f, l_boundary = 25.0f;
 	glm::mat4 lp = glm::ortho(-l_boundary, l_boundary, -l_boundary, l_boundary, lz_near, lz_far);
-	glm::mat4 lv = glm::lookAt(mainlight.position, glm::vec3(0), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 lv = glm::lookAt(mainlight.position, mainlight.position + mainlight.direction, glm::vec3(0.0f, 1.0f, 0.0f));
 	glm::mat4 ls = lp * lv;
 	{
 		GL_DEBUG_PUSH("Shadowmap")
@@ -256,7 +259,7 @@ void Application::render(float dt) {
 	timers.endQuery();
 
 	glGenerateTextureMipmap(voxelColor);
-	glGenerateTextureMipmap(voxelNormal);
+	// glGenerateTextureMipmap(voxelNormal);
 	glGenerateTextureMipmap(voxelRadiance);
 
 	timers.beginQuery(TimerQueries::RENDER_TIME);
@@ -268,6 +271,7 @@ void Application::render(float dt) {
 		glm::mat4 model;
 
 		glViewport(0, 0, width, height);
+		// glEnable(GL_FRAMEBUFFER_SRGB);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 		glPolygonMode(GL_FRONT_AND_BACK, settings.drawWireframe ? GL_LINE : GL_FILL);
@@ -325,6 +329,7 @@ void Application::render(float dt) {
 		glBindTextureUnit(4, 0);
 		program.unbind();
 
+		// glDisable(GL_FRAMEBUFFER_SRGB);
 		if (settings.drawWireframe) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		}
@@ -337,6 +342,60 @@ void Application::render(float dt) {
 	// hacky view of shadowmap
 	if (settings.drawShadowmap) {
 		view2DTexture(shadowmapFBO.getTexture(0));
+	}
+
+	// hacky raymarcher
+	if (false) {
+		static const GLchar *vert =
+			"#version 330\n"
+			"layout(location = 0) in vec3 pos;\n"
+			"layout(location = 1) in vec2 tc;\n"
+			"out vec2 fragTexcoord;\n"
+			"void main() {\n"
+			"gl_Position = vec4(pos, 1);\n"
+			"fragTexcoord = tc;\n"
+			"}\n";
+
+		static const GLchar *frag =
+			"#version 420\n"
+			"in vec2 fragTexcoord;\n"
+			"out vec4 color;\n"
+			"layout(binding = 0) uniform sampler3D voxelColor;\n"
+			"layout(binding = 1) uniform sampler3D voxelNormal;\n"
+			"layout(binding = 2) uniform sampler3D voxelRadiance;\n"
+			"uniform vec3 eye = vec3(0);\n"
+			"uniform vec3 lookat = vec3(0, 0, -1);\n"
+			"uniform int width = 1280, height = 720;\n"
+			"void main() {\n"
+			"vec3 rayStart = eye;\n"
+			"vec3 target = gl_FragCoord.xy / vec2(width, height)"
+			"vec3 rayDir = normalize("
+			"color = vec4(texture(texture0, fragTexcoord).rgb, 1);\n"
+			"}\n";
+
+		static GLuint program = 0;
+		if (program == 0) {
+			GLuint shaders[2];
+			shaders[0] = GLHelper::createShaderFromString(GL_VERTEX_SHADER, vert);
+			shaders[1] = GLHelper::createShaderFromString(GL_FRAGMENT_SHADER, frag);
+			program = glCreateProgram();
+			glAttachShader(program, shaders[0]);
+			glAttachShader(program, shaders[1]);
+			glLinkProgram(program);
+			if (!GLHelper::checkShaderProgramStatus(program)) {
+				LOG_ERROR("Raymarch debug shader compilation failed");
+			}
+		}
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glUseProgram(program);
+
+		glBindTextureUnit(0, voxelColor);
+		glBindTextureUnit(1, voxelNormal);
+		glBindTextureUnit(2, voxelRadiance);
+		GLQuad::draw();
+
+		glUseProgram(0);
 	}
 
 	// Render overlay
@@ -381,7 +440,7 @@ void view2DTexture(GLuint texture) {
 		"out vec2 fragTexcoord;\n"
 		"void main() {\n"
 		"gl_Position = vec4(pos, 1);\n"
-		"fragTexcoord = vec2(tc.x, 1 - tc.y);\n"
+		"fragTexcoord = tc;\n"
 		"}\n";
 
 	static const GLchar *frag =

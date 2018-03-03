@@ -55,6 +55,19 @@ void Mesh::loadMesh(const std::string &meshname) {
 
         // Load materials and store name->id map
         for (material_t &mp : materials) {
+            // Material m;
+            // for (int i = 0; i < 3; i++) {
+            //     m.ambient[i] = mp.ambient[i];
+            //     m.diffuse[i] = mp.diffuse[i];
+            //     m.specular[i] = mp.specular[i];
+            // }
+            // m.shininess = mp.shininess;
+            // m.hasAmbientMap = !mp.diffuse_texname.empty();
+            // m.hasDiffuseMap = !mp.ambient_texname.empty();
+            // m.hasSpecularMap = !mp._texname.empty();
+            // m.hasAlphaMap = !mp.diffuse_texname.empty();
+            // m.hasNormalMap = !mp.diffuse_texname.empty();
+
             if (!mp.diffuse_texname.empty() && textures.find(mp.diffuse_texname) == textures.end()) {
                 string texture_name = mp.diffuse_texname;
                 convertPathFromWindows(texture_name);
@@ -119,6 +132,8 @@ void Mesh::loadMesh(const std::string &meshname) {
             material_t default_material;
             default_material.name = "default";
             default_material.diffuse_texname = DEFAULT_TEXTURE;
+            default_material.shininess = 1.0f;
+                        
             materials.push_back(default_material);
 
             GLuint texture_id = GLHelper::createTextureFromImage(string(RESOURCE_DIR) + default_material.diffuse_texname);
@@ -146,8 +161,8 @@ void Mesh::loadMesh(const std::string &meshname) {
                 assert(fv == 3);
 
                 // Per face material_id
-                size_t material_id = shape.mesh.material_ids[f];
-                auto &d = drawables[material_id];
+                int material_id = shape.mesh.material_ids[f];
+                auto &d = drawables[material_id == -1 ? drawables.size() - 1 : material_id];
 
                 // Store pointers to each vertex so we can process per-face attributes later
                 vector<size_t> tri (fv, 0);
@@ -276,28 +291,38 @@ void Mesh::draw(GLuint program) const {
 
     glBindVertexArray(vao);
     for (const auto &d : drawables) {
-        const auto &diffuse_texname = materials[d.material_id].diffuse_texname;
-        const auto &bump_texname = materials[d.material_id].bump_texname;
+        const auto &m = materials[d.material_id];
 
-        GLuint diffuse_texture = textures.count(diffuse_texname) == 0 ? textures.at(DEFAULT_TEXTURE) : textures.at(diffuse_texname);
+        GLuint default_texture = textures.at(DEFAULT_TEXTURE);
+        bool hasDiffuseMap = textures.count(m.diffuse_texname) == 0;
+        bool hasNormalMap = textures.count(m.bump_texname) == 0;
+
+        GLuint diffuse_texture = hasDiffuseMap ? default_texture : textures.at(m.diffuse_texname);
         GLuint bump_texture;
-        if (textures.count(bump_texname) == 0) {
+        if (hasNormalMap) {
             bump_texture = 0;
             glUniform1i(enableNormalMapLocation, false);
         }
         else {
-            bump_texture = textures.at(bump_texname);
+            bump_texture = textures.at(m.bump_texname);
             glUniform1i(enableNormalMapLocation, enableNormalMap);
         }
 
         glBindTextureUnit(0, diffuse_texture);
         glBindTextureUnit(5, bump_texture);
-        glUniform1f(glGetUniformLocation(program, "shine"), materials[d.material_id].shininess);
-        // glUniform3fv(glGetUniformLocation(program, "material.diffuse"), materials[d.material_id].shininess);
-        // glUniform3fv(glGetUniformLocation(program, "material.ambient"), materials[d.material_id].shininess);
+
+        glUniform3fv(glGetUniformLocation(program, "material.ambient"), 3, m.ambient);
+        glUniform3fv(glGetUniformLocation(program, "material.diffuse"), 3, m.diffuse);
+        glUniform3fv(glGetUniformLocation(program, "material.specular"), 3, m.specular);
+        glUniform1f(glGetUniformLocation(program, "material.shininess"), m.shininess);
+        glUniform1i(glGetUniformLocation(program, "material.hasAmbientMap"), false);
+        glUniform1i(glGetUniformLocation(program, "material.hasDiffuseMap"), hasDiffuseMap);
+        glUniform1i(glGetUniformLocation(program, "material.hasSpecularMap"), false);
+        glUniform1i(glGetUniformLocation(program, "material.hasAlphaMap"), false);
+        glUniform1i(glGetUniformLocation(program, "material.hasNormalMap"), hasNormalMap);
+
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, d.ebo);
         glDrawElements(GL_TRIANGLES, d.indices.size(), GL_UNSIGNED_INT, 0);
-        // glDrawElements(GL_TRIANGLES, d.indices.size(), GL_UNSIGNED_INT, d.indices.data());
     }
 
     if  (enableNormalMapLocation >= 0)

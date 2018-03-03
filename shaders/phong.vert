@@ -16,11 +16,14 @@ uniform vec3 eye;
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
+uniform mat4 ls;
 
 out VS_OUT {
     vec3 fragPosition;
     vec3 fragNormal;
     vec2 fragTexcoord;
+
+    vec4 lightFragPos;
 
 #ifdef NORMAL_MAP
     vec3 tangentLightPos;
@@ -30,19 +33,23 @@ out VS_OUT {
 } vs_out;
 
 void main() {
-    vs_out.fragPosition = vec3(model * vec4(position, 1.0f));
-    vs_out.fragNormal = vec3(model * vec4(normal, 0.0f));
-    vs_out.fragTexcoord = vec2(texcoord.x, 1.0f - texcoord.y);
-    gl_Position = projection * view * model * vec4(position, 1.0f);
+    mat3 normalMatrix = mat3(transpose(inverse(model)));
+
+    vs_out.fragPosition = vec3(model * vec4(position, 1));
+    vs_out.fragNormal = normalMatrix * normal;
+    vs_out.fragTexcoord = texcoord;
+    gl_Position = projection * view * model * vec4(position, 1);
+
+    vs_out.lightFragPos = ls * model * vec4(position, 1);
 
 #ifdef NORMAL_MAP
     // https://learnopengl.com/Advanced-Lighting/Normal-Mapping
-    vec3 T = normalize(vec3(model * vec4(tangent, 0)));
-    vec3 B = normalize(vec3(model * vec4(bitangent, 0)));
-    vec3 N = normalize(vec3(model * vec4(normal, 0)));
+    vec3 T = normalMatrix * tangent;
+    vec3 B = normalMatrix * bitangent;
+    vec3 N = normalMatrix * normal;
     // re-orthogonalize
-    // T = normalize(T - dot(T, N) * N);
-    // B = cross(N, T);
+    T = normalize(T - dot(T, N) * N);
+    B = cross(N, T);
     mat3 TBN = transpose(mat3(T, B, N));
     vs_out.tangentLightPos = TBN * lightPos;
     vs_out.tangentViewPos = TBN * eye;

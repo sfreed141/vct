@@ -20,6 +20,8 @@ GLFWwindow *init_window(unsigned width, unsigned height, const char *title);
 int main() {
     GLFWwindow *window = init_window(WIDTH, HEIGHT, TITLE);
 
+    stbi_set_flip_vertically_on_load(true);
+
 #if defined(RUN_TEST_TEXTURE2D)
     static const GLchar *vert =
         "#version 330\n"

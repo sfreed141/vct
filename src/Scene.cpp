@@ -29,7 +29,8 @@ void Scene::draw(GLuint program) const {
 	}
 }
 
-void Scene::setMainlight(const glm::vec3 &position, const glm::vec3 &intensity) {
+void Scene::setMainlight(const glm::vec3 &position, const glm::vec3 &direction, const glm::vec3 &intensity) {
 	mainlight.position = position;
+	mainlight.direction = direction;
 	mainlight.intensity = intensity;
 }

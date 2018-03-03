@@ -111,16 +111,30 @@ void Overlay::render(float dt) {
 
         if (nk_tree_push(ctx, NK_TREE_TAB, "Debug", NK_MAXIMIZED)) {
             nk_layout_row_dynamic(ctx, rowheight, 1);
-
             nk_labelf(ctx, NK_TEXT_LEFT, "Camera Position: (%4.1f, %4.1f, %4.1f)", camera.position.x, camera.position.y, camera.position.z);
             nk_labelf(ctx, NK_TEXT_LEFT, "Camera Direction: (%4.1f, %4.1f, %4.1f)", camera.front.x, camera.front.y, camera.front.z);
 
             auto &lightPos = app.scene->getMainlight().position;
+            nk_layout_row_dynamic(ctx, rowheight, 1);
             nk_label(ctx, "Light Position",NK_TEXT_LEFT);
             nk_layout_row_dynamic(ctx, rowheight, 3);
             nk_property_float(ctx, "x: ", -100.0f, &lightPos.x, 100.0f, 1.0f, 0.2f);
             nk_property_float(ctx, "y: ", -100.0f, &lightPos.y, 100.0f, 1.0f, 0.2f);
             nk_property_float(ctx, "z: ", -100.0f, &lightPos.z, 100.0f, 1.0f, 0.2f);
+
+            auto &lightDir = app.scene->getMainlight().direction;
+            nk_layout_row_dynamic(ctx, rowheight, 1);
+            nk_label(ctx, "Light Direction",NK_TEXT_LEFT);
+            nk_layout_row_dynamic(ctx, rowheight, 3);
+            nk_property_float(ctx, "u: ", -10.0f, &lightDir.x, 10.0f, 0.1f, 0.1f);
+            nk_property_float(ctx, "v: ", -10.0f, &lightDir.y, 10.0f, 0.1f, 0.1f);
+            nk_property_float(ctx, "w: ", -10.0f, &lightDir.z, 10.0f, 0.1f, 0.1f);
+
+            nk_layout_row_dynamic(ctx, rowheight, 1);
+            if (nk_button_label(ctx, "Set light to camera")) {
+                lightPos = camera.position;
+                lightDir = camera.front;
+            }            
 
             nk_layout_row_dynamic(ctx, rowheight, 2);
             nk_checkbox_label(ctx, "Voxels", &settings.drawVoxels);

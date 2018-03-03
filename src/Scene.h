@@ -12,7 +12,7 @@
 #include <Graphics/Mesh.h>
 
 struct Light {
-	glm::vec3 position, intensity;
+	glm::vec3 position, direction, intensity;
 };
 
 class Scene {
@@ -25,7 +25,7 @@ public:
 	void draw(GLuint program) const;
 
 	Light &getMainlight() { return mainlight; }
-	void setMainlight(const glm::vec3 &position, const glm::vec3 &intensity);
+	void setMainlight(const glm::vec3 &position, const glm::vec3 &direction, const glm::vec3 &intensity);
 
 private:
 	struct SceneNode {

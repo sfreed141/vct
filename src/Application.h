@@ -38,9 +38,9 @@ struct Settings {
 	int conservativeRasterization = true;
 	int enableShadows = true;
     int enableNormalMap = true;
-    int enableIndirect = true;
-    int enableDiffuse = false;
-    int enableSpecular = false;
+    int enableIndirect = false;
+    int enableDiffuse = true;
+    int enableSpecular = true;
     float ambientScale = 0.2f;
 
 	int miplevel = 0;
@@ -73,7 +73,7 @@ private:
     GLShaderProgram program;
     
     GLShaderProgram voxelProgram;
-    int voxelDim = 64;
+    int voxelDim = 128;
     GLuint voxelColor = 0, voxelNormal = 0, voxelRadiance = 0;
 
 	GLFramebuffer shadowmapFBO;

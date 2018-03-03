@@ -7,6 +7,8 @@ in VS_OUT {
     vec3 fragNormal;
     vec2 fragTexcoord;
 
+    vec4 lightFragPos;
+
 #ifdef NORMAL_MAP
     vec3 tangentLightPos;
     vec3 tangentViewPos;
@@ -14,8 +16,21 @@ in VS_OUT {
 #endif
 } fs_in;
 
+uniform struct Material {
+	vec3 ambient, diffuse, specular;
+	float shininess;
+
+	bool hasAmbientMap, hasDiffuseMap, hasSpecularMap, hasAlphaMap;
+	bool hasNormalMap;
+} material = Material(vec3(0), vec3(0), vec3(0), 32.0, false, false, false, false, false);
+
+// uniform sampler2D ambientMap;
+// uniform sampler2D diffuseMap;
+// uniform sampler2D specularMap;
+// uniform sampler2D alphaMap;
+
 // Diffuse color
-uniform sampler2D texture0;
+layout(binding = 0) uniform sampler2D texture0;
 
 #ifdef NORMAL_MAP
 layout(binding = 5) uniform sampler2D normalMap;
@@ -38,8 +53,6 @@ uniform bool enableIndirect = false;
 uniform bool enableDiffuse = true;
 uniform bool enableSpecular = true;
 uniform float ambientScale = 0.2;
-
-uniform float shine;
 
 uniform vec3 eye;
 uniform vec3 lightPos;
@@ -105,31 +118,40 @@ ivec3 voxelIndex(vec3 pos) {
     return ivec3(x, y, z);
 }
 
-float calcShadowFactor(vec3 lsPosition) {
-	vec3 shifted = (lsPosition + 1.0) * 0.5;
+float calcShadowFactor(vec4 lsPosition) {
+	vec3 shifted = (lsPosition.xyz / lsPosition.w + 1.0) * 0.5;
 
 	float shadowFactor = 0;
 	float bias = 0.01;
-	float fragDepth = shifted.z + bias;
+	float fragDepth = shifted.z - bias;
 
 	if (fragDepth > 1.0) {
 		return 0;
 	}
 
-	vec2 sampleOffset = 1.0 / textureSize(shadowmap, 0);
+	const int numSamples = 5;
+	const ivec2 offsets[numSamples] = ivec2[](
+		ivec2(0, 0), ivec2(1, 0), ivec2(0, 1), ivec2(-1, 0), ivec2(0, -1)
+	);
 
-	if (fragDepth > texture(shadowmap, shifted.xy).r)
-		shadowFactor += 0.2;
-	if (fragDepth > texture(shadowmap, shifted.xy + vec2(sampleOffset.x, sampleOffset.y)).r)
-		shadowFactor += 0.2;
-	if (fragDepth > texture(shadowmap, shifted.xy + vec2(sampleOffset.x, -sampleOffset.y)).r)
-		shadowFactor += 0.2;
-	if (fragDepth > texture(shadowmap, shifted.xy + vec2(-sampleOffset.x, sampleOffset.y)).r)
-		shadowFactor += 0.2;
-	if (fragDepth > texture(shadowmap, shifted.xy + vec2(-sampleOffset.x, -sampleOffset.y)).r)
-		shadowFactor += 0.2;
+	for (int i = 0; i < numSamples; i++) {
+		if (fragDepth > textureOffset(shadowmap, shifted.xy, offsets[i]).r) {
+			shadowFactor += 1;
+		}
+	}
+	shadowFactor /= numSamples;
 
     return shadowFactor;
+}
+
+vec3 postprocess(vec3 color) {
+	const float gamma = 2.2;
+	// tone map
+	color = color / (color + vec3(1));
+	// gamma correction
+	color = pow(color, vec3(1.0 / gamma));
+
+	return color;
 }
 
 void main() {
@@ -152,15 +174,14 @@ void main() {
 	}
 
     vec3 h = normalize(view + light);
-    float vdotr = max(dot(norm, h), 0);
 
     float ambient = ambientScale;
     float diffuse = max(dot(norm, light), 0);
-    float specular = pow(vdotr, shine);
+    float specular = pow(max(dot(norm, h), 0), material.shininess);
 
 	float shadowFactor = 1.0;
 	if (enableShadows) {
-		shadowFactor = 1.0 - calcShadowFactor((ls * vec4(fs_in.fragPosition, 1.0)).xyz);
+		shadowFactor = 1.0 - calcShadowFactor(fs_in.lightFragPos);
 	}
 
     if (voxelize) {
@@ -201,6 +222,8 @@ void main() {
 			else {
 				color = vec4((ambient + shadowFactor * directLighting) * lightInt * color.rgb, 1);
 			}
+
+			// color.rgb = postprocess(color.rgb);
 
 			#if 0
 			vec3 voxelPosition = vec3(voxelIndex(fs_in.fragPosition)) / voxelDim;

@@ -15,7 +15,9 @@ uniform mat4 model;
 void main() {
     gl_Position = model * vec4(vertPosition, 1.0);
 
+    mat3 normalMatrix = mat3(transpose(inverse(model)));
+
     vs_out.position = vec3(gl_Position);
-    vs_out.normal = vec3(model * vec4(vertNormal, 0.0));
+    vs_out.normal = normalMatrix * vertNormal;
     vs_out.texcoord = vertTexcoord;
 }

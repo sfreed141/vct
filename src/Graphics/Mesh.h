@@ -10,6 +10,21 @@
 
 #include <tiny_obj_loader.h>
 
+struct Material {
+    glm::vec3 ambient, diffuse, specular;
+    float shininess;
+
+    bool hasAmbientMap, hasDiffuseMap, hasSpecularMap, hasAlphaMap;
+    bool hasNormalMap;
+
+    Material() :
+        ambient(glm::vec3(0)), diffuse(glm::vec3(0)), specular(glm::vec3(0)),
+        shininess(32.0f),
+        hasAmbientMap(false), hasDiffuseMap(false), hasSpecularMap(false), hasAlphaMap(false),
+        hasNormalMap(false)
+        {}
+};
+
 struct Vertex {
     glm::vec3 position, normal;
     glm::vec2 texcoord;
@@ -39,9 +54,11 @@ private:
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
+
     std::map<std::string, GLuint> textures;
     std::vector<Drawable> drawables;
     std::vector<Vertex> vertices;
+
     glm::vec3 min, max;
     float radius;
 
