@@ -43,10 +43,10 @@ void GLShaderProgram::linkProgram() {
 			GLsizei length = 0;
 			GLint location = 0, size = 0;
 			GLenum type = GL_NONE;
-			GLchar name[uniformMaxLength];
-			glGetActiveUniform(handle, i, uniformMaxLength, &length, &size, &type, name); 
-			location = glGetUniformLocation(handle, name);
-			uniforms[name] = location;
+			std::vector<GLchar> name(uniformMaxLength);
+			glGetActiveUniform(handle, i, uniformMaxLength, &length, &size, &type, name.data()); 
+			location = glGetUniformLocation(handle, name.data());
+			uniforms[name.data()] = location;
 		}
 	}
 }

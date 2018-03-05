@@ -30,7 +30,7 @@ struct Settings {
     int drawDominantAxis = false;
     int drawWireframe = false;
     int drawVoxels = false;
-    int drawRadiance = false;
+    int drawRadiance = true;
     int drawAxes = false;
 	int axisOverride = -1;
     int drawShadowmap = false;
@@ -39,18 +39,18 @@ struct Settings {
 	int conservativeRasterization = true;
 	int enableShadows = true;
     int enableNormalMap = true;
-    int enableIndirect = false;
+    int enableIndirect = true;
     int enableDiffuse = true;
     int enableSpecular = true;
-    float ambientScale = 0.2f;
+    float ambientScale = 0.4f;
 
 	int miplevel = 0;
 
-    int vctSteps = 8;
+    int vctSteps = 16;
     float vctConeAngle = 0.784398163f;
     float vctBias = 1.0f;
     float vctConeInitialHeight = 1.0f;
-    float vctLodOffset = 0.0f;
+    float vctLodOffset = 0.1f;
 };
 
 class Application {

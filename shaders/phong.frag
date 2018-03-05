@@ -105,7 +105,7 @@ vec3 traceCone(sampler3D voxelTexture, vec3 position, vec3 direction, int steps)
 	return color;
 }
 
-ivec3 voxelIndex(vec3 pos) {
+vec3 voxelIndex(vec3 pos) {
     const float minx = -20, maxx = 20,
         miny = -20, maxy = 20,
         minz = -20, maxz = 20;
@@ -118,7 +118,7 @@ ivec3 voxelIndex(vec3 pos) {
     float y = voxelDim * ((pos.y - miny) / rangey);
     float z = voxelDim * (1 - (pos.z - minz) / rangez);
 
-    return ivec3(x, y, z);
+    return vec3(x, y, z);
 }
 
 float calcShadowFactor(vec4 lsPosition) {
@@ -232,6 +232,7 @@ void main() {
 				}
 
 				indirect *= ambientScale;
+				indirect *= color.rgb;
 				color = vec4(indirect + shadowFactor * directLighting * lightInt * color.rgb, 1);
 			}
 			else {
