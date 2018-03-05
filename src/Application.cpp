@@ -380,57 +380,8 @@ void Application::render(float dt) {
 	}
 
 	// hacky raymarcher
-	if (false) {
-		static const GLchar *vert =
-			"#version 330\n"
-			"layout(location = 0) in vec3 pos;\n"
-			"layout(location = 1) in vec2 tc;\n"
-			"out vec2 fragTexcoord;\n"
-			"void main() {\n"
-			"gl_Position = vec4(pos, 1);\n"
-			"fragTexcoord = tc;\n"
-			"}\n";
-
-		static const GLchar *frag =
-			"#version 420\n"
-			"in vec2 fragTexcoord;\n"
-			"out vec4 color;\n"
-			"layout(binding = 0) uniform sampler3D voxelColor;\n"
-			"layout(binding = 1) uniform sampler3D voxelNormal;\n"
-			"layout(binding = 2) uniform sampler3D voxelRadiance;\n"
-			"uniform vec3 eye = vec3(0);\n"
-			"uniform vec3 lookat = vec3(0, 0, -1);\n"
-			"uniform int width = 1280, height = 720;\n"
-			"void main() {\n"
-			"vec3 rayStart = eye;\n"
-			"vec3 target = gl_FragCoord.xy / vec2(width, height)"
-			"vec3 rayDir = normalize("
-			"color = vec4(texture(texture0, fragTexcoord).rgb, 1);\n"
-			"}\n";
-
-		static GLuint program = 0;
-		if (program == 0) {
-			GLuint shaders[2];
-			shaders[0] = GLHelper::createShaderFromString(GL_VERTEX_SHADER, vert);
-			shaders[1] = GLHelper::createShaderFromString(GL_FRAGMENT_SHADER, frag);
-			program = glCreateProgram();
-			glAttachShader(program, shaders[0]);
-			glAttachShader(program, shaders[1]);
-			glLinkProgram(program);
-			if (!GLHelper::checkShaderProgramStatus(program)) {
-				LOG_ERROR("Raymarch debug shader compilation failed");
-			}
-		}
-
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glUseProgram(program);
-
-		glBindTextureUnit(0, voxelColor);
-		glBindTextureUnit(1, voxelNormal);
-		glBindTextureUnit(2, voxelRadiance);
-		GLQuad::draw();
-
-		glUseProgram(0);
+	if (settings.raymarch) {
+		viewRaymarched();
 	}
 
 	// Render overlay
@@ -505,6 +456,55 @@ void view2DTexture(GLuint texture) {
 	glUseProgram(program);
 
 	glBindTextureUnit(0, texture);
+	GLQuad::draw();
+
+	glUseProgram(0);
+}
+
+void Application::viewRaymarched() {
+	static const GLchar *vert =
+		"#version 330\n"
+		"layout(location = 0) in vec3 pos;\n"
+		"layout(location = 1) in vec2 tc;\n"
+		"out vec2 fragTexcoord;\n"
+		"void main() {\n"
+		"gl_Position = vec4(pos, 1);\n"
+		"fragTexcoord = tc;\n"
+		"}\n";
+
+	static GLuint program = 0;
+	if (program == 0) {
+		GLuint shaders[2];
+		shaders[0] = GLHelper::createShaderFromString(GL_VERTEX_SHADER, vert);
+		shaders[1] = GLHelper::createShaderFromFile(GL_FRAGMENT_SHADER, SHADER_DIR "raymarch.frag");
+		program = glCreateProgram();
+		glAttachShader(program, shaders[0]);
+		glAttachShader(program, shaders[1]);
+		glLinkProgram(program);
+		if (!GLHelper::checkShaderProgramStatus(program)) {
+			LOG_ERROR("Raymarch debug shader compilation failed");
+		}
+	}
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glUseProgram(program);
+
+	glBindTextureUnit(0, voxelColor);
+	glBindTextureUnit(1, voxelNormal);
+	glBindTextureUnit(2, voxelRadiance);
+
+	glUniform3fv(glGetUniformLocation(program, "eye"), 1, glm::value_ptr(camera.position));
+	glUniform3fv(glGetUniformLocation(program, "viewForward"), 1, glm::value_ptr(camera.front));
+	glUniform3fv(glGetUniformLocation(program, "viewRight"), 1, glm::value_ptr(glm::normalize(glm::cross(camera.front, camera.up))));
+	glUniform3fv(glGetUniformLocation(program, "viewUp"), 1, glm::value_ptr(camera.up));
+	glUniform1i(glGetUniformLocation(program, "width"), width);
+	glUniform1i(glGetUniformLocation(program, "height"), height);
+	glUniform1f(glGetUniformLocation(program, "near"), near);
+	glUniform1f(glGetUniformLocation(program, "far"), far);
+	glUniform1i(glGetUniformLocation(program, "voxelDim"), voxelDim);
+	glUniform1i(glGetUniformLocation(program, "lod"), settings.miplevel);
+	
+
 	GLQuad::draw();
 
 	glUseProgram(0);

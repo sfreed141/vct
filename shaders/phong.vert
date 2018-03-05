@@ -26,6 +26,7 @@ out VS_OUT {
     vec4 lightFragPos;
 
 #ifdef NORMAL_MAP
+    mat3 TBN;
     vec3 tangentLightPos;
     vec3 tangentViewPos;
     vec3 tangentFragPos;
@@ -50,9 +51,10 @@ void main() {
     // re-orthogonalize
     T = normalize(T - dot(T, N) * N);
     B = cross(N, T);
-    mat3 TBN = transpose(mat3(T, B, N));
-    vs_out.tangentLightPos = TBN * lightPos;
-    vs_out.tangentViewPos = TBN * eye;
-    vs_out.tangentFragPos = TBN * vec3(model * vec4(position, 0));
+    vs_out.TBN = mat3(T, B, N);
+    mat3 inverseTBN = transpose(vs_out.TBN);
+    vs_out.tangentLightPos = inverseTBN * lightPos;
+    vs_out.tangentViewPos = inverseTBN * eye;
+    vs_out.tangentFragPos = inverseTBN * vec3(model * vec4(position, 0));
 #endif
 }

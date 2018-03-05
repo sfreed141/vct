@@ -10,6 +10,7 @@ in VS_OUT {
     vec4 lightFragPos;
 
 #ifdef NORMAL_MAP
+	mat3 TBN;
     vec3 tangentLightPos;
     vec3 tangentViewPos;
     vec3 tangentFragPos;
@@ -76,6 +77,8 @@ vec3 traceCone(sampler3D voxelTexture, vec3 position, vec3 direction, int steps)
 	// const float bias = 1.0;
 	float bias = vctBias;
 
+	direction = normalize(direction);
+	direction.z = -direction.z;
 	direction /= voxelDim;
 	vec3 start = position + bias * direction;
 	
@@ -92,10 +95,10 @@ vec3 traceCone(sampler3D voxelTexture, vec3 position, vec3 direction, int steps)
 		coneRadius = coneHeight * tan(coneAngle / 2.0);
 		float lod = log2(max(1.0, 2 * coneRadius));
 		vec4 sampleColor = textureLod(voxelTexture, start + coneHeight * direction, lod + vctLodOffset);
-		// float a = 1 - alpha;
-		// color += sampleColor.rgb * a;
-		// alpha += a * sampleColor.a;
-		color += sampleColor.rgb * sampleColor.a;
+		float a = 1 - alpha;
+		color += sampleColor.rgb * a;
+		alpha += a * sampleColor.a;
+		// color += sampleColor.rgb * sampleColor.a;
 		coneHeight += coneRadius;
 	}
 
@@ -215,7 +218,21 @@ void main() {
 				vec3 voxelPosition = vec3(voxelIndex(fs_in.fragPosition)) / voxelDim;
 				vec3 indirect = vec3(0);
 				indirect += traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, fs_in.fragNormal, vctSteps);
-				// indirect += textureLod(radiance ? voxelRadiance : voxelColor, voxelPosition, miplevel).rgb;
+
+				#if 0
+				vec3 coneDirs[4] = vec3[] (
+					vec3(0.707, 0.707, 0),
+					vec3(0, 0.707, 0.707),
+					vec3(-0.707, 0.707, 0),
+					vec3(0, 0.707, -0.707)
+				);
+				float coneWeights[4] = float[](0.25, 0.25, 0.25, 0.25);
+				for (int i = 0; i < 4; i++) {
+					vec3 dir = normalize(fs_in.TBN * coneDirs[i]);
+					indirect += coneWeights[i] * traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, dir, vctSteps);
+				}
+				#endif
+
 				indirect *= ambientScale;
 				color = vec4(indirect + shadowFactor * directLighting * lightInt * color.rgb, 1);
 			}
@@ -224,27 +241,6 @@ void main() {
 			}
 
 			// color.rgb = postprocess(color.rgb);
-
-			#if 0
-			vec3 voxelPosition = vec3(voxelIndex(fs_in.fragPosition)) / voxelDim;
-			vec3 indirect = vec3(0);
-			indirect += traceCone(voxelPosition, norm, 8);
-
-			vec3 coneDirs[4] = vec3[] (
-				vec3(0.707, 0.707, 0),
-				vec3(0, 0.707, 0.707),
-				vec3(-0.707, 0.707, 0),
-				vec3(0, 0.707, -0.707)
-			);
-			float coneWeights[4] = float[](0.25, 0.25, 0.25, 0.25);
-			for (int i = 0; i < 4; i++) {
-				vec3 dir = normalize(norm * coneDirs[i]);
-				indirect += coneWeights[i] * traceCone(voxelPosition, dir, 8);
-			}
-
-            color = vec4(indirect + shadowFactor * (diffuse + specular) * lightInt * color.rgb, 1);
-			clamp(color.rgb, vec3(0), vec3(1));
-			#endif
         }
     }
 }

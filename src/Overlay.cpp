@@ -145,6 +145,7 @@ void Overlay::render(float dt) {
             nk_checkbox_label(ctx, "Radiance", &settings.drawRadiance);
             // nk_checkbox_label(ctx, "Axes", &settings.drawAxes);
             nk_checkbox_label(ctx, "Shadowmap", &settings.drawShadowmap);
+            nk_checkbox_label(ctx, "Raymarch", &settings.raymarch);
 
             nk_layout_row_dynamic(ctx, rowheight, 2);
 			nk_labelf(ctx, NK_TEXT_LEFT, "Miplevel: %d", settings.miplevel);

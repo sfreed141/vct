@@ -34,6 +34,7 @@ struct Settings {
     int drawAxes = false;
 	int axisOverride = -1;
     int drawShadowmap = false;
+    int raymarch = false;
 
 	int conservativeRasterization = true;
 	int enableShadows = true;
@@ -86,7 +87,7 @@ private:
     Settings settings;
 	GLBufferedTimer voxelizeTimer, shadowmapTimer, radianceTimer, mipmapTimer, renderTimer, totalTimer;
 
-	void renderSimpleVoxelization(float dt);
+    void viewRaymarched();
 };
 
 #endif
