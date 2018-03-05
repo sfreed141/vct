@@ -71,11 +71,12 @@ void Application::init() {
 	mipmapProgram.setObjectLabel("Filter Radiance");
 
 	// Initialize voxel textures
-	GLenum voxelFormat = GLAD_GL_NV_shader_atomic_fp16_vector ? GL_RGBA16F : GL_RGBA8;
+	useRGBA16f = GLAD_GL_NV_shader_atomic_fp16_vector;
+	GLenum voxelFormat = useRGBA16f ? GL_RGBA16F : GL_RGBA8;
 	// voxelColor = make3DTexture(voxelDim, 4, voxelFormat, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
 	voxelColor = make3DTexture(voxelDim, 1, voxelFormat, GL_LINEAR, GL_NEAREST);
 	voxelNormal = make3DTexture(voxelDim, 1, voxelFormat, GL_NEAREST, GL_NEAREST);
-	voxelRadiance = make3DTexture(voxelDim, 4, GL_RGBA8, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
+	voxelRadiance = make3DTexture(voxelDim, voxelLevels, GL_RGBA8, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
 
 	// Create scene
 	scene = std::make_unique<Scene>();
@@ -123,6 +124,8 @@ void Application::render(float dt) {
 	totalTimer.start();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	Light mainlight = scene->getMainlight();
+	
 	voxelizeTimer.start();
 	// Voxelize scene
 	{
@@ -151,7 +154,11 @@ void Application::render(float dt) {
 
 		voxelProgram.setUniform1i("axis_override", settings.axisOverride);
 
-		GLenum voxelFormat = GLAD_GL_NV_shader_atomic_fp16_vector ? GL_RGBA16F : GL_R32UI;
+		voxelProgram.setUniform3fv("eye", camera.position);
+		voxelProgram.setUniform3fv("lightPos", mainlight.position);
+		voxelProgram.setUniform3fv("lightInt", mainlight.intensity);
+
+		GLenum voxelFormat = useRGBA16f ? GL_RGBA16F : GL_R32UI;
 		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, voxelFormat);
 		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, voxelFormat);
 
@@ -177,7 +184,6 @@ void Application::render(float dt) {
 
 	// Generate shadowmap
 	shadowmapTimer.start();
-	Light mainlight = scene->getMainlight();
 	const float lz_near = 0.0f, lz_far = 100.0f, l_boundary = 25.0f;
 	glm::mat4 lp = glm::ortho(-l_boundary, l_boundary, -l_boundary, l_boundary, lz_near, lz_far);
 	glm::mat4 lv = glm::lookAt(mainlight.position, mainlight.position + mainlight.direction, glm::vec3(0.0f, 1.0f, 0.0f));
@@ -209,7 +215,7 @@ void Application::render(float dt) {
 	shadowmapTimer.stop();
 
 	// Normalize voxelColor and voxelNormal textures (divides by alpha component)
-	if (GLAD_GL_NV_shader_atomic_fp16_vector) {
+	if (useRGBA16f) {
 		static GLShaderProgram *p = nullptr;
 		if (!p) {
 			p = new GLShaderProgram({SHADER_DIR "normalizeVoxels.comp"});
@@ -235,8 +241,8 @@ void Application::render(float dt) {
 
 		injectRadianceProgram.bind();
 
-		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_ONLY, GLAD_GL_NV_shader_atomic_fp16_vector ? GL_RGBA16F : GL_RGBA8);
-		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_ONLY, GLAD_GL_NV_shader_atomic_fp16_vector ? GL_RGBA16F : GL_RGBA8);
+		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_ONLY, useRGBA16f ? GL_RGBA16F : GL_RGBA8);
+		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_ONLY, useRGBA16f ? GL_RGBA16F : GL_RGBA8);
 		glBindImageTexture(2, voxelRadiance, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
 		GLuint shadowmap = shadowmapFBO.getTexture(0);
@@ -273,8 +279,7 @@ void Application::render(float dt) {
 
 		int dim = voxelDim;
 		const int local_size = 8;
-		const int maxlevel = 4;
-		for (int level = 0; level < maxlevel; level++) {
+		for (int level = 0; level < voxelLevels; level++) {
 			glBindImageTexture(0, voxelRadiance, level, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
 			glBindImageTexture(1, voxelRadiance, level + 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 

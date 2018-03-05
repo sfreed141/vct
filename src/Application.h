@@ -46,7 +46,7 @@ struct Settings {
 
 	int miplevel = 0;
 
-    int vctSteps = 1;
+    int vctSteps = 8;
     float vctConeAngle = 0.784398163f;
     float vctBias = 1.0f;
     float vctConeInitialHeight = 1.0f;
@@ -74,8 +74,9 @@ private:
     GLShaderProgram program;
     
     GLShaderProgram voxelProgram;
-    int voxelDim = 128;
+    int voxelDim = 128, voxelLevels = 6;
     GLuint voxelColor = 0, voxelNormal = 0, voxelRadiance = 0;
+    bool useRGBA16f;
 
 	GLFramebuffer shadowmapFBO;
 	GLShaderProgram shadowmapProgram;

@@ -70,7 +70,7 @@ void Overlay::render(float dt) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        GLenum format = GLAD_GL_NV_shader_atomic_fp16_vector ? GL_RGBA16F : GL_RGBA8;
+        GLenum format = app.useRGBA16f ? GL_RGBA16F : GL_RGBA8;
         glTexStorage2D(GL_TEXTURE_2D, 1, format, app.voxelDim, app.voxelDim);
         glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -149,7 +149,7 @@ void Overlay::render(float dt) {
 
             nk_layout_row_dynamic(ctx, rowheight, 2);
 			nk_labelf(ctx, NK_TEXT_LEFT, "Miplevel: %d", settings.miplevel);
-			nk_slider_int(ctx, 0, &settings.miplevel, 3, 1);
+			nk_slider_int(ctx, 0, &settings.miplevel, app.voxelLevels - 1, 1);
 
             // nk_layout_row_dynamic(ctx, rowheight, 2);
 			// nk_labelf(ctx, NK_TEXT_LEFT, "Axis Override: %d", settings.axisOverride);

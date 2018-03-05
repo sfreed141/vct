@@ -21,6 +21,8 @@ layout(binding = 1, r32ui) uniform uimage3D voxelNormal;
 
 layout(binding = 0) uniform sampler2D diffuseTexture;
 
+uniform vec3 eye, lightPos, lightInt;
+
 // Map [-1, 1] -> [0, 1]
 vec3 ndcToUnit(vec3 p) { return (p + 1.0) * 0.5; }
 
@@ -84,16 +86,20 @@ uint convVec4ToRGBA8(vec4 val) {
 void main() {
 	ivec3 voxelIndex = getVoxelPosition();
 
-    vec3 diffuseColor = texture(diffuseTexture, fs_in.texcoord).rgb;
+    vec3 color = texture(diffuseTexture, fs_in.texcoord).rgb;
+
+	vec3 normal = normalize(fs_in.normal);
+	vec3 light = normalize(lightPos - fs_in.position);
+	// color *= max(dot(normal, light), 0) * lightInt;
 
     // Store value (must be atomic, use alpha component as count)
 #if GL_NV_shader_atomic_fp16_vector
-    imageAtomicAdd(voxelColor, voxelIndex, f16vec4(diffuseColor, 1));
-    imageAtomicAdd(voxelNormal, voxelIndex, f16vec4(fs_in.normal, 1));
+    imageAtomicAdd(voxelColor, voxelIndex, f16vec4(color, 1));
+    imageAtomicAdd(voxelNormal, voxelIndex, f16vec4(normal, 1));
 #else
-	// imageAtomicRGBA8Avg(voxelColor, voxelIndex, vec4(diffuseColor, 1));
-	// imageAtomicRGBA8Avg(voxelNormal, voxelIndex, vec4(fs_in.normal, 1));
-	imageAtomicMax(voxelColor, voxelIndex, convVec4ToRGBA8(255 * vec4(diffuseColor, 1)));
-	imageAtomicMax(voxelNormal, voxelIndex, convVec4ToRGBA8(255 * vec4(fs_in.normal, 1)));
+	// imageAtomicRGBA8Avg(voxelColor, voxelIndex, vec4(color, 1));
+	// imageAtomicRGBA8Avg(voxelNormal, voxelIndex, vec4(normal, 1));
+	imageAtomicMax(voxelColor, voxelIndex, convVec4ToRGBA8(255 * vec4(color, 1)));
+	imageAtomicMax(voxelNormal, voxelIndex, convVec4ToRGBA8(255 * vec4(normal, 1)));
 #endif
 }

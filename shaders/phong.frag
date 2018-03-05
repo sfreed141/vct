@@ -219,7 +219,6 @@ void main() {
 				vec3 indirect = vec3(0);
 				indirect += traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, fs_in.fragNormal, vctSteps);
 
-				#if 0
 				vec3 coneDirs[4] = vec3[] (
 					vec3(0.707, 0.707, 0),
 					vec3(0, 0.707, 0.707),
@@ -231,7 +230,6 @@ void main() {
 					vec3 dir = normalize(fs_in.TBN * coneDirs[i]);
 					indirect += coneWeights[i] * traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, dir, vctSteps);
 				}
-				#endif
 
 				indirect *= ambientScale;
 				color = vec4(indirect + shadowFactor * directLighting * lightInt * color.rgb, 1);
