@@ -32,6 +32,7 @@ public:
     GLint uniformLocation(const GLchar *name) const;
 
     void setUniform1f(const GLchar *name, GLfloat v) { glUniform1f(uniformLocation(name), v); }
+    void setUniform2f(const GLchar *name, GLfloat x, GLfloat y) { glUniform2f(uniformLocation(name), x, y); }
     void setUniform1i(const GLchar *name, GLint v) { glUniform1i(uniformLocation(name), v); }
     void setUniform1ui(const GLchar *name, GLuint v) { glUniform1ui(uniformLocation(name), v); }
     void setUniform3fv(const GLchar *name, const glm::vec3 &v) { glUniform3fv(uniformLocation(name), 1, glm::value_ptr(v)); }

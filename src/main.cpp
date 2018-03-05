@@ -8,12 +8,14 @@
 #include "Graphics/GLHelper.h"
 #include "Input/GLFWHandler.h"
 
-// #define RUN_TEST_TEXTURE2D
+#define RUN_TEST_TEXTURE2D
 // #define RUN_TEST_TEXTURE3D
 #include <cmath>
 #include <Graphics/GLQuad.h>
 #include <stb_image.h>
 #include <Graphics/GLShaderProgram.h>
+#include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
 
 GLFWwindow *init_window(unsigned width, unsigned height, const char *title);
 
@@ -30,7 +32,7 @@ int main() {
         "out vec2 fragTexcoord;\n"
         "void main() {\n"
         "gl_Position = vec4(pos, 1);\n"
-        "fragTexcoord = vec2(tc.x, 1 - tc.y);\n"
+        "fragTexcoord = tc;\n"
         "}\n";
 
     static const GLchar *frag =
@@ -55,17 +57,12 @@ int main() {
         return 1;
     }
 
-    int width, height, channels;
-    unsigned char *image = stbi_load("/home/sam/Pictures/artorias.jpg", &width, &height, &channels, 4);
-    if (image == NULL) {
-        LOG_ERROR("TEXTURE::LOAD_FAILED");
-    }
-    LOG_INFO("width: ", width, ", height: ", height);
+    int width = 7680, height = 4320;
     GLuint t;
-    GLuint maxlevel = 2;
+    GLuint maxlevel = 4;
     glCreateTextures(GL_TEXTURE_2D, 1, &t);
     glTextureStorage2D(t, maxlevel, GL_RGBA8, width, height);
-    glTextureSubImage2D(t, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    // glTextureSubImage2D(t, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image);
     glTextureParameteri(t, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTextureParameteri(t, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     // glGenerateTextureMipmap(t);
@@ -73,13 +70,13 @@ int main() {
     GLuint t2;
     glCreateTextures(GL_TEXTURE_2D, 1, &t2);
     glTextureStorage2D(t2, maxlevel, GL_RGBA8, width, height);
-    glTextureSubImage2D(t2, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    // glTextureSubImage2D(t2, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image);
     glTextureParameteri(t2, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTextureParameteri(t2, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glGenerateTextureMipmap(t2);
 
-    int width3, height3;
-    image = stbi_load("/home/sam/Pictures/occupancy.png", &width3, &height3, &channels, 1);
+    int width3, height3, channels;
+    unsigned char *image = stbi_load("/home/sam/Pictures/occupancy.png", &width3, &height3, &channels, 1);
     if (image == NULL) {
         LOG_ERROR("TEXTURE::LOAD_FAILED");
     }
@@ -89,9 +86,30 @@ int main() {
     glTextureSubImage2D(t3, 0, 0, 0, width3, height3, GL_RED, GL_UNSIGNED_BYTE, image);
     glTextureParameteri(t3, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTextureParameteri(t3, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    // glGenerateTextureMipmap(t3);
+    glGenerateTextureMipmap(t3);
 
+    int color_width, color_height;
+    image = stbi_load(RESOURCE_DIR "color_gradient.png", &color_width, &color_height, &channels, 1);
+    GLuint color_texture;
+    glCreateTextures(GL_TEXTURE_1D, 1, &color_texture);
+    glTextureStorage1D(color_texture, 1, GL_R8, color_width);
+    glTextureSubImage1D(color_texture, 0, 0, color_width, GL_RED, GL_UNSIGNED_BYTE, image);
+    glTextureParameteri(color_texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTextureParameteri(color_texture, GL_TEXTURE_WRAP_R, GL_MIRRORED_REPEAT);
+
+    GLShaderProgram mandelbrotProgram ({SHADER_DIR "mandelbrot.comp"});
     GLShaderProgram filterProgram ({SHADER_DIR "filter2d.comp"});
+
+    float aspect = (float) WIDTH / HEIGHT;
+    // glm::vec2 center {0, 0};
+    // float scale = 0.0f;
+    glm::vec2 center {-.232464, -.531013};
+    float scale = 0.00288213f;
+
+    GLuint query;
+    glGenQueries(1, &query);
+
+
 #elif defined(RUN_TEST_TEXTURE3D)
     static const GLchar *vert =
         "#version 330\n"
@@ -100,7 +118,7 @@ int main() {
         "out vec2 fragTexcoord;\n"
         "void main() {\n"
         "gl_Position = vec4(pos, 1);\n"
-        "fragTexcoord = vec2(tc.x, 1 - tc.y);\n"
+        "fragTexcoord = tc;\n"
         "}\n";
 
     static const GLchar *frag =
@@ -201,25 +219,58 @@ int main() {
         glfwPollEvents();
 
 #if defined(RUN_TEST_TEXTURE2D)
+        Mouse::update();
+
+        GLuint64 queryTime;
+        glGetQueryObjectui64v(query, GL_QUERY_RESULT, &queryTime);
+
         int lod = (int)currentFrame % maxlevel;
-        fprintf(stderr, "\rfps: %.2f, frametime: %0.2f, lod: %d", 1.0 / dt, dt * 1000.0f, lod);
+        fprintf(stderr, "\rfps: %.2f, frametime: %0.2f, lod: %d, miptime: %0.2f ms", 1.0 / dt, dt * 1000.0f, lod, queryTime / 1.0e6);
 
-        filterProgram.bind();
-        // glBindImageTexture(0, t, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
-        glBindTextureUnit(0, t);
-        // glBindTextureUnit(1, t3);
-        glBindImageTexture(1, t, 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+        if (Mouse::getMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT)) {
+            center += glm::vec2(Mouse::getDeltaX(), Mouse::getDeltaY()) * 0.001f * scale;
+            std::cout << glm::to_string(center) << std::endl;
+        }
+        if (Mouse::getMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT)) {
+            scale += Mouse::getDeltaX() * 0.1f * scale;
+            std::cout << scale << std::endl;
+        }
+        
+        {
+            mandelbrotProgram.bind();
+            glBindImageTexture(0, t, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+            glBindTextureUnit(0, color_texture);
+            mandelbrotProgram.setUniform2f("center", center.x, center.y);
+            mandelbrotProgram.setUniform1f("scale", scale);
+            GLuint num_groups_x = (width + 16 - 1) / 16;
+            GLuint num_groups_y = (height + 16 - 1) / 16;
+            glDispatchCompute(num_groups_x, num_groups_y, 1);
+            glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+            glBindTextureUnit(0, 0);
+            mandelbrotProgram.bind();
+        }
 
-        GLuint num_groups_x = ((width >> 1) + 16 - 1) / 16;
-        GLuint num_groups_y = ((height >> 1) + 16 - 1) / 16;
-        glDispatchCompute(num_groups_x, num_groups_y, 1);
+        glBeginQuery(GL_TIME_ELAPSED, query);
+        {
+            filterProgram.bind();
+            glBindTextureUnit(1, t3);
+            int w = width, h = height;
+            for (int level = 0; level < maxlevel; level++) {
+                glBindImageTexture(0, t, level, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+                glBindImageTexture(1, t, level + 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+                GLuint num_groups_x = ((w >> 1) + 16 - 1) / 16;
+                GLuint num_groups_y = ((h >> 1) + 16 - 1) / 16;
+                glDispatchCompute(num_groups_x, num_groups_y, 1);
+                // glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+                // glBindImageTexture(1, 0, 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
-        // glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
-        glBindTextureUnit(0, 0);
-        glBindTextureUnit(1, 0);
-        glBindImageTexture(1, 0, 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
-        filterProgram.unbind();
-        // glGenerateTextureMipmap(t2);
+                w >>= 1;
+                h >>= 1;
+            }
+            filterProgram.unbind();
+        }
+        // glGenerateTextureMipmap(t);
+        glEndQuery(GL_TIME_ELAPSED);
 
 
         glUseProgram(program);
