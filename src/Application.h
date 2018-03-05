@@ -21,7 +21,7 @@
 #include "Overlay.h"
 #include "Camera.h"
 #include "Scene.h"
-#include "TimerQueries.h"
+#include "Graphics/GLTimer.h"
 
 #include "common.h"
 
@@ -82,7 +82,7 @@ private:
 	GLShaderProgram injectRadianceProgram;
 
     Settings settings;
-	TimerQueries timers;
+	GLBufferedTimer voxelizeTimer, shadowmapTimer, radianceTimer, mipmapTimer, renderTimer, totalTimer;
 
 	void renderSimpleVoxelization(float dt);
 };

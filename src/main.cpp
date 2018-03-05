@@ -8,10 +8,11 @@
 #include "Graphics/GLHelper.h"
 #include "Input/GLFWHandler.h"
 
-#define RUN_TEST_TEXTURE2D
+// #define RUN_TEST_TEXTURE2D
 // #define RUN_TEST_TEXTURE3D
 #include <cmath>
 #include <Graphics/GLQuad.h>
+#include <Graphics/GLTimer.h>
 #include <stb_image.h>
 #include <Graphics/GLShaderProgram.h>
 #include <glm/glm.hpp>
@@ -106,9 +107,7 @@ int main() {
     glm::vec2 center {-.232464, -.531013};
     float scale = 0.00288213f;
 
-    GLuint query;
-    glGenQueries(1, &query);
-
+    GLBufferedTimer mipmapQuery{}, renderQuery{}, totalQuery{}, mandelbrotQuery{};
 
 #elif defined(RUN_TEST_TEXTURE3D)
     static const GLchar *vert =
@@ -221,11 +220,20 @@ int main() {
 #if defined(RUN_TEST_TEXTURE2D)
         Mouse::update();
 
-        GLuint64 queryTime;
-        glGetQueryObjectui64v(query, GL_QUERY_RESULT, &queryTime);
+
+        mipmapQuery.getQueryResult();
+        renderQuery.getQueryResult();
+        totalQuery.getQueryResult();
+        mandelbrotQuery.getQueryResult();
 
         int lod = (int)currentFrame % maxlevel;
-        fprintf(stderr, "\rfps: %.2f, frametime: %0.2f, lod: %d, miptime: %0.2f ms", 1.0 / dt, dt * 1000.0f, lod, queryTime / 1.0e6);
+        fprintf(stderr, "\rfps: %.2f, frametime: %0.2f, lod: %d, miptime: %0.2fms, rendertime: %0.2fms, mandelbrot: %0.2fms, totaltime: %0.2fms",
+            1.0 / dt, dt * 1000.0f, lod,
+            mipmapQuery.getTime() / 1.0e6,
+            renderQuery.getTime() / 1.0e6,
+            mandelbrotQuery.getTime() / 1.0e6,
+            totalQuery.getTime() / 1.0e6
+        );
 
         if (Mouse::getMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT)) {
             center += glm::vec2(Mouse::getDeltaX(), Mouse::getDeltaY()) * 0.001f * scale;
@@ -236,6 +244,8 @@ int main() {
             std::cout << scale << std::endl;
         }
         
+        totalQuery.start();
+        mandelbrotQuery.start();
         {
             mandelbrotProgram.bind();
             glBindImageTexture(0, t, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
@@ -249,8 +259,9 @@ int main() {
             glBindTextureUnit(0, 0);
             mandelbrotProgram.bind();
         }
+        mandelbrotQuery.stop();
 
-        glBeginQuery(GL_TIME_ELAPSED, query);
+        mipmapQuery.start();
         {
             filterProgram.bind();
             glBindTextureUnit(1, t3);
@@ -270,15 +281,18 @@ int main() {
             filterProgram.unbind();
         }
         // glGenerateTextureMipmap(t);
-        glEndQuery(GL_TIME_ELAPSED);
+        mipmapQuery.stop();
 
-
+        renderQuery.start();
         glUseProgram(program);
         glBindTextureUnit(0, t);//lod == 0 ? t : t2);
         glUniform1f(glGetUniformLocation(program, "lod"), lod);
         GLQuad::draw();
         glBindTextureUnit(0, 0);
         glUseProgram(0);
+        renderQuery.stop();
+        totalQuery.stop();
+
 #elif defined(RUN_TEST_TEXTURE3D)
         int lod = (int)currentFrame % maxlevel;
         int slice = (int)(currentFrame / 2) % size;

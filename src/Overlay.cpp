@@ -62,7 +62,6 @@ void Overlay::render(float dt) {
 
     const Camera &camera = app.camera;
     Settings &settings = app.settings;
-	TimerQueries &timers = app.timers;
 
     if (voxelSlice == 0) {
         glGenTextures(1, &voxelSlice);
@@ -98,10 +97,12 @@ void Overlay::render(float dt) {
             nk_labelf(ctx, NK_TEXT_LEFT, "GPU Memory Usage: %d / %d MB", totalMem - availableMem, totalMem);
 
 			if (nk_tree_push(ctx, NK_TREE_NODE, "Timing Breakdown", NK_MINIMIZED)) {
-				nk_labelf(ctx, NK_TEXT_LEFT, "Voxelize: %.2f ms", timers.getTime(TimerQueries::VOXELIZE_TIME));
-				nk_labelf(ctx, NK_TEXT_LEFT, "Shadowmap: %.2f ms", timers.getTime(TimerQueries::SHADOWMAP_TIME));
-				nk_labelf(ctx, NK_TEXT_LEFT, "Radiance: %.2f ms", timers.getTime(TimerQueries::RADIANCE_TIME));
-				nk_labelf(ctx, NK_TEXT_LEFT, "Render: %.2f ms", timers.getTime(TimerQueries::RENDER_TIME));
+				nk_labelf(ctx, NK_TEXT_LEFT, "Voxelize: %.2f ms", app.voxelizeTimer.getTime() / 1.0e6);
+				nk_labelf(ctx, NK_TEXT_LEFT, "Shadowmap: %.2f ms", app.shadowmapTimer.getTime() / 1.0e6);
+				nk_labelf(ctx, NK_TEXT_LEFT, "Radiance: %.2f ms", app.radianceTimer.getTime() / 1.0e6);
+				nk_labelf(ctx, NK_TEXT_LEFT, "Mipmap: %.2f ms", app.mipmapTimer.getTime() / 1.0e6);
+				nk_labelf(ctx, NK_TEXT_LEFT, "Render: %.2f ms", app.renderTimer.getTime() / 1.0e6);
+				nk_labelf(ctx, NK_TEXT_LEFT, "Total: %.2f ms", app.totalTimer.getTime() / 1.0e6);
 
 				nk_tree_pop(ctx);
 			}

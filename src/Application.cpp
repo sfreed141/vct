@@ -16,6 +16,7 @@
 #include "Graphics/GLHelper.h"
 #include "Graphics/GLShaderProgram.h"
 #include "Graphics/GLQuad.h"
+#include "Graphics/GLTimer.h"
 
 #include "Input/Keyboard.h"
 #include "Input/Mouse.h"
@@ -116,9 +117,10 @@ void Application::update(float dt) {
 }
 
 void Application::render(float dt) {
+	totalTimer.start();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	timers.beginQuery(TimerQueries::VOXELIZE_TIME);
+	voxelizeTimer.start();
 	// Voxelize scene
 	{
 		GL_DEBUG_PUSH("Voxelize Scene")
@@ -168,10 +170,10 @@ void Application::render(float dt) {
 		}
 		GL_DEBUG_POP()
 	}
-	timers.endQuery();
+	voxelizeTimer.stop();
 
 	// Generate shadowmap
-	timers.beginQuery(TimerQueries::SHADOWMAP_TIME);
+	shadowmapTimer.start();
 	Light mainlight = scene->getMainlight();
 	const float lz_near = 0.0f, lz_far = 100.0f, l_boundary = 25.0f;
 	glm::mat4 lp = glm::ortho(-l_boundary, l_boundary, -l_boundary, l_boundary, lz_near, lz_far);
@@ -201,7 +203,7 @@ void Application::render(float dt) {
 		glCullFace(GL_BACK);
 		GL_DEBUG_POP()
 	}
-	timers.endQuery();
+	shadowmapTimer.stop();
 
 	// Normalize voxelColor and voxelNormal textures (divides by alpha component)
 	if (GLAD_GL_NV_shader_atomic_fp16_vector) {
@@ -222,7 +224,7 @@ void Application::render(float dt) {
 	}
 
 	// Inject radiance into voxel grid
-	timers.beginQuery(TimerQueries::RADIANCE_TIME);
+	radianceTimer.start();
 	{
 		GL_DEBUG_PUSH("Radiance Injection")
 
@@ -256,13 +258,15 @@ void Application::render(float dt) {
 
 		GL_DEBUG_POP()
 	}
-	timers.endQuery();
+	radianceTimer.stop();
 
+	mipmapTimer.start();
 	glGenerateTextureMipmap(voxelColor);
 	// glGenerateTextureMipmap(voxelNormal);
 	glGenerateTextureMipmap(voxelRadiance);
+	mipmapTimer.stop();
 
-	timers.beginQuery(TimerQueries::RENDER_TIME);
+	renderTimer.start();
 	// Render scene
 	{
 		GL_DEBUG_PUSH("Render Scene")
@@ -335,9 +339,15 @@ void Application::render(float dt) {
 		}
 		GL_DEBUG_POP()
 	}
-	timers.endQuery();
+	renderTimer.stop();
+	totalTimer.stop();
 
-	timers.getQueriesAndSwap();
+	voxelizeTimer.getQueryResult();
+	shadowmapTimer.getQueryResult();
+	radianceTimer.getQueryResult();
+	mipmapTimer.getQueryResult();
+	renderTimer.getQueryResult();
+	totalTimer.getQueryResult();
 
 	// hacky view of shadowmap
 	if (settings.drawShadowmap) {
