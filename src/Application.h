@@ -81,6 +81,8 @@ private:
 
 	GLShaderProgram injectRadianceProgram;
 
+    GLShaderProgram mipmapProgram;
+
     Settings settings;
 	GLBufferedTimer voxelizeTimer, shadowmapTimer, radianceTimer, mipmapTimer, renderTimer, totalTimer;
 

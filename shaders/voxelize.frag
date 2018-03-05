@@ -19,7 +19,7 @@ layout(binding = 0, r32ui) uniform uimage3D voxelColor;
 layout(binding = 1, r32ui) uniform uimage3D voxelNormal;
 #endif
 
-uniform sampler2D diffuseTexture;
+layout(binding = 0) uniform sampler2D diffuseTexture;
 
 // Map [-1, 1] -> [0, 1]
 vec3 ndcToUnit(vec3 p) { return (p + 1.0) * 0.5; }

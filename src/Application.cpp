@@ -67,10 +67,13 @@ void Application::init() {
 	shadowmapProgram.setObjectLabel("Shadowmap");
 	injectRadianceProgram.attachAndLink({SHADER_DIR "injectRadiance.comp"});
 	injectRadianceProgram.setObjectLabel("Inject Radiance");
+	mipmapProgram.attachAndLink({SHADER_DIR "filterRadiance.comp"});
+	mipmapProgram.setObjectLabel("Filter Radiance");
 
 	// Initialize voxel textures
 	GLenum voxelFormat = GLAD_GL_NV_shader_atomic_fp16_vector ? GL_RGBA16F : GL_RGBA8;
-	voxelColor = make3DTexture(voxelDim, 4, voxelFormat, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
+	// voxelColor = make3DTexture(voxelDim, 4, voxelFormat, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
+	voxelColor = make3DTexture(voxelDim, 1, voxelFormat, GL_LINEAR, GL_NEAREST);
 	voxelNormal = make3DTexture(voxelDim, 1, voxelFormat, GL_NEAREST, GL_NEAREST);
 	voxelRadiance = make3DTexture(voxelDim, 4, GL_RGBA8, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
 
@@ -261,9 +264,31 @@ void Application::render(float dt) {
 	radianceTimer.stop();
 
 	mipmapTimer.start();
-	glGenerateTextureMipmap(voxelColor);
-	// glGenerateTextureMipmap(voxelNormal);
-	glGenerateTextureMipmap(voxelRadiance);
+	{
+		// glGenerateTextureMipmap(voxelColor);
+		// glGenerateTextureMipmap(voxelNormal);
+		// glGenerateTextureMipmap(voxelRadiance);
+
+		mipmapProgram.bind();
+
+		int dim = voxelDim;
+		const int local_size = 8;
+		const int maxlevel = 4;
+		for (int level = 0; level < maxlevel; level++) {
+			glBindImageTexture(0, voxelRadiance, level, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+			glBindImageTexture(1, voxelRadiance, level + 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+
+			GLuint num_groups = ((dim >> 1) + local_size - 1) / local_size;
+			glDispatchCompute(num_groups, num_groups, num_groups);
+
+			glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+			glBindImageTexture(1, 0, 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+
+			dim >>= 1;
+		}
+
+		mipmapProgram.unbind();
+	}
 	mipmapTimer.stop();
 
 	renderTimer.start();
