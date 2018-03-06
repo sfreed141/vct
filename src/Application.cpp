@@ -318,11 +318,9 @@ void Application::render(float dt) {
 		program.setUniform3fv("lightPos", mainlight.position);
 		program.setUniform3fv("lightInt", mainlight.intensity);
 		program.setUniformMatrix4fv("ls", ls);
-		program.setUniform1i("texture0", 0);
 
 		GLuint shadowmap = shadowmapFBO.getTexture(0);
-		glBindTextureUnit(1, shadowmap);
-		program.setUniform1i("shadowmap", 1);
+		glBindTextureUnit(6, shadowmap);
 
 		program.setUniform1i("voxelize", settings.drawVoxels);
 		program.setUniform1i("normals", settings.drawNormals);
@@ -338,16 +336,12 @@ void Application::render(float dt) {
 
 		program.setUniform1i("voxelDim", voxelDim);
 
-		glBindTextureUnit(2, voxelColor);
-		program.setUniform1i("voxelColor", 2);
 		program.setUniform1i("miplevel", settings.miplevel);
 		program.setUniform1i("voxelDim", voxelDim);
 
+		glBindTextureUnit(2, voxelColor);
 		glBindTextureUnit(3, voxelNormal);
-		program.setUniform1i("voxelNormal", 3);
-
 		glBindTextureUnit(4, voxelRadiance);
-		program.setUniform1i("voxelRadiance", 4);
 
 		program.setUniform1i("vctSteps", settings.vctSteps);
 		program.setUniform1f("vctBias", settings.vctBias);

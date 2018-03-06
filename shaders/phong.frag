@@ -30,18 +30,18 @@ uniform struct Material {
 // uniform sampler2D specularMap;
 // uniform sampler2D alphaMap;
 
-// Diffuse color
-layout(binding = 0) uniform sampler2D texture0;
+layout(binding = 0) uniform sampler2D diffuseMap;
+layout(binding = 1) uniform sampler2D specularMap;
 
 #ifdef NORMAL_MAP
 layout(binding = 5) uniform sampler2D normalMap;
 #endif
 
-uniform sampler2D shadowmap;
+layout(binding = 6) uniform sampler2D shadowmap;
 
-uniform sampler3D voxelColor;
-uniform sampler3D voxelNormal;
-uniform sampler3D voxelRadiance;
+layout(binding = 2) uniform sampler3D voxelColor;
+layout(binding = 3) uniform sampler3D voxelNormal;
+layout(binding = 4) uniform sampler3D voxelRadiance;
 
 uniform bool voxelize = false;
 uniform bool normals = false;
@@ -158,7 +158,17 @@ vec3 postprocess(vec3 color) {
 }
 
 void main() {
-    color = texture(texture0, fs_in.fragTexcoord);
+	vec4 diffuseColor = material.hasDiffuseMap ? texture(diffuseMap, fs_in.fragTexcoord) : vec4(material.diffuse, 1);
+	vec4 specularColor;
+	if (material.hasSpecularMap) {
+		specularColor = texture(specularMap, fs_in.fragTexcoord);
+	}
+	else if (material.hasDiffuseMap) {
+		specularColor = diffuseColor;
+	}
+	else {
+		specularColor = vec4(material.specular, 1);
+	}
 
 	vec3 norm, light, view;
 #ifdef NORMAL_MAP
@@ -210,9 +220,11 @@ void main() {
             color = vec4(step(vec3(max(max(norm.x, norm.y), norm.z)), norm.xyz), 1);
         }
         else {
-			float directLighting = 0.0;
-			directLighting += enableDiffuse ? diffuse : 0.0;
-			directLighting += enableSpecular ? specular : 0.0;
+			// float directLighting = 0.0;
+			// directLighting += enableDiffuse ? diffuse : 0.0;
+			// directLighting += enableSpecular ? specular : 0.0;
+			vec3 diffuseLighting = diffuseColor.rgb * (enableDiffuse ? diffuse : 0.0);
+			vec3 specularLighting = specularColor.rgb * (enableSpecular ? specular : 0.0);
 			
 			if (enableIndirect) {
 				vec3 voxelPosition = vec3(voxelIndex(fs_in.fragPosition)) / voxelDim;
@@ -232,11 +244,11 @@ void main() {
 				}
 
 				indirect *= ambientScale;
-				indirect *= color.rgb;
-				color = vec4(indirect + shadowFactor * directLighting * lightInt * color.rgb, 1);
+				indirect *= diffuseColor.rgb;
+				color = vec4(indirect + shadowFactor * (diffuseLighting + specularLighting) * lightInt, 1);
 			}
 			else {
-				color = vec4((ambient + shadowFactor * directLighting) * lightInt * color.rgb, 1);
+				color = vec4((ambient * diffuseColor.rgb + shadowFactor * (diffuseLighting + specularLighting)) * lightInt, 1);
 			}
 
 			// color.rgb = postprocess(color.rgb);

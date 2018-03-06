@@ -74,9 +74,20 @@ void Mesh::loadMesh(const std::string &meshname) {
 
                 texture_name = basedir + texture_name;
                 GLuint texture_id = GLHelper::createTextureFromImage(texture_name);
-                
+
                 textures.insert(make_pair(mp.diffuse_texname, texture_id));
                 LOG_INFO("loaded diffuse ", mp.diffuse_texname);
+            }
+
+            if (!mp.specular_texname.empty() && textures.find(mp.specular_texname) == textures.end()) {
+                string texture_name = mp.specular_texname;
+                convertPathFromWindows(texture_name);
+
+                texture_name = basedir + texture_name;
+                GLuint texture_id = GLHelper::createTextureFromImage(texture_name);
+
+                textures.insert(make_pair(mp.specular_texname, texture_id));
+                LOG_INFO("loaded specular ", mp.specular_texname);
             }
 
             if (!mp.bump_texname.empty() && textures.find(mp.bump_texname) == textures.end()) {
@@ -294,30 +305,33 @@ void Mesh::draw(GLuint program) const {
         const auto &m = materials[d.material_id];
 
         GLuint default_texture = textures.at(DEFAULT_TEXTURE);
-        bool hasDiffuseMap = textures.count(m.diffuse_texname) == 0;
-        bool hasNormalMap = textures.count(m.bump_texname) == 0;
+        bool hasDiffuseMap = textures.count(m.diffuse_texname) != 0;
+        bool hasSpecularMap = textures.count(m.specular_texname) != 0;
+        bool hasNormalMap = textures.count(m.bump_texname) != 0;
 
-        GLuint diffuse_texture = hasDiffuseMap ? default_texture : textures.at(m.diffuse_texname);
+        GLuint diffuse_texture = hasDiffuseMap ? textures.at(m.diffuse_texname) : default_texture;
+        GLuint specular_texture = hasSpecularMap ? textures.at(m.specular_texname) : 0;
         GLuint bump_texture;
         if (hasNormalMap) {
-            bump_texture = 0;
-            glUniform1i(enableNormalMapLocation, false);
-        }
-        else {
             bump_texture = textures.at(m.bump_texname);
             glUniform1i(enableNormalMapLocation, enableNormalMap);
         }
+        else {
+            bump_texture = 0;
+            glUniform1i(enableNormalMapLocation, false);
+        }
 
         glBindTextureUnit(0, diffuse_texture);
+        glBindTextureUnit(1, specular_texture);
         glBindTextureUnit(5, bump_texture);
 
-        glUniform3fv(glGetUniformLocation(program, "material.ambient"), 3, m.ambient);
-        glUniform3fv(glGetUniformLocation(program, "material.diffuse"), 3, m.diffuse);
-        glUniform3fv(glGetUniformLocation(program, "material.specular"), 3, m.specular);
+        glUniform3fv(glGetUniformLocation(program, "material.ambient"), 1, m.ambient);
+        glUniform3fv(glGetUniformLocation(program, "material.diffuse"), 1, m.diffuse);
+        glUniform3fv(glGetUniformLocation(program, "material.specular"), 1, m.specular);
         glUniform1f(glGetUniformLocation(program, "material.shininess"), m.shininess);
         glUniform1i(glGetUniformLocation(program, "material.hasAmbientMap"), false);
         glUniform1i(glGetUniformLocation(program, "material.hasDiffuseMap"), hasDiffuseMap);
-        glUniform1i(glGetUniformLocation(program, "material.hasSpecularMap"), false);
+        glUniform1i(glGetUniformLocation(program, "material.hasSpecularMap"), hasSpecularMap);
         glUniform1i(glGetUniformLocation(program, "material.hasAlphaMap"), false);
         glUniform1i(glGetUniformLocation(program, "material.hasNormalMap"), hasNormalMap);
 
@@ -329,6 +343,7 @@ void Mesh::draw(GLuint program) const {
         glUniform1i(enableNormalMapLocation, enableNormalMap);
 
     glBindTextureUnit(0, 0);
+    glBindTextureUnit(1, 0);
     glBindTextureUnit(5, 0);
     glBindVertexArray(0);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
