@@ -498,10 +498,12 @@ void Application::viewRaymarched() {
 	glBindTextureUnit(1, voxelNormal);
 	glBindTextureUnit(2, voxelRadiance);
 
+	glm::vec3 cameraRight = glm::normalize(glm::cross(camera.front, camera.up)) * ((float)width / height);
+
 	glUniform3fv(glGetUniformLocation(program, "eye"), 1, glm::value_ptr(camera.position));
 	glUniform3fv(glGetUniformLocation(program, "viewForward"), 1, glm::value_ptr(camera.front));
-	glUniform3fv(glGetUniformLocation(program, "viewRight"), 1, glm::value_ptr(glm::normalize(glm::cross(camera.front, camera.up))));
-	glUniform3fv(glGetUniformLocation(program, "viewUp"), 1, glm::value_ptr(camera.up));
+	glUniform3fv(glGetUniformLocation(program, "viewRight"), 1, glm::value_ptr(cameraRight));
+	glUniform3fv(glGetUniformLocation(program, "viewUp"), 1, glm::value_ptr(glm::normalize(glm::cross(cameraRight, camera.front))));
 	glUniform1i(glGetUniformLocation(program, "width"), width);
 	glUniform1i(glGetUniformLocation(program, "height"), height);
 	glUniform1f(glGetUniformLocation(program, "near"), near);
