@@ -36,14 +36,17 @@ public:
     void setUniform1i(const GLchar *name, GLint v) { glUniform1i(uniformLocation(name), v); }
     void setUniform1ui(const GLchar *name, GLuint v) { glUniform1ui(uniformLocation(name), v); }
     void setUniform3fv(const GLchar *name, const glm::vec3 &v) { glUniform3fv(uniformLocation(name), 1, glm::value_ptr(v)); }
+    void setUniform3fv(const GLchar *name, GLsizei count, const GLfloat *v) { glUniform3fv(uniformLocation(name), count, v); }
     void setUniformMatrix4fv(const GLchar *name, const glm::mat4 &v) { glUniformMatrix4fv(uniformLocation(name), 1, GL_FALSE, glm::value_ptr(v)); }
 
     void setObjectLabel(const std::string &label);
+    const std::string &getObjectLabel() const { return label; }
 
 private:
     GLuint handle;
     std::unordered_map<std::string, GLint> uniforms;
     bool linkStatus = false;
+    std::string label;
 };
 
 #endif

@@ -2,6 +2,7 @@
 #define MESH_H
 
 #include <Graphics/opengl.h>
+#include <Graphics/GLShaderProgram.h>
 #include <glm/glm.hpp>
 
 #include <string>
@@ -42,6 +43,7 @@ public:
     Mesh(const std::string &meshname);
 
     void draw(GLuint program) const;
+    void draw(GLShaderProgram &program) const;
 
     void loadMesh(const std::string &meshname);
 
@@ -62,7 +64,9 @@ private:
     glm::vec3 min, max;
     float radius;
 
-    GLuint vao;
+    GLuint vao, materialUBO;
+
+    GLint uboOffsetAlignment;    
 };
 
 #endif

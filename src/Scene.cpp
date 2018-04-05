@@ -29,6 +29,13 @@ void Scene::draw(GLuint program) const {
 	}
 }
 
+void Scene::draw(GLShaderProgram &program) const {
+	for (const auto &node : nodes) {
+		program.setUniformMatrix4fv("model", node.model);
+		node.mesh->draw(program);
+	}
+}
+
 void Scene::setMainlight(const glm::vec3 &position, const glm::vec3 &direction, const glm::vec3 &intensity) {
 	mainlight.position = position;
 	mainlight.direction = direction;

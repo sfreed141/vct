@@ -23,6 +23,7 @@ public:
 	// TODO: option to add local transform, normalize to ndc after loading, error handling (in mesh.cpp)
 	void addMesh(const std::string &meshname, const glm::mat4 &model = glm::mat4());
 	void draw(GLuint program) const;
+	void draw(GLShaderProgram &program) const;
 
 	Light &getMainlight() { return mainlight; }
 	void setMainlight(const glm::vec3 &position, const glm::vec3 &direction, const glm::vec3 &intensity);

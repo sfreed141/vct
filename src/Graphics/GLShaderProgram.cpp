@@ -72,6 +72,7 @@ void GLShaderProgram::unbind() const {
 
 void GLShaderProgram::setObjectLabel(const std::string &label) {
 	glObjectLabel(GL_PROGRAM, handle, label.size(), label.c_str());
+	this->label = label;
 }
 
 GLint GLShaderProgram::uniformLocation(const GLchar *name) const {

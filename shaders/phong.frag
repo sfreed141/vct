@@ -17,13 +17,24 @@ in VS_OUT {
 #endif
 } fs_in;
 
-uniform struct Material {
-	vec3 ambient, diffuse, specular;
-	float shininess;
+struct Material {
+						// base		offset
+	vec3 ambient;		// 16		0
+	vec3 diffuse;		// 16		16
+	vec3 specular;		// 16		32
+	float shininess;	// 4		44
 
-	bool hasAmbientMap, hasDiffuseMap, hasSpecularMap, hasAlphaMap;
-	bool hasNormalMap;
-} material = Material(vec3(0), vec3(0), vec3(0), 32.0, false, false, false, false, false);
+	bool hasAmbientMap;	// 4		48
+	bool hasDiffuseMap;	// 4		52
+	bool hasSpecularMap;// 4		56
+	bool hasAlphaMap;	// 4		60
+	bool hasNormalMap;	// 4		64
+						//			
+};// material = Material(vec3(0), vec3(0), vec3(0), 32.0, false, false, false, false, false);
+
+layout(std140) uniform MaterialBlock {
+	Material material;
+};
 
 // uniform sampler2D ambientMap;
 // uniform sampler2D diffuseMap;

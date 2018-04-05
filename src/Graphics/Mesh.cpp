@@ -278,6 +278,39 @@ void Mesh::loadMesh(const std::string &meshname) {
         glBindVertexArray(0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+        {
+            glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uboOffsetAlignment);
+            LOG_DEBUG("uboOffsetAlignment: ", uboOffsetAlignment);
+
+            glGenBuffers(1, &materialUBO);
+            glBindBuffer(GL_UNIFORM_BUFFER, materialUBO);
+            glBufferData(GL_UNIFORM_BUFFER, std::max(80, uboOffsetAlignment) * materials.size(), nullptr, GL_STATIC_DRAW);
+
+            for (const auto &d : drawables) {
+                const auto &m = materials[d.material_id];
+
+                bool hasAmbientMap = false;
+                bool hasDiffuseMap = textures.count(m.diffuse_texname) != 0;
+                bool hasSpecularMap = textures.count(m.specular_texname) != 0;
+                bool hasAlphaMap = false;
+                bool hasNormalMap = textures.count(m.bump_texname) != 0;
+
+                GLuint materialOffset = std::max(80, uboOffsetAlignment) * d.material_id;
+
+                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset +  0, 12, m.ambient);
+                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 16, 12, m.diffuse);
+                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 32, 12, m.specular);
+                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 44,  4, &m.shininess);
+                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 48,  4, &hasAmbientMap);
+                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 52,  4, &hasDiffuseMap);
+                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 56,  4, &hasSpecularMap);
+                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 60,  4, &hasAlphaMap);
+                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 64,  4, &hasNormalMap);
+            }
+
+            glBindBuffer(GL_UNIFORM_BUFFER, 0);
+        }
+
         auto end = chrono::high_resolution_clock::now();
         chrono::duration<double> diff = end - start;
         LOG_INFO(
@@ -334,6 +367,125 @@ void Mesh::draw(GLuint program) const {
         glUniform1i(glGetUniformLocation(program, "material.hasSpecularMap"), hasSpecularMap);
         glUniform1i(glGetUniformLocation(program, "material.hasAlphaMap"), false);
         glUniform1i(glGetUniformLocation(program, "material.hasNormalMap"), hasNormalMap);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, d.ebo);
+        glDrawElements(GL_TRIANGLES, d.indices.size(), GL_UNSIGNED_INT, 0);
+    }
+
+    if  (enableNormalMapLocation >= 0)
+        glUniform1i(enableNormalMapLocation, enableNormalMap);
+
+    glBindTextureUnit(0, 0);
+    glBindTextureUnit(1, 0);
+    glBindTextureUnit(5, 0);
+    glBindVertexArray(0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+}
+
+void Mesh::draw(GLShaderProgram &program) const {
+    GLint enableNormalMapLocation = program.uniformLocation("enableNormalMap");
+    GLint enableNormalMap = 0;
+    if  (enableNormalMapLocation >= 0)
+        glGetUniformiv(program.getHandle(), enableNormalMapLocation, &enableNormalMap);
+
+    if (program.getObjectLabel() == "Phong") {
+        GLuint uboIndex = glGetUniformBlockIndex(program.getHandle(), "MaterialBlock");
+        // LOG_DEBUG("uboIndex: ", uboIndex);
+        glUniformBlockBinding(program.getHandle(), uboIndex, 0);
+    }
+
+#if 0
+    static GLuint ubo = 0;
+    if (ubo == 0 && program.getObjectLabel() == "Phong") {
+        LOG_DEBUG("Initializing ubo");
+        GLint maxUBOs;
+        glGetIntegerv(GL_MAX_UNIFORM_BUFFER_BINDINGS, &maxUBOs);
+        LOG_DEBUG("Max ubos: ", maxUBOs);
+
+        glGenBuffers(1, &ubo);
+        glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+        glBufferData(GL_UNIFORM_BUFFER, 72, nullptr, GL_STREAM_DRAW);
+        glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+        GLuint uboIndex = glGetUniformBlockIndex(program.getHandle(), "MaterialBlock");
+        LOG_DEBUG("uboIndex: ", uboIndex);
+        glUniformBlockBinding(program.getHandle(), uboIndex, 0);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
+        // glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo, 0, 72);
+
+        GLint numBlocks = 0;
+        glGetProgramInterfaceiv(program.getHandle(), GL_UNIFORM_BLOCK, GL_ACTIVE_RESOURCES, &numBlocks);
+        const GLenum blockProperties[1] = {GL_NUM_ACTIVE_VARIABLES};
+        const GLenum activeUnifProp[1] = {GL_ACTIVE_VARIABLES};
+        const GLenum unifProperties[3] = {GL_NAME_LENGTH, GL_TYPE, GL_OFFSET};
+
+        LOG_DEBUG("# Uniform blocks:", numBlocks);
+        for(int blockIx = 0; blockIx < numBlocks; ++blockIx) {
+            GLint numActiveUnifs = 0;
+            glGetProgramResourceiv(program.getHandle(), GL_UNIFORM_BLOCK, blockIx, 1, blockProperties, 1, NULL, &numActiveUnifs);
+
+            if(!numActiveUnifs)
+                continue;
+
+            LOG_DEBUG("# Active uniforms: ", numActiveUnifs);
+            std::vector<GLint> blockUnifs(numActiveUnifs);
+            glGetProgramResourceiv(program.getHandle(), GL_UNIFORM_BLOCK, blockIx, 1, activeUnifProp, numActiveUnifs, NULL, &blockUnifs[0]);
+
+            for(int unifIx = 0; unifIx < numActiveUnifs; ++unifIx) {
+                GLint values[3];
+                glGetProgramResourceiv(program.getHandle(), GL_UNIFORM, blockUnifs[unifIx], 3, unifProperties, 3, NULL, values);
+
+                // Get the name. Must use a std::vector rather than a std::string for C++03 standards issues.
+                // C++11 would let you use a std::string directly.
+                std::vector<char> nameData(values[0]);
+                glGetProgramResourceName(program.getHandle(), GL_UNIFORM, blockUnifs[unifIx], nameData.size(), NULL, &nameData[0]);
+                std::string name(nameData.begin(), nameData.end() - 1);
+
+                LOG_DEBUG(name, " ", values[0], " ", values[1], " ", values[2]);
+            }
+        }
+    }
+#endif
+
+    glBindVertexArray(vao);
+    for (const auto &d : drawables) {
+        const auto &m = materials[d.material_id];
+
+        GLuint default_texture = textures.at(DEFAULT_TEXTURE);
+        bool hasDiffuseMap = textures.count(m.diffuse_texname) != 0;
+        bool hasSpecularMap = textures.count(m.specular_texname) != 0;
+        bool hasNormalMap = textures.count(m.bump_texname) != 0;
+
+        GLuint diffuse_texture = hasDiffuseMap ? textures.at(m.diffuse_texname) : default_texture;
+        GLuint specular_texture = hasSpecularMap ? textures.at(m.specular_texname) : 0;
+        GLuint bump_texture;
+        if (hasNormalMap) {
+            bump_texture = textures.at(m.bump_texname);
+            glUniform1i(enableNormalMapLocation, enableNormalMap);
+        }
+        else {
+            bump_texture = 0;
+            glUniform1i(enableNormalMapLocation, false);
+        }
+
+        glBindTextureUnit(0, diffuse_texture);
+        glBindTextureUnit(1, specular_texture);
+        glBindTextureUnit(5, bump_texture);
+
+        if (program.getObjectLabel() == "Phong") {
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, materialUBO, std::max(80, uboOffsetAlignment) * d.material_id, 80);
+        }
+        else {
+            program.setUniform3fv("material.ambient", 1, m.ambient);
+            program.setUniform3fv("material.diffuse", 1, m.diffuse);
+            program.setUniform3fv("material.specular", 1, m.specular);
+            program.setUniform1f("material.shininess", m.shininess);
+            program.setUniform1i("material.hasAmbientMap", false);
+            program.setUniform1i("material.hasDiffuseMap", hasDiffuseMap);
+            program.setUniform1i("material.hasSpecularMap", hasSpecularMap);
+            program.setUniform1i("material.hasAlphaMap", false);
+            program.setUniform1i("material.hasNormalMap", hasNormalMap);
+        }
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, d.ebo);
         glDrawElements(GL_TRIANGLES, d.indices.size(), GL_UNSIGNED_INT, 0);

@@ -162,7 +162,7 @@ void Application::render(float dt) {
 		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, voxelFormat);
 		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, voxelFormat);
 
-		scene->draw(voxelProgram.getHandle());
+		scene->draw(voxelProgram);
 
 		glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 		glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
@@ -204,7 +204,7 @@ void Application::render(float dt) {
 		shadowmapProgram.setUniformMatrix4fv("view", lv);
 		shadowmapProgram.setUniformMatrix4fv("model", model);
 
-		scene->draw(shadowmapProgram.getHandle());
+		scene->draw(shadowmapProgram);
 
 		shadowmapProgram.unbind();
 		shadowmapFBO.unbind();
@@ -349,7 +349,7 @@ void Application::render(float dt) {
 		program.setUniform1f("vctConeInitialHeight", settings.vctConeInitialHeight);
 		program.setUniform1f("vctLodOffset", settings.vctLodOffset);
 
-		scene->draw(program.getHandle());
+		scene->draw(program);
 
 		glBindTextureUnit(1, 0);
 		glBindTextureUnit(2, 0);
