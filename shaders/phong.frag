@@ -11,6 +11,7 @@ in VS_OUT {
 
 #ifdef NORMAL_MAP
 	mat3 TBN;
+	mat3 inverseTBN;
     vec3 tangentLightPos;
     vec3 tangentViewPos;
     vec3 tangentFragPos;
@@ -225,6 +226,7 @@ void main() {
     else {
         if (normals) {
 			color = vec4(norm, 1);
+			// color = vec4(enableNormalMap ? fs_in.inverseTBN * norm : norm, 1);
         }
         else if (dominant_axis) {
             norm = abs(norm);
@@ -239,8 +241,9 @@ void main() {
 			
 			if (enableIndirect) {
 				vec3 voxelPosition = vec3(voxelIndex(fs_in.fragPosition)) / voxelDim;
+				vec3 voxelNormal = enableNormalMap ? fs_in.inverseTBN * norm : fs_in.fragNormal;
 				vec3 indirect = vec3(0);
-				indirect += traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, fs_in.fragNormal, vctSteps);
+				indirect += traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, voxelNormal, vctSteps);
 
 				vec3 coneDirs[4] = vec3[] (
 					vec3(0.707, 0.707, 0),

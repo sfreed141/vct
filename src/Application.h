@@ -42,7 +42,7 @@ struct Settings {
     int enableIndirect = true;
     int enableDiffuse = true;
     int enableSpecular = true;
-    float ambientScale = 0.4f;
+    float ambientScale = 1.0f;
 
 	int miplevel = 0;
 
