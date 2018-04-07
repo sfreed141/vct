@@ -7,32 +7,19 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <initializer_list>
 
 #include "Graphics/Mesh.h"
 
 Scene::Scene() {}
-Scene::Scene(std::initializer_list<const std::string> meshnames) {
-	for (const auto &meshname : meshnames) {
-		addMesh(meshname);
-	}
+
+void Scene::addMesh(std::shared_ptr<Actor> actor) {
+	actors.push_back(actor);
 }
 
-void Scene::addMesh(const std::string &meshname, const glm::mat4 &model) {
-	nodes.push_back({std::make_unique<Mesh>(meshname), model});
-}
-
-void Scene::draw(GLuint program) const {
-	for (const auto &node : nodes) {
-		glUniformMatrix4fv(glGetUniformLocation(program, "model"), 1, GL_FALSE, glm::value_ptr(node.model));
-		node.mesh->draw(program);
-	}
-}
-
-void Scene::draw(GLShaderProgram &program) const {
-	for (const auto &node : nodes) {
-		program.setUniformMatrix4fv("model", node.model);
-		node.mesh->draw(program);
+void Scene::draw(GLShaderProgram &program) {
+	for (auto &actor : actors) {
+		program.setUniformMatrix4fv("model", actor->getTransform());
+		actor->draw(program);
 	}
 }
 
@@ -40,4 +27,10 @@ void Scene::setMainlight(const glm::vec3 &position, const glm::vec3 &direction, 
 	mainlight.position = position;
 	mainlight.direction = direction;
 	mainlight.intensity = intensity;
+}
+
+void Scene::update(float dt) {
+	for (auto &actor : actors) {
+		actor->update(dt);
+	}
 }

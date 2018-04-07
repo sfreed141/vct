@@ -80,11 +80,23 @@ void Application::init() {
 
 	// Create scene
 	scene = std::make_unique<Scene>();
-	scene->addMesh(RESOURCE_DIR "sponza2/sponza.obj", glm::scale(glm::mat4(1.0f), glm::vec3(0.01f)));
-	scene->addMesh(RESOURCE_DIR "nanosuit/nanosuit.obj", glm::scale(glm::mat4(1.0f), glm::vec3(0.25f)));
-	// scene->addMesh(RESOURCE_DIR "cube.obj");
-	// scene->addMesh(RESOURCE_DIR "cube.obj", glm::translate(glm::scale(glm::mat4(), glm::vec3(5)), glm::vec3(0,-2,0)));
-	// scene->addMesh(RESOURCE_DIR "sphere.obj", glm::translate(glm::mat4(), glm::vec3(2.5,0,0)));
+
+	StaticMeshActor sponza {RESOURCE_DIR "sponza2/sponza.obj"}, nanosuit {RESOURCE_DIR "nanosuit/nanosuit.obj"};
+	sponza.transform.setScale(glm::vec3(0.01f));
+	scene->addMesh(std::make_shared<StaticMeshActor>(sponza));
+
+	nanosuit.transform.setScale(glm::vec3(0.25f));
+	nanosuit.controller = new LambdaActorController([](Actor &actor, float dt) {
+		static float time = 0.0f;
+		time += dt;
+		const float speedMultiplier = 5.0f;
+		// actor.transform.setPosition(actor.transform.getPosition() + glm::vec3(0.0f, glm::sin(time), 0.0f));
+		actor.transform.setScale(glm::vec3(0.25f + 0.05f * glm::sin(speedMultiplier * time)));
+		actor.transform.setPosition(glm::vec3(glm::cos(speedMultiplier * time), 0.0f, glm::sin(speedMultiplier * time)));
+		actor.transform.rotate(speedMultiplier * dt, glm::vec3(0.0f, 1.0f, 0.0f));
+	});
+	scene->addMesh(std::make_shared<StaticMeshActor>(nanosuit));
+
 	scene->setMainlight({12.0f, 40.0f, -7.0f}, {-0.38f, -0.88f, 0.2f}, {1.0f, 1.0f, 1.0f});
 
 	// Camera setup
@@ -118,6 +130,8 @@ void Application::update(float dt) {
 	if (GLFW_CURSOR_DISABLED == glfwGetInputMode(window, GLFW_CURSOR)) {
 		camera.update(dt);
 	}
+
+	scene->update(dt);
 }
 
 void Application::render(float dt) {

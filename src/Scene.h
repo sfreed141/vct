@@ -7,9 +7,8 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include <initializer_list>
 
-#include <Graphics/Mesh.h>
+#include <Actor.h>
 
 struct Light {
 	glm::vec3 position, direction, intensity;
@@ -18,23 +17,18 @@ struct Light {
 class Scene {
 public:
 	Scene();
-	Scene(std::initializer_list<const std::string> meshnames);
 
-	// TODO: option to add local transform, normalize to ndc after loading, error handling (in mesh.cpp)
-	void addMesh(const std::string &meshname, const glm::mat4 &model = glm::mat4());
-	void draw(GLuint program) const;
-	void draw(GLShaderProgram &program) const;
+	void addMesh(std::shared_ptr<Actor> actor);
+	void draw(GLShaderProgram &program);
 
 	Light &getMainlight() { return mainlight; }
 	void setMainlight(const glm::vec3 &position, const glm::vec3 &direction, const glm::vec3 &intensity);
 
-private:
-	struct SceneNode {
-		std::unique_ptr<Mesh> mesh;
-		glm::mat4 model;
-	};
+	void update(float dt);
 
-	std::vector<SceneNode> nodes;
+private:
+	std::vector<std::shared_ptr<Actor>> actors;
+	
 	Light mainlight;
 };
 
