@@ -31,15 +31,13 @@ struct Material {
 	bool hasAlphaMap;	// 4		60
 	bool hasNormalMap;	// 4		64
 						//			
-};// material = Material(vec3(0), vec3(0), vec3(0), 32.0, false, false, false, false, false);
+};
 
 layout(std140) uniform MaterialBlock {
 	Material material;
 };
 
 // uniform sampler2D ambientMap;
-// uniform sampler2D diffuseMap;
-// uniform sampler2D specularMap;
 // uniform sampler2D alphaMap;
 
 layout(binding = 0) uniform sampler2D diffuseMap;
@@ -60,6 +58,7 @@ uniform bool normals = false;
 uniform bool dominant_axis = false;
 uniform bool radiance = false;
 
+uniform bool enablePostprocess = false;
 uniform bool enableShadows = true;
 uniform bool enableNormalMap = true;
 uniform bool enableIndirect = false;
@@ -84,20 +83,12 @@ uniform float vctLodOffset;
 out vec4 color;
 
 // based on https://github.com/godotengine/godot/blob/master/drivers/gles3/shaders/scene.glsl
-// experiment with cone aperture, lod scaling, steps vs distance vs alpha
-vec3 traceCone(sampler3D voxelTexture, vec3 position, vec3 direction, int steps) {
-	// const float bias = 1.0;
-	float bias = vctBias;
-
+vec3 traceCone(sampler3D voxelTexture, vec3 position, vec3 direction, int steps, float bias, float coneAngle, float coneHeight) {
 	direction = normalize(direction);
 	direction.z = -direction.z;
 	direction /= voxelDim;
 	vec3 start = position + bias * direction;
 	
-	float coneAngle = vctConeAngle;
-	// float coneTanHalfAngle = tan(coneAngle / 2.0);
-
-	float coneHeight = vctConeInitialHeight;
 	float coneRadius;
 
 	vec3 color = vec3(0);
@@ -233,9 +224,6 @@ void main() {
             color = vec4(step(vec3(max(max(norm.x, norm.y), norm.z)), norm.xyz), 1);
         }
         else {
-			// float directLighting = 0.0;
-			// directLighting += enableDiffuse ? diffuse : 0.0;
-			// directLighting += enableSpecular ? specular : 0.0;
 			vec3 diffuseLighting = diffuseColor.rgb * (enableDiffuse ? diffuse : 0.0);
 			vec3 specularLighting = specularColor.rgb * (enableSpecular ? specular : 0.0);
 			
@@ -243,7 +231,7 @@ void main() {
 				vec3 voxelPosition = vec3(voxelIndex(fs_in.fragPosition)) / voxelDim;
 				vec3 voxelNormal = enableNormalMap ? fs_in.inverseTBN * norm : fs_in.fragNormal;
 				vec3 indirect = vec3(0);
-				indirect += traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, voxelNormal, vctSteps);
+				indirect += traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, voxelNormal, vctSteps, vctBias, vctConeAngle, vctConeInitialHeight);
 
 				vec3 coneDirs[4] = vec3[] (
 					vec3(0.707, 0.707, 0),
@@ -254,7 +242,7 @@ void main() {
 				float coneWeights[4] = float[](0.25, 0.25, 0.25, 0.25);
 				for (int i = 0; i < 4; i++) {
 					vec3 dir = normalize(fs_in.TBN * coneDirs[i]);
-					indirect += coneWeights[i] * traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, dir, vctSteps);
+					indirect += coneWeights[i] * traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, dir, vctSteps, vctBias, vctConeAngle, vctConeInitialHeight);
 				}
 
 				indirect *= ambientScale;
@@ -265,7 +253,9 @@ void main() {
 				color = vec4((ambient * diffuseColor.rgb + shadowFactor * (diffuseLighting + specularLighting)) * lightInt, 1);
 			}
 
-			// color.rgb = postprocess(color.rgb);
+			if (enablePostprocess) {
+				color.rgb = postprocess(color.rgb);
+			}
         }
     }
 }

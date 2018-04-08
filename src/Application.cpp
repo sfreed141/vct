@@ -346,6 +346,7 @@ void Application::render(float dt) {
 		program.setUniform1i("dominant_axis", settings.drawDominantAxis);
 		program.setUniform1i("radiance", settings.drawRadiance);
 
+		program.setUniform1i("enablePostprocess", settings.enablePostprocess);
 		program.setUniform1i("enableShadows", settings.enableShadows);
 		program.setUniform1i("enableNormalMap", settings.enableNormalMap);
 		program.setUniform1i("enableIndirect", settings.enableIndirect);

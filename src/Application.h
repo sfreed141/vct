@@ -37,6 +37,7 @@ struct Settings {
     int raymarch = false;
 
 	int conservativeRasterization = true;
+    int enablePostprocess = false;
 	int enableShadows = true;
     int enableNormalMap = true;
     int enableIndirect = true;

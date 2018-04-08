@@ -143,6 +143,7 @@ void Overlay::render(float dt) {
             nk_checkbox_label(ctx, "Normals", &settings.drawNormals);
             nk_checkbox_label(ctx, "Wireframe", &settings.drawWireframe);
             nk_checkbox_label(ctx, "Radiance", &settings.drawRadiance);
+            nk_checkbox_label(ctx, "Postprocess", &settings.enablePostprocess);
             // nk_checkbox_label(ctx, "Axes", &settings.drawAxes);
             nk_checkbox_label(ctx, "Shadowmap", &settings.drawShadowmap);
             nk_checkbox_label(ctx, "Raymarch", &settings.raymarch);
