@@ -6,6 +6,7 @@
 #include <string>
 #include <iostream>
 
+#include "ResourceLoader.h"
 #include "Graphics/Mesh.h"
 #include "Transform.h"
 #include "log.h"
@@ -32,20 +33,24 @@ public:
 
 class StaticMeshActor : public Actor {
 public:
-    StaticMeshActor(const std::string &meshname) : Actor(), mesh(meshname) {}
+    StaticMeshActor(const std::string &meshname) : Actor(), mesh(ResourceLoader::loadMesh(meshname)) {}
 
-    void draw(GLShaderProgram &program) const override { mesh.draw(program); }
+    void draw(GLShaderProgram &program) const override { mesh->draw(program); }
 
-    Mesh mesh;
+    MeshResource mesh;
 };
 
 class LambdaActorController : public ActorController {
 public:
-    using UpdateFnType = void (*)(Actor &, float);
+    using UpdateFnType = void (*)(Actor &, float, float);
 
     LambdaActorController(UpdateFnType lambda) : updateFn(lambda) {}
 
-    void update(Actor &actor, float dt) override { updateFn(actor, dt); }
+    void update(Actor &actor, float dt) override {
+        static float time = 0.0f;
+        time += dt;
+        updateFn(actor, dt, time);
+    }
 
     UpdateFnType updateFn;
 };
