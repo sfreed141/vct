@@ -289,11 +289,11 @@ void Mesh::loadMesh(const std::string &meshname) {
             for (const auto &d : drawables) {
                 const auto &m = materials[d.material_id];
 
-                bool hasAmbientMap = false;
-                bool hasDiffuseMap = textures.count(m.diffuse_texname) != 0;
-                bool hasSpecularMap = textures.count(m.specular_texname) != 0;
-                bool hasAlphaMap = false;
-                bool hasNormalMap = textures.count(m.bump_texname) != 0;
+                GLuint hasAmbientMap = false;
+                GLuint hasDiffuseMap = textures.count(m.diffuse_texname) != 0;
+                GLuint hasSpecularMap = textures.count(m.specular_texname) != 0;
+                GLuint hasAlphaMap = false;
+                GLuint hasNormalMap = textures.count(m.bump_texname) != 0;
 
                 GLuint materialOffset = std::max(80, uboOffsetAlignment) * d.material_id;
 
