@@ -89,13 +89,11 @@ vec3 traceCone(sampler3D voxelTexture, vec3 position, vec3 direction, int steps,
 	direction /= voxelDim;
 	vec3 start = position + bias * direction;
 	
-	float coneRadius;
-
 	vec3 color = vec3(0);
 	float alpha = 0;
 
 	for (int i = 0; i < steps && alpha < 0.95; i++) {
-		coneRadius = coneHeight * tan(coneAngle / 2.0);
+		float coneRadius = coneHeight * tan(coneAngle / 2.0);
 		float lod = log2(max(1.0, 2 * coneRadius));
 		vec4 sampleColor = textureLod(voxelTexture, start + coneHeight * direction, lod + vctLodOffset);
 		float a = 1 - alpha;
@@ -245,9 +243,19 @@ void main() {
 					indirect += coneWeights[i] * traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, dir, vctSteps, vctBias, vctConeAngle, vctConeInitialHeight);
 				}
 
+				vec3 reflectColor = traceCone(
+					radiance ? voxelRadiance : voxelColor,
+					// voxelColor,
+					voxelPosition,
+					reflect(fs_in.fragPosition - eye, normalize(fs_in.fragNormal)),
+					vctSteps, vctBias, 0.1, vctConeInitialHeight
+				);
+				// indirect += 0.5 * reflectColor;
+
 				indirect *= ambientScale;
 				indirect *= diffuseColor.rgb;
 				color = vec4(indirect + shadowFactor * (diffuseLighting + specularLighting) * lightInt, 1);
+				color.rgb = mix(color.rgb, reflectColor, 0.5);
 			}
 			else {
 				color = vec4((ambient * diffuseColor.rgb + shadowFactor * (diffuseLighting + specularLighting)) * lightInt, 1);
