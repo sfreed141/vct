@@ -81,7 +81,7 @@ void Application::init() {
 	// Create scene
 	scene = std::make_unique<Scene>();
 
-	StaticMeshActor sponza {RESOURCE_DIR "sponza2/sponza.obj"}, nanosuit {RESOURCE_DIR "nanosuit/nanosuit.obj"};
+	StaticMeshActor sponza {RESOURCE_DIR "sponza/sponza_pbr.obj"}, nanosuit {RESOURCE_DIR "nanosuit/nanosuit.obj"};
 	sponza.transform.setScale(glm::vec3(0.01f));
 	scene->addMesh(std::make_shared<StaticMeshActor>(sponza));
 

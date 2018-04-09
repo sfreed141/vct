@@ -15,6 +15,7 @@ Implementation of global illumination using voxel cone tracing.
 
 ## Models
 * [Sponza](http://casual-effects.com/data/index.html)
+* [PBR Sponza](www.alexandre-pestana.com/pbr-textures-sponza/)
 
 ## Building
 ### Linux
