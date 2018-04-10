@@ -64,7 +64,9 @@ uniform bool enableNormalMap = true;
 uniform bool enableIndirect = false;
 uniform bool enableDiffuse = true;
 uniform bool enableSpecular = true;
+uniform bool enableReflections = false;
 uniform float ambientScale = 0.2;
+uniform float reflectScale = 0.5;
 
 uniform vec3 eye;
 uniform vec3 lightPos;
@@ -79,11 +81,16 @@ uniform float vctConeAngle;
 uniform float vctBias;
 uniform float vctConeInitialHeight;
 uniform float vctLodOffset;
+uniform int vctSpecularSteps;
+uniform float vctSpecularConeAngle;
+uniform float vctSpecularBias;
+uniform float vctSpecularConeInitialHeight;
+uniform float vctSpecularLodOffset;
 
 out vec4 color;
 
 // based on https://github.com/godotengine/godot/blob/master/drivers/gles3/shaders/scene.glsl
-vec3 traceCone(sampler3D voxelTexture, vec3 position, vec3 direction, int steps, float bias, float coneAngle, float coneHeight) {
+vec3 traceCone(sampler3D voxelTexture, vec3 position, vec3 direction, int steps, float bias, float coneAngle, float coneHeight, float lodOffset) {
 	direction = normalize(direction);
 	direction.z = -direction.z;
 	direction /= voxelDim;
@@ -95,7 +102,7 @@ vec3 traceCone(sampler3D voxelTexture, vec3 position, vec3 direction, int steps,
 	for (int i = 0; i < steps && alpha < 0.95; i++) {
 		float coneRadius = coneHeight * tan(coneAngle / 2.0);
 		float lod = log2(max(1.0, 2 * coneRadius));
-		vec4 sampleColor = textureLod(voxelTexture, start + coneHeight * direction, lod + vctLodOffset);
+		vec4 sampleColor = textureLod(voxelTexture, start + coneHeight * direction, lod + lodOffset);
 		float a = 1 - alpha;
 		color += sampleColor.rgb * a;
 		alpha += a * sampleColor.a;
@@ -229,7 +236,7 @@ void main() {
 				vec3 voxelPosition = vec3(voxelIndex(fs_in.fragPosition)) / voxelDim;
 				vec3 voxelNormal = enableNormalMap ? fs_in.inverseTBN * norm : fs_in.fragNormal;
 				vec3 indirect = vec3(0);
-				indirect += traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, voxelNormal, vctSteps, vctBias, vctConeAngle, vctConeInitialHeight);
+				indirect += traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, voxelNormal, vctSteps, vctBias, vctConeAngle, vctConeInitialHeight, vctLodOffset);
 
 				vec3 coneDirs[4] = vec3[] (
 					vec3(0.707, 0.707, 0),
@@ -240,22 +247,24 @@ void main() {
 				float coneWeights[4] = float[](0.25, 0.25, 0.25, 0.25);
 				for (int i = 0; i < 4; i++) {
 					vec3 dir = normalize(fs_in.TBN * coneDirs[i]);
-					indirect += coneWeights[i] * traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, dir, vctSteps, vctBias, vctConeAngle, vctConeInitialHeight);
+					indirect += coneWeights[i] * traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, dir, vctSteps, vctBias, vctConeAngle, vctConeInitialHeight, vctLodOffset);
 				}
-
-				vec3 reflectColor = traceCone(
-					radiance ? voxelRadiance : voxelColor,
-					// voxelColor,
-					voxelPosition,
-					reflect(fs_in.fragPosition - eye, normalize(fs_in.fragNormal)),
-					vctSteps, vctBias, 0.1, vctConeInitialHeight
-				);
-				// indirect += 0.5 * reflectColor;
 
 				indirect *= ambientScale;
 				indirect *= diffuseColor.rgb;
 				color = vec4(indirect + shadowFactor * (diffuseLighting + specularLighting) * lightInt, 1);
-				color.rgb = mix(color.rgb, reflectColor, 0.5);
+
+				if (enableReflections) {
+					vec3 reflectColor = traceCone(
+						radiance ? voxelRadiance : voxelColor,
+						// voxelColor,
+						voxelPosition,
+						reflect(fs_in.fragPosition - eye, normalize(fs_in.fragNormal)),
+						vctSpecularSteps, vctSpecularBias, vctSpecularConeAngle, vctSpecularConeInitialHeight, vctSpecularLodOffset
+					);
+					// indirect += 0.5 * reflectColor;
+					color.rgb = mix(color.rgb, reflectColor, reflectScale);
+				}
 			}
 			else {
 				color = vec4((ambient * diffuseColor.rgb + shadowFactor * (diffuseLighting + specularLighting)) * lightInt, 1);

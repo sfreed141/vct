@@ -21,6 +21,8 @@ uniform int voxelDim = 128;
 
 uniform int lod = 0;
 
+uniform bool radiance = true;
+
 ivec3 voxelIndex(vec3 pos) {
     const float minx = -20, maxx = 20,
         miny = -20, maxy = 20,
@@ -46,7 +48,7 @@ void main() {
     float scale = 1.0;
     while (value.a < 1 && scale < far) {
         vec3 voxelCoords = voxelIndex(rayStart + scale * rayDir) / float(voxelDim);
-        vec4 sampleColor = textureLod(voxelRadiance, voxelCoords, lod);
+        vec4 sampleColor = textureLod(radiance ? voxelRadiance : voxelColor, voxelCoords, lod);
         float alpha = 1 - value.a;
         value.rgb += sampleColor.rgb * alpha;
         value.a += sampleColor.a * alpha;

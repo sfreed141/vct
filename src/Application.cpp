@@ -87,7 +87,7 @@ void Application::init() {
 
 	nanosuit.transform.setScale(glm::vec3(0.25f));
 	nanosuit.controller = new LambdaActorController([](Actor &actor, float dt, float time) {
-		const float speedMultiplier = 5.0f;
+		const float speedMultiplier = 1.0f;
 		// actor.transform.setPosition(actor.transform.getPosition() + glm::vec3(0.0f, glm::sin(time), 0.0f));
 		actor.transform.setScale(glm::vec3(0.25f + 0.05f * glm::sin(speedMultiplier * time)));
 		actor.transform.setPosition(glm::vec3(glm::cos(speedMultiplier * time), 0.0f, glm::sin(speedMultiplier * time)));
@@ -352,7 +352,9 @@ void Application::render(float dt) {
 		program.setUniform1i("enableIndirect", settings.enableIndirect);
 		program.setUniform1i("enableDiffuse", settings.enableDiffuse);
 		program.setUniform1i("enableSpecular", settings.enableSpecular);
+		program.setUniform1i("enableReflections", settings.enableReflections);
 		program.setUniform1f("ambientScale", settings.ambientScale);
+		program.setUniform1f("reflectScale", settings.reflectScale);
 
 		program.setUniform1i("voxelDim", voxelDim);
 
@@ -363,11 +365,17 @@ void Application::render(float dt) {
 		glBindTextureUnit(3, voxelNormal);
 		glBindTextureUnit(4, voxelRadiance);
 
-		program.setUniform1i("vctSteps", settings.vctSteps);
-		program.setUniform1f("vctBias", settings.vctBias);
-		program.setUniform1f("vctConeAngle", settings.vctConeAngle);
-		program.setUniform1f("vctConeInitialHeight", settings.vctConeInitialHeight);
-		program.setUniform1f("vctLodOffset", settings.vctLodOffset);
+		program.setUniform1i("vctSteps", settings.diffuseConeSettings.steps);
+		program.setUniform1f("vctBias", settings.diffuseConeSettings.bias);
+		program.setUniform1f("vctConeAngle", settings.diffuseConeSettings.coneAngle);
+		program.setUniform1f("vctConeInitialHeight", settings.diffuseConeSettings.coneInitialHeight);
+		program.setUniform1f("vctLodOffset", settings.diffuseConeSettings.lodOffset);
+
+		program.setUniform1i("vctSpecularSteps", settings.specularConeSettings.steps);
+		program.setUniform1f("vctSpecularBias", settings.specularConeSettings.bias);
+		program.setUniform1f("vctSpecularConeAngle", settings.specularConeSettings.coneAngle);
+		program.setUniform1f("vctSpecularConeInitialHeight", settings.specularConeSettings.coneInitialHeight);
+		program.setUniform1f("vctSpecularLodOffset", settings.specularConeSettings.lodOffset);
 
 		scene->draw(program);
 
@@ -524,6 +532,7 @@ void Application::viewRaymarched() {
 	glUniform1f(glGetUniformLocation(program, "far"), far);
 	glUniform1i(glGetUniformLocation(program, "voxelDim"), voxelDim);
 	glUniform1i(glGetUniformLocation(program, "lod"), settings.miplevel);
+	glUniform1i(glGetUniformLocation(program, "radiance"), settings.drawRadiance);
 	
 
 	GLQuad::draw();

@@ -182,23 +182,39 @@ void Overlay::render(float dt) {
 			if (GLAD_GL_NV_conservative_raster) {
 				nk_checkbox_label(ctx, "Conservative Rasterization", &settings.conservativeRasterization);
 			}
-			nk_checkbox_label(ctx, "Enable Shadows", &settings.enableShadows);
-			nk_checkbox_label(ctx, "Enable Normal Map", &settings.enableNormalMap);
-			nk_checkbox_label(ctx, "Enable Indirect", &settings.enableIndirect);
-			nk_checkbox_label(ctx, "Enable Diffuse", &settings.enableDiffuse);
-			nk_checkbox_label(ctx, "Enable Specular", &settings.enableSpecular);
+            nk_layout_row_dynamic(ctx, rowheight, 2);
+			nk_checkbox_label(ctx, "Shadows", &settings.enableShadows);
+			nk_checkbox_label(ctx, "Normal Map", &settings.enableNormalMap);
+			nk_checkbox_label(ctx, "Indirect", &settings.enableIndirect);
+			nk_checkbox_label(ctx, "Diffuse", &settings.enableDiffuse);
+			nk_checkbox_label(ctx, "Specular", &settings.enableSpecular);
+			nk_checkbox_label(ctx, "Reflections", &settings.enableReflections);
             
             nk_layout_row_dynamic(ctx, rowheight, 2);
             nk_labelf(ctx, NK_TEXT_LEFT, "Ambient Scale: %0.1f", settings.ambientScale);
             nk_slider_float(ctx, 0.0f, &settings.ambientScale, 1.0f, 0.1f);
+            nk_labelf(ctx, NK_TEXT_LEFT, "Reflect Scale: %0.1f", settings.reflectScale);
+            nk_slider_float(ctx, 0.0f, &settings.reflectScale, 1.0f, 0.1f);
 
-            nk_layout_row_dynamic(ctx, rowheight, 2);
-            nk_property_int(ctx, "vctSteps", 0, &settings.vctSteps, 16, 1, 1.0f);
-            nk_property_float(ctx, "vctBias", 0.0f, &settings.vctBias, 10.0f, 0.1f, 0.05f);
-            nk_property_float(ctx, "vctConeAngle", 0.0f, &settings.vctConeAngle, 10.0f, 0.1f, 0.05f);
-            nk_property_float(ctx, "vctLodOffset", 0.0f, &settings.vctLodOffset, 4.0f, 0.1f, 0.05f);
             nk_layout_row_dynamic(ctx, rowheight, 1);
-            nk_property_float(ctx, "vctConeInitialHeight", 0.0f, &settings.vctConeInitialHeight, 10.0f, 0.1f, 0.05f);
+            nk_label(ctx, "Diffuse Cone Settings", NK_TEXT_LEFT);
+            nk_layout_row_dynamic(ctx, rowheight, 2);
+            nk_property_int(ctx, "dSteps", 0, &settings.diffuseConeSettings.steps, 16, 1, 1.0f);
+            nk_property_float(ctx, "dBias", 0.0f, &settings.diffuseConeSettings.bias, 10.0f, 0.1f, 0.05f);
+            nk_property_float(ctx, "dConeAngle", 0.0f, &settings.diffuseConeSettings.coneAngle, 10.0f, 0.1f, 0.05f);
+            nk_property_float(ctx, "dLodOffset", 0.0f, &settings.diffuseConeSettings.lodOffset, 4.0f, 0.1f, 0.05f);
+            nk_layout_row_dynamic(ctx, rowheight, 1);
+            nk_property_float(ctx, "dConeInitialHeight", 0.0f, &settings.diffuseConeSettings.coneInitialHeight, 10.0f, 0.1f, 0.05f);
+
+            nk_layout_row_dynamic(ctx, rowheight, 1);
+            nk_label(ctx, "Specular Cone Settings", NK_TEXT_LEFT);
+            nk_layout_row_dynamic(ctx, rowheight, 2);
+            nk_property_int(ctx, "sSteps", 0, &settings.specularConeSettings.steps, 16, 1, 1.0f);
+            nk_property_float(ctx, "sBias", 0.0f, &settings.specularConeSettings.bias, 10.0f, 0.1f, 0.05f);
+            nk_property_float(ctx, "sConeAngle", 0.0f, &settings.specularConeSettings.coneAngle, 10.0f, 0.1f, 0.05f);
+            nk_property_float(ctx, "sLodOffset", 0.0f, &settings.specularConeSettings.lodOffset, 4.0f, 0.1f, 0.05f);
+            nk_layout_row_dynamic(ctx, rowheight, 1);
+            nk_property_float(ctx, "sConeInitialHeight", 0.0f, &settings.specularConeSettings.coneInitialHeight, 10.0f, 0.1f, 0.05f);
 
             nk_tree_pop(ctx);
         }

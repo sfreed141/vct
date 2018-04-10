@@ -25,6 +25,14 @@
 
 #include "common.h"
 
+struct VCTSettings {
+    int steps = 16;
+    float coneAngle = 0.784398163f;
+    float bias = 1.0f;
+    float coneInitialHeight = 1.0f;
+    float lodOffset = 0.1f;
+};
+
 struct Settings {
     int drawNormals = false;
     int drawDominantAxis = false;
@@ -43,15 +51,14 @@ struct Settings {
     int enableIndirect = true;
     int enableDiffuse = true;
     int enableSpecular = true;
+    int enableReflections = false;
     float ambientScale = 1.0f;
+    float reflectScale = 0.5f;
 
 	int miplevel = 0;
 
-    int vctSteps = 16;
-    float vctConeAngle = 0.784398163f;
-    float vctBias = 1.0f;
-    float vctConeInitialHeight = 1.0f;
-    float vctLodOffset = 0.1f;
+    VCTSettings diffuseConeSettings;
+    VCTSettings specularConeSettings { 16, 0.1f, 1.0f, 5.0f, 0.1f };
 };
 
 class Application {
