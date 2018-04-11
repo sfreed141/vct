@@ -19,6 +19,7 @@ uniform float near = 0.1, far = 100.0;
 
 uniform int voxelDim = 128;
 uniform vec3 voxelMin, voxelMax;
+uniform vec3 voxelCenter;
 
 uniform int lod = 0;
 
@@ -26,6 +27,7 @@ uniform bool radiance = true;
 
 ivec3 voxelIndex(vec3 pos) {
     vec3 range = voxelMax - voxelMin;
+    pos -= voxelCenter;
 
     float x = voxelDim * ((pos.x - voxelMin.x) / range.x);
     float y = voxelDim * ((pos.y - voxelMin.y) / range.y);

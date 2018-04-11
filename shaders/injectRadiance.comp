@@ -21,9 +21,11 @@ uniform vec3 lightInt;
 
 uniform int voxelDim;
 uniform vec3 voxelMin, voxelMax;
+uniform vec3 voxelCenter;
 
 ivec3 voxelIndex(vec3 pos) {
     vec3 range = voxelMax - voxelMin;
+    pos -= voxelCenter;
 
     float x = voxelDim * ((pos.x - voxelMin.x) / range.x);
     float y = voxelDim * ((pos.y - voxelMin.y) / range.y);

@@ -284,6 +284,7 @@ void Application::render(float dt) {
 		injectRadianceProgram.setUniform1i("voxelDim", vct.voxelDim);
 		injectRadianceProgram.setUniform3fv("voxelMin", vct.min);
 		injectRadianceProgram.setUniform3fv("voxelMax", vct.max);
+		injectRadianceProgram.setUniform3fv("voxelCenter", vct.center);
 
 		// 2D workgroup should be the size of shadowmap, local_size = 16
 		glDispatchCompute((SHADOWMAP_WIDTH + 16 - 1) / 16, (SHADOWMAP_HEIGHT + 16 - 1) / 16, 1);
@@ -371,6 +372,7 @@ void Application::render(float dt) {
 		program.setUniform1i("voxelDim", vct.voxelDim);
 		program.setUniform3fv("voxelMin", vct.min);
 		program.setUniform3fv("voxelMax", vct.max);
+		program.setUniform3fv("voxelCenter", vct.center);
 		glBindTextureUnit(2, vct.voxelColor);
 		glBindTextureUnit(3, vct.voxelNormal);
 		glBindTextureUnit(4, vct.voxelRadiance);
@@ -543,6 +545,7 @@ void Application::viewRaymarched() {
 	glUniform1i(glGetUniformLocation(program, "voxelDim"), vct.voxelDim);
 	glUniform3fv(glGetUniformLocation(program, "voxelMin"), 1, glm::value_ptr(vct.min));
 	glUniform3fv(glGetUniformLocation(program, "voxelMax"), 1, glm::value_ptr(vct.max));
+	glUniform3fv(glGetUniformLocation(program, "voxelCenter"), 1, glm::value_ptr(vct.center));
 	glUniform1i(glGetUniformLocation(program, "lod"), settings.miplevel);
 	glUniform1i(glGetUniformLocation(program, "radiance"), settings.drawRadiance);
 	
