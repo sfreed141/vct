@@ -87,16 +87,18 @@ void Overlay::render(float dt) {
 		nk_label(ctx, "Grave/Tilde: Toggle overlay", NK_TEXT_LEFT);
 
         if (nk_tree_push(ctx, NK_TREE_TAB, "Performance", NK_MAXIMIZED)) {
-            nk_layout_row_dynamic(ctx, rowheight, 1);
+            const float ratio[] = {0.25f, 0.75f};
+            nk_layout_row(ctx, NK_DYNAMIC, rowheight, 2, ratio);
             nk_labelf(ctx, NK_TEXT_LEFT, "FPS: %.2f", 1 / dt);
 
             int totalMem, availableMem;
             GLHelper::getMemoryUsage(totalMem, availableMem);
             totalMem /= 1024;
             availableMem /= 1024;
-            nk_labelf(ctx, NK_TEXT_LEFT, "GPU Memory Usage: %d / %d MB", totalMem - availableMem, totalMem);
+            nk_labelf(ctx, NK_TEXT_RIGHT, "GPU Memory Usage: %d / %d MB ", totalMem - availableMem, totalMem);
 
 			if (nk_tree_push(ctx, NK_TREE_NODE, "Timing Breakdown", NK_MINIMIZED)) {
+                nk_layout_row_dynamic(ctx, rowheight, 1);
 				nk_labelf(ctx, NK_TEXT_LEFT, "Voxelize: %.2f ms", app.voxelizeTimer.getTime() / 1.0e6);
 				nk_labelf(ctx, NK_TEXT_LEFT, "Shadowmap: %.2f ms", app.shadowmapTimer.getTime() / 1.0e6);
 				nk_labelf(ctx, NK_TEXT_LEFT, "Radiance: %.2f ms", app.radianceTimer.getTime() / 1.0e6);
@@ -116,26 +118,31 @@ void Overlay::render(float dt) {
             nk_labelf(ctx, NK_TEXT_LEFT, "Camera Direction: (%4.1f, %4.1f, %4.1f)", camera.front.x, camera.front.y, camera.front.z);
 
             auto &lightPos = app.scene->getMainlight().position;
-            nk_layout_row_dynamic(ctx, rowheight, 1);
-            nk_label(ctx, "Light Position",NK_TEXT_LEFT);
-            nk_layout_row_dynamic(ctx, rowheight, 3);
-            nk_property_float(ctx, "x: ", -100.0f, &lightPos.x, 100.0f, 1.0f, 0.2f);
-            nk_property_float(ctx, "y: ", -100.0f, &lightPos.y, 100.0f, 1.0f, 0.2f);
-            nk_property_float(ctx, "z: ", -100.0f, &lightPos.z, 100.0f, 1.0f, 0.2f);
-
             auto &lightDir = app.scene->getMainlight().direction;
-            nk_layout_row_dynamic(ctx, rowheight, 1);
-            nk_label(ctx, "Light Direction",NK_TEXT_LEFT);
-            nk_layout_row_dynamic(ctx, rowheight, 3);
-            nk_property_float(ctx, "u: ", -10.0f, &lightDir.x, 10.0f, 0.1f, 0.1f);
-            nk_property_float(ctx, "v: ", -10.0f, &lightDir.y, 10.0f, 0.1f, 0.1f);
-            nk_property_float(ctx, "w: ", -10.0f, &lightDir.z, 10.0f, 0.1f, 0.1f);
 
             nk_layout_row_dynamic(ctx, rowheight, 1);
-            if (nk_button_label(ctx, "Set light to camera")) {
-                lightPos = camera.position;
-                lightDir = camera.front;
-            }            
+            sprintf(tmp_buffer, "Light Position: %.2f, %.2f, %.2f", lightPos.x, lightPos.y, lightPos.z);
+            if (nk_combo_begin_label(ctx, tmp_buffer, nk_vec2(200, 200))) {
+                nk_layout_row_dynamic(ctx, rowheight, 1);
+                nk_property_float(ctx, "#X:", -100.0f, &lightPos[0], 100.0f, 1.0f, 0.2f);
+                nk_property_float(ctx, "#Y:", -100.0f, &lightPos[1], 100.0f, 1.0f, 0.2f);
+                nk_property_float(ctx, "#Z:", -100.0f, &lightPos[2], 100.0f, 1.0f, 0.2f);
+                if (nk_button_label(ctx, "Set to camera")) {
+                    lightPos = camera.position;
+                    lightDir = camera.front;
+                }  
+                nk_combo_end(ctx);
+            }
+
+            nk_layout_row_dynamic(ctx, rowheight, 1);
+            sprintf(tmp_buffer, "Light Direction: %.2f, %.2f, %.2f", lightDir.x, lightDir.y, lightDir.z);
+            if (nk_combo_begin_label(ctx, tmp_buffer, nk_vec2(200, 200))) {
+                nk_layout_row_dynamic(ctx, rowheight, 1);
+                nk_property_float(ctx, "#U:", -10.0f, &lightDir[0], 10.0f, 0.1f, 0.01f);
+                nk_property_float(ctx, "#V:", -10.0f, &lightDir[1], 10.0f, 0.1f, 0.01f);
+                nk_property_float(ctx, "#W:", -10.0f, &lightDir[2], 10.0f, 0.1f, 0.01f);
+                nk_combo_end(ctx);
+            }
 
             nk_layout_row_dynamic(ctx, rowheight, 2);
             nk_checkbox_label(ctx, "Voxels", &settings.drawVoxels);
@@ -177,9 +184,8 @@ void Overlay::render(float dt) {
         }
 
         if (nk_tree_push(ctx, NK_TREE_TAB, "Settings", NK_MAXIMIZED)) {
-			nk_layout_row_dynamic(ctx, rowheight, 1);
-
 			if (GLAD_GL_NV_conservative_raster) {
+                nk_layout_row_dynamic(ctx, rowheight, 1);
 				nk_checkbox_label(ctx, "Conservative Rasterization", &settings.conservativeRasterization);
 			}
             nk_layout_row_dynamic(ctx, rowheight, 2);
