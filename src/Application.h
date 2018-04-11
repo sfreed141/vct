@@ -57,6 +57,7 @@ struct Settings {
 
 	int miplevel = 0;
 
+    int voxelTrackCamera = false;
     VCTSettings diffuseConeSettings;
     VCTSettings specularConeSettings { 16, 0.1f, 1.0f, 5.0f, 0.1f };
 };
@@ -93,6 +94,7 @@ public:
     bool useRGBA16f;
     GLenum voxelFormat;
 
+    glm::vec3 center { 0.0f };
     glm::vec3 min { -20.0f }, max { 20.0f };
 
 private:

@@ -141,6 +141,10 @@ void Application::update(float dt) {
 		camera.update(dt);
 	}
 
+	if (settings.voxelTrackCamera) {
+		vct.center = camera.position;
+	}
+
 	scene->update(dt);
 }
 
@@ -167,9 +171,9 @@ void Application::render(float dt) {
 		glClearTexImage(vct.voxelNormal, 0, GL_RGBA, GL_FLOAT, nullptr);
 
 		glm::mat4 projection = glm::ortho(vct.min.x, vct.max.x, vct.min.y, vct.max.y, 0.0f, vct.max.z - vct.min.z);
-		glm::mat4 mvp_x = projection * glm::lookAt(glm::vec3(vct.max.x, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-		glm::mat4 mvp_y = projection * glm::lookAt(glm::vec3(0, vct.max.y, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, -1));
-		glm::mat4 mvp_z = projection * glm::lookAt(glm::vec3(0, 0, vct.max.z), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+		glm::mat4 mvp_x = projection * glm::lookAt(glm::vec3(vct.max.x, 0, 0) + vct.center, vct.center, glm::vec3(0, 1, 0));
+		glm::mat4 mvp_y = projection * glm::lookAt(glm::vec3(0, vct.max.y, 0) + vct.center, vct.center, glm::vec3(0, 0, -1));
+		glm::mat4 mvp_z = projection * glm::lookAt(glm::vec3(0, 0, vct.max.z) + vct.center, vct.center, glm::vec3(0, 1, 0));
 
 		voxelProgram.bind();
 		voxelProgram.setUniformMatrix4fv("mvp_x", mvp_x);

@@ -189,6 +189,12 @@ void Overlay::render(float dt) {
 			nk_checkbox_label(ctx, "Diffuse", &settings.enableDiffuse);
 			nk_checkbox_label(ctx, "Specular", &settings.enableSpecular);
 			nk_checkbox_label(ctx, "Reflections", &settings.enableReflections);
+			if (nk_checkbox_label(ctx, "voxelTrackCamera", &settings.voxelTrackCamera)) {
+                // reset voxel center to origin after tracking
+                if (!settings.voxelTrackCamera) {
+                    app.vct.center = glm::vec3(0.0f);
+                }
+            }
             
             nk_layout_row_dynamic(ctx, rowheight, 2);
             nk_labelf(ctx, NK_TEXT_LEFT, "Ambient Scale: %0.1f", settings.ambientScale);
