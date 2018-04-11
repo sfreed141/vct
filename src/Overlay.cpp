@@ -70,13 +70,13 @@ void Overlay::render(float dt) {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        GLenum format = app.useRGBA16f ? GL_RGBA16F : GL_RGBA8;
-        glTexStorage2D(GL_TEXTURE_2D, 1, format, app.voxelDim, app.voxelDim);
+        glTexStorage2D(GL_TEXTURE_2D, 1, app.vct.voxelFormat, app.vct.voxelDim, app.vct.voxelDim);
         glBindTexture(GL_TEXTURE_2D, 0);
 
         voxelSliceImage = nk_image_id((int)voxelSlice);
     }
 
+    char tmp_buffer[128];
     const float rowheight = 20.0f;
     const nk_flags window_flags = NK_WINDOW_BORDER | NK_WINDOW_MOVABLE
         | NK_WINDOW_SCALABLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE;
@@ -150,7 +150,7 @@ void Overlay::render(float dt) {
 
             nk_layout_row_dynamic(ctx, rowheight, 2);
 			nk_labelf(ctx, NK_TEXT_LEFT, "Miplevel: %d", settings.miplevel);
-			nk_slider_int(ctx, 0, &settings.miplevel, app.voxelLevels - 1, 1);
+			nk_slider_int(ctx, 0, &settings.miplevel, app.vct.voxelLevels - 1, 1);
 
             // nk_layout_row_dynamic(ctx, rowheight, 2);
 			// nk_labelf(ctx, NK_TEXT_LEFT, "Axis Override: %d", settings.axisOverride);
@@ -160,11 +160,11 @@ void Overlay::render(float dt) {
                 static int slice = 0;
                 nk_layout_row_dynamic(ctx, rowheight, 2);
                 nk_labelf(ctx, NK_TEXT_LEFT, "Slice %d", slice);
-                nk_slider_int(ctx, 0, &slice, app.voxelDim - 1, 1);
+                nk_slider_int(ctx, 0, &slice, app.vct.voxelDim - 1, 1);
                 glCopyImageSubData(
-                    app.voxelColor, GL_TEXTURE_3D, 0, 0, 0, slice,
+                    app.vct.voxelColor, GL_TEXTURE_3D, 0, 0, 0, slice,
                     voxelSlice, GL_TEXTURE_2D, 0, 0, 0, 0,
-                    app.voxelDim, app.voxelDim, 1
+                    app.vct.voxelDim, app.vct.voxelDim, 1
                 );
 
                 nk_layout_row_static(ctx, 64, 64, 1);
@@ -195,6 +195,24 @@ void Overlay::render(float dt) {
             nk_slider_float(ctx, 0.0f, &settings.ambientScale, 1.0f, 0.1f);
             nk_labelf(ctx, NK_TEXT_LEFT, "Reflect Scale: %0.1f", settings.reflectScale);
             nk_slider_float(ctx, 0.0f, &settings.reflectScale, 1.0f, 0.1f);
+
+            nk_layout_row_dynamic(ctx, rowheight, 2);
+            static int nextVoxelResolution = app.vct.voxelDim;
+            sprintf(tmp_buffer, "Set voxelDim (%d->%d)", app.vct.voxelDim, nextVoxelResolution);
+            if (nk_button_label(ctx, tmp_buffer) && nextVoxelResolution != app.vct.voxelDim) {
+                app.vct.remake(nextVoxelResolution, app.vct.voxelLevels);
+            }
+            const int minVoxelDim = 64, maxVoxelDim = 512;
+            nk_slider_int(ctx, minVoxelDim, &nextVoxelResolution, maxVoxelDim, 64);
+
+            nk_layout_row_dynamic(ctx, rowheight, 2);
+            static int nextVoxelLevels = app.vct.voxelLevels;
+            sprintf(tmp_buffer, "Set voxelLevels (%d->%d)", app.vct.voxelLevels, nextVoxelLevels);
+            if (nk_button_label(ctx, tmp_buffer) && nextVoxelLevels != app.vct.voxelLevels) {
+                app.vct.remake(app.vct.voxelDim, nextVoxelLevels);
+            }
+            const int minVoxelLevels = 1;
+            nk_slider_int(ctx, minVoxelLevels, &nextVoxelLevels, std::log2(app.vct.voxelDim) + 1, 1);
 
             nk_layout_row_dynamic(ctx, rowheight, 1);
             nk_label(ctx, "Diffuse Cone Settings", NK_TEXT_LEFT);

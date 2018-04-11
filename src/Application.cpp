@@ -30,8 +30,6 @@
 #define SHADOWMAP_WIDTH 4096
 #define SHADOWMAP_HEIGHT 4096
 
-GLuint make3DTexture(GLsizei size, GLsizei levels, GLenum internalFormat, GLint minFilter, GLint magFilter);
-
 void view2DTexture(GLuint texture);
 
 void Application::init() {
@@ -71,12 +69,12 @@ void Application::init() {
 	mipmapProgram.setObjectLabel("Filter Radiance");
 
 	// Initialize voxel textures
-	useRGBA16f = GLAD_GL_NV_shader_atomic_fp16_vector;
-	GLenum voxelFormat = useRGBA16f ? GL_RGBA16F : GL_RGBA8;
+	// useRGBA16f = GLAD_GL_NV_shader_atomic_fp16_vector;
+	// GLenum voxelFormat = useRGBA16f ? GL_RGBA16F : GL_RGBA8;
 	// voxelColor = make3DTexture(voxelDim, 4, voxelFormat, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
-	voxelColor = make3DTexture(voxelDim, 1, voxelFormat, GL_LINEAR, GL_NEAREST);
-	voxelNormal = make3DTexture(voxelDim, 1, voxelFormat, GL_NEAREST, GL_NEAREST);
-	voxelRadiance = make3DTexture(voxelDim, voxelLevels, GL_RGBA8, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
+	// voxelColor = make3DTexture(voxelDim, 1, voxelFormat, GL_LINEAR, GL_NEAREST);
+	// voxelNormal = make3DTexture(voxelDim, 1, voxelFormat, GL_NEAREST, GL_NEAREST);
+	// voxelRadiance = make3DTexture(voxelDim, voxelLevels, GL_RGBA8, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
 
 	// Create scene
 	scene = std::make_unique<Scene>();
@@ -98,9 +96,16 @@ void Application::init() {
 	StaticMeshActor nanosuit2 {RESOURCE_DIR "nanosuit/nanosuit.obj"};
 	nanosuit2.transform.setScale(glm::vec3(0.2f));
 	nanosuit2.controller = new LambdaActorController([](Actor &actor, float dt, float time) {
-		actor.transform.setPosition(glm::vec3(4 * glm::sin(time), 4.2f, 3.0f));
+		actor.transform.setPosition(glm::vec3(2 * glm::sin(0.4 * time) - 2, 4.2f, 3.0f));
 	});
 	scene->addMesh(std::make_shared<StaticMeshActor>(nanosuit2));
+
+	StaticMeshActor cube {RESOURCE_DIR "cube.obj"};
+	cube.transform.setScale(glm::vec3(0.5f));
+	cube.controller = new LambdaActorController([](Actor &actor, float dt, float time) {
+		actor.transform.setPosition(glm::vec3(2 * glm::sin(0.4 * time) + 2, 5.0f, 3.0f));
+	});
+	scene->addMesh(std::make_shared<StaticMeshActor>(cube));
 
 	scene->setMainlight({12.0f, 40.0f, -7.0f}, {-0.38f, -0.88f, 0.2f}, {1.0f, 1.0f, 1.0f});
 
@@ -149,7 +154,7 @@ void Application::render(float dt) {
 	// Voxelize scene
 	{
 		GL_DEBUG_PUSH("Voxelize Scene")
-		glViewport(0, 0, voxelDim, voxelDim);
+		glViewport(0, 0, vct.voxelDim, vct.voxelDim);
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE);
 		glDepthMask(GL_FALSE);
@@ -158,8 +163,8 @@ void Application::render(float dt) {
 			glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
 		}
 
-		glClearTexImage(voxelColor, 0, GL_RGBA, GL_FLOAT, nullptr);
-		glClearTexImage(voxelNormal, 0, GL_RGBA, GL_FLOAT, nullptr);
+		glClearTexImage(vct.voxelColor, 0, GL_RGBA, GL_FLOAT, nullptr);
+		glClearTexImage(vct.voxelNormal, 0, GL_RGBA, GL_FLOAT, nullptr);
 
 		glm::mat4 projection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.0f, 40.0f);
 		glm::mat4 mvp_x = projection * glm::lookAt(glm::vec3(20, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
@@ -177,9 +182,8 @@ void Application::render(float dt) {
 		voxelProgram.setUniform3fv("lightPos", mainlight.position);
 		voxelProgram.setUniform3fv("lightInt", mainlight.intensity);
 
-		GLenum voxelFormat = useRGBA16f ? GL_RGBA16F : GL_R32UI;
-		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, voxelFormat);
-		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, voxelFormat);
+		glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
+		glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
 
 		scene->draw(voxelProgram);
 
@@ -233,18 +237,18 @@ void Application::render(float dt) {
 	}
 	shadowmapTimer.stop();
 
-	// Normalize voxelColor and voxelNormal textures (divides by alpha component)
-	if (useRGBA16f) {
+	// Normalize vct.voxelColor and vct.voxelNormal textures (divides by alpha component)
+	if (vct.useRGBA16f) {
 		static GLShaderProgram *p = nullptr;
 		if (!p) {
 			p = new GLShaderProgram({SHADER_DIR "normalizeVoxels.comp"});
 			p->setObjectLabel("Normalize Voxels");
 		}
 		p->bind();
-		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
-		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+		glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+		glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 
-		glDispatchCompute((voxelDim + 4 - 1) / 4, (voxelDim + 4 - 1) / 4, (voxelDim + 4 - 1) / 4);
+		glDispatchCompute((vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4);
 
 		glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 		glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
@@ -256,13 +260,13 @@ void Application::render(float dt) {
 	{
 		GL_DEBUG_PUSH("Radiance Injection")
 
-		glClearTexImage(voxelRadiance, 0, GL_RGBA, GL_FLOAT, nullptr);
+		glClearTexImage(vct.voxelRadiance, 0, GL_RGBA, GL_FLOAT, nullptr);
 
 		injectRadianceProgram.bind();
 
-		glBindImageTexture(0, voxelColor, 0, GL_TRUE, 0, GL_READ_ONLY, useRGBA16f ? GL_RGBA16F : GL_RGBA8);
-		glBindImageTexture(1, voxelNormal, 0, GL_TRUE, 0, GL_READ_ONLY, useRGBA16f ? GL_RGBA16F : GL_RGBA8);
-		glBindImageTexture(2, voxelRadiance, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+		glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_ONLY, vct.voxelFormat);
+		glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_ONLY, vct.voxelFormat);
+		glBindImageTexture(2, vct.voxelRadiance, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
 		GLuint shadowmap = shadowmapFBO.getTexture(0);
 		glBindTextureUnit(1, shadowmap);
@@ -273,7 +277,7 @@ void Application::render(float dt) {
 		injectRadianceProgram.setUniform3fv("lightPos", mainlight.position);
 		injectRadianceProgram.setUniform3fv("lightInt", mainlight.intensity);
 
-		injectRadianceProgram.setUniform1i("voxelDim", voxelDim);
+		injectRadianceProgram.setUniform1i("voxelDim", vct.voxelDim);
 
 		// 2D workgroup should be the size of shadowmap, local_size = 16
 		glDispatchCompute((SHADOWMAP_WIDTH + 16 - 1) / 16, (SHADOWMAP_HEIGHT + 16 - 1) / 16, 1);
@@ -290,17 +294,17 @@ void Application::render(float dt) {
 
 	mipmapTimer.start();
 	{
-		// glGenerateTextureMipmap(voxelColor);
-		// glGenerateTextureMipmap(voxelNormal);
-		// glGenerateTextureMipmap(voxelRadiance);
+		// glGenerateTextureMipmap(vct.voxelColor);
+		// glGenerateTextureMipmap(vct.voxelNormal);
+		// glGenerateTextureMipmap(vct.voxelRadiance);
 
 		mipmapProgram.bind();
 
-		int dim = voxelDim;
+		int dim = vct.voxelDim;
 		const int local_size = 8;
-		for (int level = 0; level < voxelLevels; level++) {
-			glBindImageTexture(0, voxelRadiance, level, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
-			glBindImageTexture(1, voxelRadiance, level + 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+		for (int level = 0; level < vct.voxelLevels; level++) {
+			glBindImageTexture(0, vct.voxelRadiance, level, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+			glBindImageTexture(1, vct.voxelRadiance, level + 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
 			GLuint num_groups = ((dim >> 1) + local_size - 1) / local_size;
 			glDispatchCompute(num_groups, num_groups, num_groups);
@@ -356,14 +360,12 @@ void Application::render(float dt) {
 		program.setUniform1f("ambientScale", settings.ambientScale);
 		program.setUniform1f("reflectScale", settings.reflectScale);
 
-		program.setUniform1i("voxelDim", voxelDim);
-
 		program.setUniform1i("miplevel", settings.miplevel);
-		program.setUniform1i("voxelDim", voxelDim);
 
-		glBindTextureUnit(2, voxelColor);
-		glBindTextureUnit(3, voxelNormal);
-		glBindTextureUnit(4, voxelRadiance);
+		program.setUniform1i("voxelDim", vct.voxelDim);
+		glBindTextureUnit(2, vct.voxelColor);
+		glBindTextureUnit(3, vct.voxelNormal);
+		glBindTextureUnit(4, vct.voxelRadiance);
 
 		program.setUniform1i("vctSteps", settings.diffuseConeSettings.steps);
 		program.setUniform1f("vctBias", settings.diffuseConeSettings.bias);
@@ -516,9 +518,9 @@ void Application::viewRaymarched() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glUseProgram(program);
 
-	glBindTextureUnit(0, voxelColor);
-	glBindTextureUnit(1, voxelNormal);
-	glBindTextureUnit(2, voxelRadiance);
+	glBindTextureUnit(0, vct.voxelColor);
+	glBindTextureUnit(1, vct.voxelNormal);
+	glBindTextureUnit(2, vct.voxelRadiance);
 
 	glm::vec3 cameraRight = glm::normalize(glm::cross(camera.front, camera.up)) * ((float)width / height);
 
@@ -530,7 +532,7 @@ void Application::viewRaymarched() {
 	glUniform1i(glGetUniformLocation(program, "height"), height);
 	glUniform1f(glGetUniformLocation(program, "near"), near);
 	glUniform1f(glGetUniformLocation(program, "far"), far);
-	glUniform1i(glGetUniformLocation(program, "voxelDim"), voxelDim);
+	glUniform1i(glGetUniformLocation(program, "voxelDim"), vct.voxelDim);
 	glUniform1i(glGetUniformLocation(program, "lod"), settings.miplevel);
 	glUniform1i(glGetUniformLocation(program, "radiance"), settings.drawRadiance);
 	

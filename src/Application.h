@@ -61,6 +61,54 @@ struct Settings {
     VCTSettings specularConeSettings { 16, 0.1f, 1.0f, 5.0f, 0.1f };
 };
 
+GLuint make3DTexture(GLsizei size, GLsizei levels, GLenum internalFormat, GLint minFilter, GLint magFilter);
+
+class VCT {
+public:
+    VCT() {
+        useRGBA16f = GLAD_GL_NV_shader_atomic_fp16_vector;
+	    voxelFormat = useRGBA16f ? GL_RGBA16F : GL_RGBA8;
+        make();
+    }
+
+    ~VCT() { cleanup(); }
+
+    void remake(int dim, int levels) {
+        assert(dim > 0);
+        voxelDim = dim;
+        voxelLevels = glm::clamp<int>(levels, 0, std::log2(dim) + 1);
+
+        if (voxelLevels != levels) {
+            LOG_WARN("Attempted remaking VCT with invalid number of levels, clamped ", levels, " to ", voxelLevels);
+        }
+
+        cleanup();
+        make();
+    }
+
+    glm::vec3 voxelWorldSize() const { return (max - min) / (float)voxelDim; }
+
+    int voxelDim = 256, voxelLevels = 6;
+    GLuint voxelColor = 0, voxelNormal = 0, voxelRadiance = 0;
+    bool useRGBA16f;
+    GLenum voxelFormat;
+
+    glm::vec3 min { -20.0f }, max { 20.0f };
+
+private:
+    void make() {
+        voxelColor = make3DTexture(voxelDim, 1, voxelFormat, GL_LINEAR, GL_NEAREST);
+        voxelNormal = make3DTexture(voxelDim, 1, voxelFormat, GL_NEAREST, GL_NEAREST);
+        voxelRadiance = make3DTexture(voxelDim, voxelLevels, GL_RGBA8, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
+    }
+
+    void cleanup() {
+        glDeleteTextures(1, &voxelColor);
+        glDeleteTextures(1, &voxelNormal);
+        glDeleteTextures(1, &voxelRadiance);
+    }
+};
+
 class Application {
 public:
     friend class Overlay;
@@ -82,9 +130,7 @@ private:
     GLShaderProgram program;
     
     GLShaderProgram voxelProgram;
-    int voxelDim = 128, voxelLevels = 6;
-    GLuint voxelColor = 0, voxelNormal = 0, voxelRadiance = 0;
-    bool useRGBA16f;
+    VCT vct;
 
 	GLFramebuffer shadowmapFBO;
 	GLShaderProgram shadowmapProgram;
