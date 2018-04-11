@@ -18,23 +18,18 @@ uniform int width = 1280, height = 720;
 uniform float near = 0.1, far = 100.0;
 
 uniform int voxelDim = 128;
+uniform vec3 voxelMin, voxelMax;
 
 uniform int lod = 0;
 
 uniform bool radiance = true;
 
 ivec3 voxelIndex(vec3 pos) {
-    const float minx = -20, maxx = 20,
-        miny = -20, maxy = 20,
-        minz = -20, maxz = 20;
+    vec3 range = voxelMax - voxelMin;
 
-    float rangex = maxx - minx;
-    float rangey = maxy - miny;
-    float rangez = maxz - minz;
-
-    float x = voxelDim * ((pos.x - minx) / rangex);
-    float y = voxelDim * ((pos.y - miny) / rangey);
-    float z = voxelDim * (1 - (pos.z - minz) / rangez);
+    float x = voxelDim * ((pos.x - voxelMin.x) / range.x);
+    float y = voxelDim * ((pos.y - voxelMin.y) / range.y);
+    float z = voxelDim * (1 - (pos.z - voxelMin.z) / range.z);
 
     return ivec3(x, y, z);
 }

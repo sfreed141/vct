@@ -75,6 +75,7 @@ uniform mat4 ls;
 
 uniform int miplevel = 0;
 uniform int voxelDim;
+uniform vec3 voxelMin, voxelMax;
 
 uniform int vctSteps;
 uniform float vctConeAngle;
@@ -114,17 +115,11 @@ vec3 traceCone(sampler3D voxelTexture, vec3 position, vec3 direction, int steps,
 }
 
 vec3 voxelIndex(vec3 pos) {
-    const float minx = -20, maxx = 20,
-        miny = -20, maxy = 20,
-        minz = -20, maxz = 20;
+	vec3 range = voxelMax - voxelMin;
 
-    float rangex = maxx - minx;
-    float rangey = maxy - miny;
-    float rangez = maxz - minz;
-
-    float x = voxelDim * ((pos.x - minx) / rangex);
-    float y = voxelDim * ((pos.y - miny) / rangey);
-    float z = voxelDim * (1 - (pos.z - minz) / rangez);
+    float x = voxelDim * ((pos.x - voxelMin.x) / range.x);
+    float y = voxelDim * ((pos.y - voxelMin.y) / range.y);
+    float z = voxelDim * (1 - (pos.z - voxelMin.z) / range.z);
 
     return vec3(x, y, z);
 }

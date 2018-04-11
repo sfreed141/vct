@@ -166,10 +166,10 @@ void Application::render(float dt) {
 		glClearTexImage(vct.voxelColor, 0, GL_RGBA, GL_FLOAT, nullptr);
 		glClearTexImage(vct.voxelNormal, 0, GL_RGBA, GL_FLOAT, nullptr);
 
-		glm::mat4 projection = glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.0f, 40.0f);
-		glm::mat4 mvp_x = projection * glm::lookAt(glm::vec3(20, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-		glm::mat4 mvp_y = projection * glm::lookAt(glm::vec3(0, 20, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, -1));
-		glm::mat4 mvp_z = projection * glm::lookAt(glm::vec3(0, 0, 20), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+		glm::mat4 projection = glm::ortho(vct.min.x, vct.max.x, vct.min.y, vct.max.y, 0.0f, vct.max.z - vct.min.z);
+		glm::mat4 mvp_x = projection * glm::lookAt(glm::vec3(vct.max.x, 0, 0), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+		glm::mat4 mvp_y = projection * glm::lookAt(glm::vec3(0, vct.max.y, 0), glm::vec3(0, 0, 0), glm::vec3(0, 0, -1));
+		glm::mat4 mvp_z = projection * glm::lookAt(glm::vec3(0, 0, vct.max.z), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 
 		voxelProgram.bind();
 		voxelProgram.setUniformMatrix4fv("mvp_x", mvp_x);
@@ -278,6 +278,8 @@ void Application::render(float dt) {
 		injectRadianceProgram.setUniform3fv("lightInt", mainlight.intensity);
 
 		injectRadianceProgram.setUniform1i("voxelDim", vct.voxelDim);
+		injectRadianceProgram.setUniform3fv("voxelMin", vct.min);
+		injectRadianceProgram.setUniform3fv("voxelMax", vct.max);
 
 		// 2D workgroup should be the size of shadowmap, local_size = 16
 		glDispatchCompute((SHADOWMAP_WIDTH + 16 - 1) / 16, (SHADOWMAP_HEIGHT + 16 - 1) / 16, 1);
@@ -363,6 +365,8 @@ void Application::render(float dt) {
 		program.setUniform1i("miplevel", settings.miplevel);
 
 		program.setUniform1i("voxelDim", vct.voxelDim);
+		program.setUniform3fv("voxelMin", vct.min);
+		program.setUniform3fv("voxelMax", vct.max);
 		glBindTextureUnit(2, vct.voxelColor);
 		glBindTextureUnit(3, vct.voxelNormal);
 		glBindTextureUnit(4, vct.voxelRadiance);
@@ -533,6 +537,8 @@ void Application::viewRaymarched() {
 	glUniform1f(glGetUniformLocation(program, "near"), near);
 	glUniform1f(glGetUniformLocation(program, "far"), far);
 	glUniform1i(glGetUniformLocation(program, "voxelDim"), vct.voxelDim);
+	glUniform3fv(glGetUniformLocation(program, "voxelMin"), 1, glm::value_ptr(vct.min));
+	glUniform3fv(glGetUniformLocation(program, "voxelMax"), 1, glm::value_ptr(vct.max));
 	glUniform1i(glGetUniformLocation(program, "lod"), settings.miplevel);
 	glUniform1i(glGetUniformLocation(program, "radiance"), settings.drawRadiance);
 	
