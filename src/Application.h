@@ -58,6 +58,8 @@ struct Settings {
 	int miplevel = 0;
 
     int voxelTrackCamera = false;
+    float voxelizeMultiplier = 1.0f;
+    int voxelizeDilate = false;
     VCTSettings diffuseConeSettings;
     VCTSettings specularConeSettings { 16, 0.1f, 1.0f, 5.0f, 0.1f };
 };

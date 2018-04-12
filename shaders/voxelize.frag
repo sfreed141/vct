@@ -22,11 +22,12 @@ layout(binding = 1, r32ui) uniform uimage3D voxelNormal;
 layout(binding = 0) uniform sampler2D diffuseTexture;
 
 uniform vec3 eye, lightPos, lightInt;
+uniform bool voxelizeDilate = false;
 
 // Map [-1, 1] -> [0, 1]
 vec3 ndcToUnit(vec3 p) { return (p + 1.0) * 0.5; }
 
-ivec3 getVoxelPosition() {
+vec3 getVoxelPosition() {
 	// get ndc
 	vec3 ndc = vec3(fs_in.position);
 
@@ -49,7 +50,7 @@ ivec3 getVoxelPosition() {
 	// map to voxel index
 	vec3 voxelIndex = unit * imageSize(voxelColor).x;
 
-	return ivec3(voxelIndex);
+	return voxelIndex;
 }
 
 // From OpenGL Insights
@@ -84,8 +85,6 @@ uint convVec4ToRGBA8(vec4 val) {
 // }
 
 void main() {
-	ivec3 voxelIndex = getVoxelPosition();
-
     vec3 color = texture(diffuseTexture, fs_in.texcoord).rgb;
 
 	vec3 normal = normalize(fs_in.normal);
@@ -94,9 +93,27 @@ void main() {
 
     // Store value (must be atomic, use alpha component as count)
 #if GL_NV_shader_atomic_fp16_vector
-    imageAtomicAdd(voxelColor, voxelIndex, f16vec4(color, 1));
-    imageAtomicAdd(voxelNormal, voxelIndex, f16vec4(normal, 1));
+	if (voxelizeDilate) {
+		vec3 voxelPosition = getVoxelPosition();
+		ivec3 voxelIndex = ivec3(voxelPosition);
+		vec3 fractionalPosition = fract(voxelPosition);
+		const ivec3 offsets[] = ivec3[](
+			ivec3(0, 0, 0), ivec3(0, 0, 1), ivec3(0, 1, 0), ivec3(0, 1, 1),
+			ivec3(1, 0, 0), ivec3(1, 0, 1), ivec3(1, 1, 0), ivec3(1, 1, 1)
+		);
+
+		for (int i = 0; i < 8; i++) {
+			imageAtomicAdd(voxelColor, voxelIndex + offsets[i], f16vec4(color, 1));
+			imageAtomicAdd(voxelNormal, voxelIndex + offsets[i], f16vec4(normal, 1));
+		}
+	}
+	else {
+		ivec3 voxelIndex = ivec3(getVoxelPosition());
+		imageAtomicAdd(voxelColor, voxelIndex, f16vec4(color, 1));
+		imageAtomicAdd(voxelNormal, voxelIndex, f16vec4(normal, 1));
+	}
 #else
+	ivec3 voxelIndex = ivec3(getVoxelPosition());
 	// imageAtomicRGBA8Avg(voxelColor, voxelIndex, vec4(color, 1));
 	// imageAtomicRGBA8Avg(voxelNormal, voxelIndex, vec4(normal, 1));
 	imageAtomicMax(voxelColor, voxelIndex, convVec4ToRGBA8(255 * vec4(color, 1)));

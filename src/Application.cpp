@@ -158,7 +158,7 @@ void Application::render(float dt) {
 	// Voxelize scene
 	{
 		GL_DEBUG_PUSH("Voxelize Scene")
-		glViewport(0, 0, vct.voxelDim, vct.voxelDim);
+		glViewport(0, 0, settings.voxelizeMultiplier * vct.voxelDim, settings.voxelizeMultiplier * vct.voxelDim);
 		glDisable(GL_DEPTH_TEST);
 		glDisable(GL_CULL_FACE);
 		glDepthMask(GL_FALSE);
@@ -185,6 +185,7 @@ void Application::render(float dt) {
 		voxelProgram.setUniform3fv("eye", camera.position);
 		voxelProgram.setUniform3fv("lightPos", mainlight.position);
 		voxelProgram.setUniform3fv("lightInt", mainlight.intensity);
+		voxelProgram.setUniform1i("voxelizeDilate", settings.voxelizeDilate);
 
 		glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
 		glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);

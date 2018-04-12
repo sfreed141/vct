@@ -195,6 +195,7 @@ void Overlay::render(float dt) {
 			nk_checkbox_label(ctx, "Diffuse", &settings.enableDiffuse);
 			nk_checkbox_label(ctx, "Specular", &settings.enableSpecular);
 			nk_checkbox_label(ctx, "Reflections", &settings.enableReflections);
+			nk_checkbox_label(ctx, "voxelizeDilate", &settings.voxelizeDilate);
 			if (nk_checkbox_label(ctx, "voxelTrackCamera", &settings.voxelTrackCamera)) {
                 // reset voxel center to origin after tracking
                 if (!settings.voxelTrackCamera) {
@@ -207,6 +208,8 @@ void Overlay::render(float dt) {
             nk_slider_float(ctx, 0.0f, &settings.ambientScale, 1.0f, 0.1f);
             nk_labelf(ctx, NK_TEXT_LEFT, "Reflect Scale: %0.1f", settings.reflectScale);
             nk_slider_float(ctx, 0.0f, &settings.reflectScale, 1.0f, 0.1f);
+            nk_labelf(ctx, NK_TEXT_LEFT, "Voxelize Multiplier: %0.1f", settings.voxelizeMultiplier);
+            nk_slider_float(ctx, 0.5f, &settings.voxelizeMultiplier, 4.0f, 0.5f);
 
             nk_layout_row_dynamic(ctx, rowheight, 2);
             static int nextVoxelResolution = app.vct.voxelDim;
