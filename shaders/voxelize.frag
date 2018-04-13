@@ -103,8 +103,13 @@ void main() {
 		);
 
 		for (int i = 0; i < 8; i++) {
-			imageAtomicAdd(voxelColor, voxelIndex + offsets[i], f16vec4(color, 1));
-			imageAtomicAdd(voxelNormal, voxelIndex + offsets[i], f16vec4(normal, 1));
+			vec3 weight = vec3(
+				offsets[i].x == 0 ? 1 -  fractionalPosition.x : fractionalPosition.x,
+				offsets[i].y == 0 ? 1 -  fractionalPosition.y : fractionalPosition.y,
+				offsets[i].z == 0 ? 1 -  fractionalPosition.z : fractionalPosition.z
+			);
+			imageAtomicAdd(voxelColor, voxelIndex + offsets[i], f16vec4(color, weight.x + weight.y + weight.z));
+			imageAtomicAdd(voxelNormal, voxelIndex + offsets[i], f16vec4(normal, weight.x + weight.y + weight.z));
 		}
 	}
 	else {
