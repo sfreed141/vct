@@ -65,6 +65,8 @@ void Application::init() {
 	shadowmapProgram.setObjectLabel("Shadowmap");
 	injectRadianceProgram.attachAndLink({SHADER_DIR "injectRadiance.comp"});
 	injectRadianceProgram.setObjectLabel("Inject Radiance");
+	temporalRadianceFilterProgram.attachAndLink({SHADER_DIR "temporalRadianceFilter.comp"});
+	temporalRadianceFilterProgram.setObjectLabel("Temporal Radiance Filter");
 	mipmapProgram.attachAndLink({SHADER_DIR "filterRadiance.comp"});
 	mipmapProgram.setObjectLabel("Filter Radiance");
 
@@ -282,13 +284,27 @@ void Application::render(float dt) {
 	{
 		GL_DEBUG_PUSH("Radiance Injection")
 
-		glClearTexImage(vct.voxelRadiance, 0, GL_RGBA, GL_FLOAT, nullptr);
+		if (settings.temporalFilterRadiance) {
+			GL_DEBUG_PUSH("Temporal Radiance Filter")
+			temporalRadianceFilterProgram.bind();
+
+			glBindImageTexture(0, vct.voxelRadiance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+			temporalRadianceFilterProgram.setUniform1f("temporalDecay", settings.temporalDecay);
+
+			glDispatchCompute((vct.voxelDim + 8 - 1) / 8, (vct.voxelDim + 8 - 1) / 8, (vct.voxelDim + 8 - 1) / 8);
+
+			temporalRadianceFilterProgram.unbind();
+			GL_DEBUG_POP()
+		}
+		else {
+			glClearTexImage(vct.voxelRadiance, 0, GL_RGBA, GL_FLOAT, nullptr);
+		}
 
 		injectRadianceProgram.bind();
 
 		glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_ONLY, vct.voxelFormat);
 		glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_ONLY, vct.voxelFormat);
-		glBindImageTexture(2, vct.voxelRadiance, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+		glBindImageTexture(2, vct.voxelRadiance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
 
 		GLuint shadowmap = shadowmapFBO.getTexture(0);
 		glBindTextureUnit(1, shadowmap);
@@ -310,7 +326,7 @@ void Application::render(float dt) {
 		glBindTextureUnit(1, 0);
 		glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
 		glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
-		glBindImageTexture(2, 0, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+		glBindImageTexture(2, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
 		injectRadianceProgram.unbind();
 
 		GL_DEBUG_POP()

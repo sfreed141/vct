@@ -56,6 +56,9 @@ struct Settings {
     float ambientScale = 1.0f;
     float reflectScale = 0.5f;
 
+    int temporalFilterRadiance = false;
+    float temporalDecay = 0.8f;
+
 	int miplevel = 0;
 
     int voxelTrackCamera = false;
@@ -140,7 +143,7 @@ private:
 	GLFramebuffer shadowmapFBO;
 	GLShaderProgram shadowmapProgram;
 
-	GLShaderProgram injectRadianceProgram;
+	GLShaderProgram injectRadianceProgram, temporalRadianceFilterProgram;
 
     GLShaderProgram mipmapProgram;
 
