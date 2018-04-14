@@ -184,10 +184,10 @@ void Overlay::render(float dt) {
         }
 
         if (nk_tree_push(ctx, NK_TREE_TAB, "Settings", NK_MAXIMIZED)) {
-			if (GLAD_GL_NV_conservative_raster) {
+			// if (GLAD_GL_NV_conservative_raster) {
                 nk_layout_row_dynamic(ctx, rowheight, 1);
 				nk_checkbox_label(ctx, "Conservative Rasterization", &settings.conservativeRasterization);
-			}
+			// }
             nk_layout_row_dynamic(ctx, rowheight, 2);
 			nk_checkbox_label(ctx, "Shadows", &settings.enableShadows);
 			nk_checkbox_label(ctx, "Normal Map", &settings.enableNormalMap);
