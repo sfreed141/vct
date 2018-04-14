@@ -163,8 +163,13 @@ void Application::render(float dt) {
 		glDisable(GL_CULL_FACE);
 		glDepthMask(GL_FALSE);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-		if (GLAD_GL_NV_conservative_raster && settings.conservativeRasterization) {
-			glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
+		if (settings.conservativeRasterization) {
+			if (GLAD_GL_NV_conservative_raster) {
+				glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
+			}
+			else {
+				glEnable(GL_MULTISAMPLE);
+			}
 		}
 
 		glClearTexImage(vct.voxelColor, 0, GL_RGBA, GL_FLOAT, nullptr);
@@ -196,15 +201,19 @@ void Application::render(float dt) {
 		glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 		voxelProgram.unbind();
 
-
 		// Restore OpenGL state
 		glViewport(0, 0, width, height);
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 		glDepthMask(GL_TRUE);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		if (GLAD_GL_NV_conservative_raster && settings.conservativeRasterization) {
-			glDisable(GL_CONSERVATIVE_RASTERIZATION_NV);
+		if (settings.conservativeRasterization) {
+			if (GLAD_GL_NV_conservative_raster) {
+				glDisable(GL_CONSERVATIVE_RASTERIZATION_NV);
+			}
+			else {
+				glDisable(GL_MULTISAMPLE);
+			}
 		}
 		GL_DEBUG_POP()
 	}
