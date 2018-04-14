@@ -200,6 +200,7 @@ void Overlay::render(float dt) {
 			nk_checkbox_label(ctx, "Diffuse", &settings.enableDiffuse);
 			nk_checkbox_label(ctx, "Specular", &settings.enableSpecular);
 			nk_checkbox_label(ctx, "Reflections", &settings.enableReflections);
+            nk_checkbox_label(ctx, "radianceDilate", &settings.radianceDilate);
             nk_checkbox_label(ctx, "temporalFilterRadiance", &settings.temporalFilterRadiance);
 			nk_checkbox_label(ctx, "voxelizeDilate", &settings.voxelizeDilate);
 			if (nk_checkbox_label(ctx, "voxelTrackCamera", &settings.voxelTrackCamera)) {

@@ -320,6 +320,8 @@ void Application::render(float dt) {
 		injectRadianceProgram.setUniform3fv("voxelMax", vct.max);
 		injectRadianceProgram.setUniform3fv("voxelCenter", vct.center);
 
+		injectRadianceProgram.setUniform1i("radianceDilate", settings.radianceDilate);
+
 		// 2D workgroup should be the size of shadowmap, local_size = 16
 		glDispatchCompute((SHADOWMAP_WIDTH + 16 - 1) / 16, (SHADOWMAP_HEIGHT + 16 - 1) / 16, 1);
 
