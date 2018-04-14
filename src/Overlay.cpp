@@ -184,10 +184,15 @@ void Overlay::render(float dt) {
         }
 
         if (nk_tree_push(ctx, NK_TREE_TAB, "Settings", NK_MAXIMIZED)) {
-			// if (GLAD_GL_NV_conservative_raster) {
-                nk_layout_row_dynamic(ctx, rowheight, 1);
-				nk_checkbox_label(ctx, "Conservative Rasterization", &settings.conservativeRasterization);
-			// }
+            {
+                const float ratio[] = {0.6f, 0.14f, 0.15f, 0.11f};
+                nk_layout_row(ctx, NK_DYNAMIC, rowheight, 4, ratio);
+                nk_label(ctx, "Conservative Rasterization: ", NK_TEXT_LEFT);
+                settings.conservativeRasterization = nk_option_label(ctx, "OFF", settings.conservativeRasterization == Settings::ConservativeRasterizeMode::OFF) ? Settings::ConservativeRasterizeMode::OFF : settings.conservativeRasterization;
+                settings.conservativeRasterization = nk_option_label(ctx, "MSAA", settings.conservativeRasterization == Settings::ConservativeRasterizeMode::MSAA) ? Settings::ConservativeRasterizeMode::MSAA : settings.conservativeRasterization;
+                settings.conservativeRasterization = nk_option_label(ctx, "NV", settings.conservativeRasterization == Settings::ConservativeRasterizeMode::NV) ? Settings::ConservativeRasterizeMode::NV : settings.conservativeRasterization;
+            }
+
             nk_layout_row_dynamic(ctx, rowheight, 2);
 			nk_checkbox_label(ctx, "Shadows", &settings.enableShadows);
 			nk_checkbox_label(ctx, "Normal Map", &settings.enableNormalMap);

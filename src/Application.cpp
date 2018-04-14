@@ -163,13 +163,17 @@ void Application::render(float dt) {
 		glDisable(GL_CULL_FACE);
 		glDepthMask(GL_FALSE);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-		if (settings.conservativeRasterization) {
-			if (GLAD_GL_NV_conservative_raster) {
+		switch (settings.conservativeRasterization) {
+			case Settings::ConservativeRasterizeMode::NV:
 				glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
-			}
-			else {
+				break;
+			case Settings::ConservativeRasterizeMode::MSAA:
 				glEnable(GL_MULTISAMPLE);
-			}
+				break;
+			case Settings::ConservativeRasterizeMode::OFF:
+			default:
+				// pass
+				break;
 		}
 
 		glClearTexImage(vct.voxelColor, 0, GL_RGBA, GL_FLOAT, nullptr);
@@ -207,13 +211,17 @@ void Application::render(float dt) {
 		glEnable(GL_CULL_FACE);
 		glDepthMask(GL_TRUE);
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		if (settings.conservativeRasterization) {
-			if (GLAD_GL_NV_conservative_raster) {
+		switch (settings.conservativeRasterization) {
+			case Settings::ConservativeRasterizeMode::NV:
 				glDisable(GL_CONSERVATIVE_RASTERIZATION_NV);
-			}
-			else {
+				break;
+			case Settings::ConservativeRasterizeMode::MSAA:
 				glDisable(GL_MULTISAMPLE);
-			}
+				break;
+			case Settings::ConservativeRasterizeMode::OFF:
+			default:
+				// pass
+				break;
 		}
 		GL_DEBUG_POP()
 	}
