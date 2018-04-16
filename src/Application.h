@@ -45,7 +45,7 @@ struct Settings {
     int raymarch = false;
 
 	enum ConservativeRasterizeMode { OFF, MSAA, NV };
-    ConservativeRasterizeMode conservativeRasterization = GL_NV_conservative_raster ? NV : MSAA;
+    ConservativeRasterizeMode conservativeRasterization = MSAA;
     int enablePostprocess = false;
 	int enableShadows = true;
     int enableNormalMap = true;

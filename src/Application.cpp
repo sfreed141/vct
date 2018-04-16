@@ -241,8 +241,6 @@ void Application::render(float dt) {
 		glViewport(0, 0, SHADOWMAP_WIDTH, SHADOWMAP_HEIGHT);
 		glClear(GL_DEPTH_BUFFER_BIT);
 		glDisable(GL_BLEND);
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_FRONT);
 
 		glm::mat4 model;
 
@@ -256,7 +254,6 @@ void Application::render(float dt) {
 		shadowmapProgram.unbind();
 		shadowmapFBO.unbind();
 
-		glCullFace(GL_BACK);
 		GL_DEBUG_POP()
 	}
 	shadowmapTimer.stop();
