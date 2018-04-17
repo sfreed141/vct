@@ -43,13 +43,15 @@ void main() {
 
     vec4 value = vec4(0, 0, 0, 0);
     float scale = 1.0;
+    // Derive step size based on voxel cell size (just pick one axis)
+    float stepSize = (voxelMax.x - voxelMin.x) / float(voxelDim);
     while (value.a < 1 && scale < far) {
         vec3 voxelCoords = voxelIndex(rayStart + scale * rayDir) / float(voxelDim);
         vec4 sampleColor = textureLod(radiance ? voxelRadiance : voxelColor, voxelCoords, lod);
         float alpha = 1 - value.a;
         value.rgb += sampleColor.rgb * alpha;
         value.a += sampleColor.a * alpha;
-        scale += 0.2;
+        scale += stepSize;
     }
 
     color = value;
