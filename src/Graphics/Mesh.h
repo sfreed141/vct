@@ -3,6 +3,7 @@
 
 #include <Graphics/opengl.h>
 #include <Graphics/GLShaderProgram.h>
+#include <Graphics/GLTexture2D.h>
 #include <glm/glm.hpp>
 
 #include <string>
@@ -57,7 +58,7 @@ private:
     std::vector<tinyobj::shape_t> shapes;
     std::vector<tinyobj::material_t> materials;
 
-    std::map<std::string, GLuint> textures;
+    std::map<std::string, GLTexture2D> textures;
     std::vector<Drawable> drawables;
     std::vector<Vertex> vertices;
 
