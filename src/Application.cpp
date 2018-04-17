@@ -81,33 +81,34 @@ void Application::init() {
 	// Create scene
 	scene = std::make_unique<Scene>();
 
-	StaticMeshActor sponza {RESOURCE_DIR "sponza/sponza_pbr.obj"}, nanosuit {RESOURCE_DIR "nanosuit/nanosuit.obj"};
+	StaticMeshActor sponza {RESOURCE_DIR "sponza/sponza_dds.obj"};
+	// StaticMeshActor sponza {RESOURCE_DIR "sponza/sponza_pbr.obj"}, nanosuit {RESOURCE_DIR "nanosuit/nanosuit.obj"};
 	sponza.transform.setScale(glm::vec3(0.01f));
 	scene->addMesh(std::make_shared<StaticMeshActor>(sponza));
 
-	nanosuit.transform.setScale(glm::vec3(0.25f));
-	nanosuit.controller = new LambdaActorController([](Actor &actor, float dt, float time) {
-		const float speedMultiplier = 1.0f;
-		// actor.transform.setPosition(actor.transform.getPosition() + glm::vec3(0.0f, glm::sin(time), 0.0f));
-		actor.transform.setScale(glm::vec3(0.25f + 0.05f * glm::sin(speedMultiplier * time)));
-		actor.transform.setPosition(glm::vec3(glm::cos(speedMultiplier * time), 0.0f, glm::sin(speedMultiplier * time)));
-		actor.transform.rotate(speedMultiplier * dt, glm::vec3(0.0f, 1.0f, 0.0f));
-	});
-	scene->addMesh(std::make_shared<StaticMeshActor>(nanosuit));
+	// nanosuit.transform.setScale(glm::vec3(0.25f));
+	// nanosuit.controller = new LambdaActorController([](Actor &actor, float dt, float time) {
+	// 	const float speedMultiplier = 1.0f;
+	// 	// actor.transform.setPosition(actor.transform.getPosition() + glm::vec3(0.0f, glm::sin(time), 0.0f));
+	// 	actor.transform.setScale(glm::vec3(0.25f + 0.05f * glm::sin(speedMultiplier * time)));
+	// 	actor.transform.setPosition(glm::vec3(glm::cos(speedMultiplier * time), 0.0f, glm::sin(speedMultiplier * time)));
+	// 	actor.transform.rotate(speedMultiplier * dt, glm::vec3(0.0f, 1.0f, 0.0f));
+	// });
+	// scene->addMesh(std::make_shared<StaticMeshActor>(nanosuit));
 
-	StaticMeshActor nanosuit2 {RESOURCE_DIR "nanosuit/nanosuit.obj"};
-	nanosuit2.transform.setScale(glm::vec3(0.2f));
-	nanosuit2.controller = new LambdaActorController([](Actor &actor, float dt, float time) {
-		actor.transform.setPosition(glm::vec3(2 * glm::sin(0.4 * time) - 2, 4.2f, 3.0f));
-	});
-	scene->addMesh(std::make_shared<StaticMeshActor>(nanosuit2));
+	// StaticMeshActor nanosuit2 {RESOURCE_DIR "nanosuit/nanosuit.obj"};
+	// nanosuit2.transform.setScale(glm::vec3(0.2f));
+	// nanosuit2.controller = new LambdaActorController([](Actor &actor, float dt, float time) {
+	// 	actor.transform.setPosition(glm::vec3(2 * glm::sin(0.4 * time) - 2, 4.2f, 3.0f));
+	// });
+	// scene->addMesh(std::make_shared<StaticMeshActor>(nanosuit2));
 
-	StaticMeshActor cube {RESOURCE_DIR "cube.obj"};
-	cube.transform.setScale(glm::vec3(0.5f));
-	cube.controller = new LambdaActorController([](Actor &actor, float dt, float time) {
-		actor.transform.setPosition(glm::vec3(2 * glm::sin(0.4 * time) + 2, 5.0f, 3.0f));
-	});
-	scene->addMesh(std::make_shared<StaticMeshActor>(cube));
+	// StaticMeshActor cube {RESOURCE_DIR "cube.obj"};
+	// cube.transform.setScale(glm::vec3(0.5f));
+	// cube.controller = new LambdaActorController([](Actor &actor, float dt, float time) {
+	// 	actor.transform.setPosition(glm::vec3(2 * glm::sin(0.4 * time) + 2, 5.0f, 3.0f));
+	// });
+	// scene->addMesh(std::make_shared<StaticMeshActor>(cube));
 
 	scene->setMainlight({12.0f, 40.0f, -7.0f}, {-0.38f, -0.88f, 0.2f}, {1.0f, 1.0f, 1.0f});
 

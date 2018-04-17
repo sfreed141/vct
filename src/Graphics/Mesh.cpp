@@ -95,46 +95,10 @@ void Mesh::loadMesh(const std::string &meshname) {
                 convertPathFromWindows(texture_name);
 
                 texture_name = basedir + texture_name;
-                int width, height, channels;
-                unsigned char *image = stbi_load(texture_name.c_str(), &width, &height, &channels, STBI_default);
-                if (image == nullptr) {
-                    LOG_ERROR("TEXTURE::LOAD_FAILED::", texture_name);
-                    continue;
-                }
-                else if (channels == 3 || channels == 4) {
-                    GLuint texture_id;
-                    glCreateTextures(GL_TEXTURE_2D, 1, &texture_id);
-                    
-                    glTextureParameteri(texture_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-                    glTextureParameteri(texture_id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                    glTextureParameteri(texture_id, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                    glTextureParameteri(texture_id, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-                    if (GLAD_GL_EXT_texture_filter_anisotropic) {
-                        float maxAnisotropy = 1.0f;
-                        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
-                        glTextureParameterf(texture_id, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy);
-                    }
-
-                    GLint levels = (GLint)std::log2(std::fmax(width, height)) + 1;
-                    if (channels == 3) {
-                        glTextureStorage2D(texture_id, levels, GL_RGB8, width, height);
-                        glTextureSubImage2D(texture_id, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, image);
-                    }
-                    else if (channels == 4) {
-                        glTextureStorage2D(texture_id, levels, GL_RGBA8, width, height);
-                        glTextureSubImage2D(texture_id, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image); 
-                    }
-
-                    glGenerateTextureMipmap(texture_id);
-
-                    textures.insert(make_pair(mp.bump_texname, texture_id));
-                    LOG_INFO("loaded normal map ", mp.bump_texname);
-                }
-                else {
-                    LOG_WARN("Bump map ", texture_name, " not supported, convert it to normal map");
-                }
-                stbi_image_free(image);
+                GLuint texture_id = GLHelper::createTextureFromImage(texture_name);
+                
+                textures.insert(make_pair(mp.bump_texname, texture_id));
+                LOG_INFO("loaded normal map ", mp.bump_texname);
             }
         }
 

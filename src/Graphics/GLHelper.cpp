@@ -10,8 +10,15 @@
 #include <fstream>
 #include <unordered_map>
 #include <common.h>
+#include <ResourceLoader.h>
 
 static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
+
+std::string getExtension(const std::string &path) {
+    size_t pos = path.find_last_of('.');    
+    std::string ext = (pos == std::string::npos) ? path : path.substr(pos + 1);
+    return ext;
+}
 
 void GLHelper::printGLInfo() {
     const GLubyte *vendor = glGetString(GL_VENDOR);
@@ -154,41 +161,47 @@ static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum
 
 // Creates texture and loads it with data from provided image file.
 GLuint GLHelper::createTextureFromImage(const std::string &imagename) {
-    int width, height, channels;
-    unsigned char *image = stbi_load(imagename.c_str(), &width, &height, &channels, STBI_default);
-    if (image == NULL) {
-        LOG_ERROR("TEXTURE::LOAD_FAILED::", imagename);
+    std::string file_extension = getExtension(imagename);
+    if (file_extension == "dds") {
+        return ResourceLoader::loadDDS(imagename);
     }
+    else {
+        int width, height, channels;
+        unsigned char *image = stbi_load(imagename.c_str(), &width, &height, &channels, STBI_default);
+        if (image == NULL) {
+            LOG_ERROR("TEXTURE::LOAD_FAILED::", imagename);
+        }
 
-    GLuint texture_id;
-    glCreateTextures(GL_TEXTURE_2D, 1, &texture_id);
+        GLuint texture_id;
+        glCreateTextures(GL_TEXTURE_2D, 1, &texture_id);
 
-    glTextureParameteri(texture_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-    glTextureParameteri(texture_id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    glTextureParameteri(texture_id, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTextureParameteri(texture_id, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTextureParameteri(texture_id, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+        glTextureParameteri(texture_id, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTextureParameteri(texture_id, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTextureParameteri(texture_id, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    if (GLAD_GL_EXT_texture_filter_anisotropic) {
-        float maxAnisotropy = 1.0f;
-        glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
-        glTextureParameterf(texture_id, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy);
+        if (GLAD_GL_EXT_texture_filter_anisotropic) {
+            float maxAnisotropy = 1.0f;
+            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY, &maxAnisotropy);
+            glTextureParameterf(texture_id, GL_TEXTURE_MAX_ANISOTROPY, maxAnisotropy);
+        }
+
+        GLint levels = (GLint)std::log2(std::fmax(width, height)) + 1;
+        if (channels == 3) {
+            glTextureStorage2D(texture_id, levels, GL_RGB8, width, height);
+            glTextureSubImage2D(texture_id, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, image);
+        }
+        else if (channels == 4) {
+            glTextureStorage2D(texture_id, levels, GL_RGBA8, width, height);
+            glTextureSubImage2D(texture_id, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image); 
+        }
+
+        glGenerateTextureMipmap(texture_id);
+
+        stbi_image_free(image);
+
+        return texture_id;
     }
-
-    GLint levels = (GLint)std::log2(std::fmax(width, height)) + 1;
-    if (channels == 3) {
-        glTextureStorage2D(texture_id, levels, GL_RGB8, width, height);
-        glTextureSubImage2D(texture_id, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, image);
-    }
-    else if (channels == 4) {
-        glTextureStorage2D(texture_id, levels, GL_RGBA8, width, height);
-        glTextureSubImage2D(texture_id, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image); 
-    }
-
-    glGenerateTextureMipmap(texture_id);
-
-    stbi_image_free(image);
-
-    return texture_id;
 }
 
 // Creates cubemap from provided image files.
@@ -317,8 +330,7 @@ GLenum GLHelper::shaderTypeFromExtension(const std::string &filename) {
         {"comp", GL_COMPUTE_SHADER}
     };
 
-    size_t pos = filename.find_last_of('.');
-    std::string ext = (pos == std::string::npos) ? filename : filename.substr(pos + 1);
+    std::string ext = getExtension(filename);
 
     return (extToType.count(ext) != 0) ? extToType[ext] : 0;
 }
