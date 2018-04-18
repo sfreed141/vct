@@ -70,21 +70,13 @@ void Application::init() {
 	mipmapProgram.attachAndLink({SHADER_DIR "filterRadiance.comp"});
 	mipmapProgram.setObjectLabel("Filter Radiance");
 
-	// Initialize voxel textures
-	// useRGBA16f = GLAD_GL_NV_shader_atomic_fp16_vector;
-	// GLenum voxelFormat = useRGBA16f ? GL_RGBA16F : GL_RGBA8;
-	// voxelColor = make3DTexture(voxelDim, 4, voxelFormat, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
-	// voxelColor = make3DTexture(voxelDim, 1, voxelFormat, GL_LINEAR, GL_NEAREST);
-	// voxelNormal = make3DTexture(voxelDim, 1, voxelFormat, GL_NEAREST, GL_NEAREST);
-	// voxelRadiance = make3DTexture(voxelDim, voxelLevels, GL_RGBA8, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
-
 	// Create scene
 	scene = std::make_unique<Scene>();
 
 	StaticMeshActor sponza {RESOURCE_DIR "sponza/sponza_dds.obj"};
 	// StaticMeshActor sponza {RESOURCE_DIR "sponza/sponza_pbr.obj"}, nanosuit {RESOURCE_DIR "nanosuit/nanosuit.obj"};
 	sponza.transform.setScale(glm::vec3(0.01f));
-	scene->addMesh(std::make_shared<StaticMeshActor>(sponza));
+	scene->addActor(std::make_shared<StaticMeshActor>(sponza));
 
 	// nanosuit.transform.setScale(glm::vec3(0.25f));
 	// nanosuit.controller = new LambdaActorController([](Actor &actor, float dt, float time) {
@@ -94,23 +86,34 @@ void Application::init() {
 	// 	actor.transform.setPosition(glm::vec3(glm::cos(speedMultiplier * time), 0.0f, glm::sin(speedMultiplier * time)));
 	// 	actor.transform.rotate(speedMultiplier * dt, glm::vec3(0.0f, 1.0f, 0.0f));
 	// });
-	// scene->addMesh(std::make_shared<StaticMeshActor>(nanosuit));
+	// scene->addActor(std::make_shared<StaticMeshActor>(nanosuit));
 
 	// StaticMeshActor nanosuit2 {RESOURCE_DIR "nanosuit/nanosuit.obj"};
 	// nanosuit2.transform.setScale(glm::vec3(0.2f));
 	// nanosuit2.controller = new LambdaActorController([](Actor &actor, float dt, float time) {
 	// 	actor.transform.setPosition(glm::vec3(2 * glm::sin(0.4 * time) - 2, 4.2f, 3.0f));
 	// });
-	// scene->addMesh(std::make_shared<StaticMeshActor>(nanosuit2));
+	// scene->addActor(std::make_shared<StaticMeshActor>(nanosuit2));
 
 	// StaticMeshActor cube {RESOURCE_DIR "cube.obj"};
 	// cube.transform.setScale(glm::vec3(0.5f));
 	// cube.controller = new LambdaActorController([](Actor &actor, float dt, float time) {
 	// 	actor.transform.setPosition(glm::vec3(2 * glm::sin(0.4 * time) + 2, 5.0f, 3.0f));
 	// });
-	// scene->addMesh(std::make_shared<StaticMeshActor>(cube));
+	// scene->addActor(std::make_shared<StaticMeshActor>(cube));
 
-	scene->setMainlight({12.0f, 40.0f, -7.0f}, {-0.38f, -0.88f, 0.2f}, {1.0f, 1.0f, 1.0f});
+	Light mainlight;
+	mainlight.type = Light::Type::Directional;
+	mainlight.shadowCaster = true;
+	mainlight.position = glm::vec3(12.0f, 40.0f, -7.0f);
+	mainlight.direction = glm::vec3(-0.38f, -0.88f, 0.2f);
+	scene->addLight(mainlight);
+
+	Light test;
+	test.type = Light::Type::Point;
+	test.position = glm::vec3(0.0f, 10.0f, 0.0f);
+	test.color = glm::vec3(1.0f, 0.0f, 1.0f);
+	scene->addLight(test);
 
 	// Camera setup
 	camera.position = glm::vec3(5, 1, 0);
@@ -155,7 +158,7 @@ void Application::render(float dt) {
 	totalTimer.start();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	Light mainlight = scene->getMainlight();
+	Light mainlight = scene->lights[0];
 	
 	voxelizeTimer.start();
 	// Voxelize scene
@@ -196,7 +199,7 @@ void Application::render(float dt) {
 
 		voxelProgram.setUniform3fv("eye", camera.position);
 		voxelProgram.setUniform3fv("lightPos", mainlight.position);
-		voxelProgram.setUniform3fv("lightInt", mainlight.intensity);
+		voxelProgram.setUniform3fv("lightInt", mainlight.color);
 		voxelProgram.setUniform1i("voxelizeDilate", settings.voxelizeDilate);
 
 		glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
@@ -311,7 +314,7 @@ void Application::render(float dt) {
 		glm::mat4 lsInverse = glm::inverse(ls);
 		injectRadianceProgram.setUniformMatrix4fv("lsInverse", lsInverse);
 		injectRadianceProgram.setUniform3fv("lightPos", mainlight.position);
-		injectRadianceProgram.setUniform3fv("lightInt", mainlight.intensity);
+		injectRadianceProgram.setUniform3fv("lightInt", mainlight.color);
 
 		injectRadianceProgram.setUniform1i("voxelDim", vct.voxelDim);
 		injectRadianceProgram.setUniform3fv("voxelMin", vct.min);
@@ -379,8 +382,8 @@ void Application::render(float dt) {
 		program.setUniformMatrix4fv("view", view);
 		program.setUniformMatrix4fv("model", model);
 		program.setUniform3fv("eye", camera.position);
-		program.setUniform3fv("lightPos", mainlight.position);
-		program.setUniform3fv("lightInt", mainlight.intensity);
+		// program.setUniform3fv("lightPos", mainlight.position);
+		// program.setUniform3fv("lightInt", mainlight.color);
 		program.setUniformMatrix4fv("ls", ls);
 
 		GLuint shadowmap = shadowmapFBO.getTexture(0);
@@ -422,6 +425,8 @@ void Application::render(float dt) {
 		program.setUniform1f("vctSpecularConeAngle", settings.specularConeSettings.coneAngle);
 		program.setUniform1f("vctSpecularConeInitialHeight", settings.specularConeSettings.coneInitialHeight);
 		program.setUniform1f("vctSpecularLodOffset", settings.specularConeSettings.lodOffset);
+
+		scene->bindLightSSBO(3);
 
 		scene->draw(program);
 

@@ -28,7 +28,6 @@ out VS_OUT {
 #ifdef NORMAL_MAP
     mat3 TBN;
     mat3 inverseTBN;
-    vec3 tangentLightPos;
     vec3 tangentViewPos;
     vec3 tangentFragPos;
 #endif
@@ -54,7 +53,6 @@ void main() {
     B = cross(N, T);
     vs_out.TBN = mat3(T, B, N);
     vs_out.inverseTBN = transpose(vs_out.TBN);
-    vs_out.tangentLightPos = vs_out.inverseTBN * lightPos;
     vs_out.tangentViewPos = vs_out.inverseTBN * eye;
     vs_out.tangentFragPos = vs_out.inverseTBN * vec3(model * vec4(position, 0));
 #endif

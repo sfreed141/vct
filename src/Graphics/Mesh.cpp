@@ -287,11 +287,6 @@ void Mesh::loadMesh(const std::string &meshname) {
 }
 
 void Mesh::draw(GLuint program) const {
-    GLint enableNormalMapLocation = glGetUniformLocation(program, "enableNormalMap");
-    GLint enableNormalMap = 0;
-    if  (enableNormalMapLocation >= 0)
-        glGetUniformiv(program, enableNormalMapLocation, &enableNormalMap);
-
     glBindVertexArray(vao);
     for (const auto &d : drawables) {
         const auto &m = materials[d.material_id];
@@ -303,15 +298,7 @@ void Mesh::draw(GLuint program) const {
 
         GLuint diffuse_texture = hasDiffuseMap ? textures.at(m.diffuse_texname).handle : default_texture;
         GLuint specular_texture = hasSpecularMap ? textures.at(m.specular_texname).handle : 0;
-        GLuint bump_texture;
-        if (hasNormalMap) {
-            bump_texture = textures.at(m.bump_texname).handle;
-            glUniform1i(enableNormalMapLocation, enableNormalMap);
-        }
-        else {
-            bump_texture = 0;
-            glUniform1i(enableNormalMapLocation, false);
-        }
+        GLuint bump_texture = hasNormalMap ? textures.at(m.bump_texname).handle : 0;
 
         glBindTextureUnit(0, diffuse_texture);
         glBindTextureUnit(1, specular_texture);
@@ -331,9 +318,6 @@ void Mesh::draw(GLuint program) const {
         glDrawElements(GL_TRIANGLES, d.indices.size(), GL_UNSIGNED_INT, 0);
     }
 
-    if  (enableNormalMapLocation >= 0)
-        glUniform1i(enableNormalMapLocation, enableNormalMap);
-
     glBindTextureUnit(0, 0);
     glBindTextureUnit(1, 0);
     glBindTextureUnit(5, 0);
@@ -342,11 +326,6 @@ void Mesh::draw(GLuint program) const {
 }
 
 void Mesh::draw(GLShaderProgram &program) const {
-    GLint enableNormalMapLocation = program.uniformLocation("enableNormalMap");
-    GLint enableNormalMap = 0;
-    if  (enableNormalMapLocation >= 0)
-        glGetUniformiv(program.getHandle(), enableNormalMapLocation, &enableNormalMap);
-
     if (program.getObjectLabel() == "Phong") {
         GLuint uboIndex = glGetUniformBlockIndex(program.getHandle(), "MaterialBlock");
         // LOG_DEBUG("uboIndex: ", uboIndex);
@@ -417,15 +396,7 @@ void Mesh::draw(GLShaderProgram &program) const {
 
         GLuint diffuse_texture = hasDiffuseMap ? textures.at(m.diffuse_texname).handle : default_texture;
         GLuint specular_texture = hasSpecularMap ? textures.at(m.specular_texname).handle : 0;
-        GLuint bump_texture;
-        if (hasNormalMap) {
-            bump_texture = textures.at(m.bump_texname).handle;
-            glUniform1i(enableNormalMapLocation, enableNormalMap);
-        }
-        else {
-            bump_texture = 0;
-            glUniform1i(enableNormalMapLocation, false);
-        }
+        GLuint bump_texture = hasNormalMap ? textures.at(m.bump_texname).handle : 0;
 
         glBindTextureUnit(0, diffuse_texture);
         glBindTextureUnit(1, specular_texture);
@@ -449,9 +420,6 @@ void Mesh::draw(GLShaderProgram &program) const {
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, d.ebo);
         glDrawElements(GL_TRIANGLES, d.indices.size(), GL_UNSIGNED_INT, 0);
     }
-
-    if  (enableNormalMapLocation >= 0)
-        glUniform1i(enableNormalMapLocation, enableNormalMap);
 
     glBindTextureUnit(0, 0);
     glBindTextureUnit(1, 0);

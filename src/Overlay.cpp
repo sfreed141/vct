@@ -117,8 +117,8 @@ void Overlay::render(float dt) {
             nk_labelf(ctx, NK_TEXT_LEFT, "Camera Position: (%4.1f, %4.1f, %4.1f)", camera.position.x, camera.position.y, camera.position.z);
             nk_labelf(ctx, NK_TEXT_LEFT, "Camera Direction: (%4.1f, %4.1f, %4.1f)", camera.front.x, camera.front.y, camera.front.z);
 
-            auto &lightPos = app.scene->getMainlight().position;
-            auto &lightDir = app.scene->getMainlight().direction;
+            auto &lightPos = app.scene->lights[0].position;
+            auto &lightDir = app.scene->lights[0].direction;
 
             nk_layout_row_dynamic(ctx, rowheight, 1);
             sprintf(tmp_buffer, "Light Position: %.2f, %.2f, %.2f", lightPos.x, lightPos.y, lightPos.z);
