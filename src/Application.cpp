@@ -246,12 +246,9 @@ void Application::render(float dt) {
 		glClear(GL_DEPTH_BUFFER_BIT);
 		glDisable(GL_BLEND);
 
-		glm::mat4 model;
-
 		shadowmapProgram.bind();
 		shadowmapProgram.setUniformMatrix4fv("projection", lp);
 		shadowmapProgram.setUniformMatrix4fv("view", lv);
-		shadowmapProgram.setUniformMatrix4fv("model", model);
 
 		scene->draw(shadowmapProgram);
 
@@ -363,27 +360,49 @@ void Application::render(float dt) {
 	}
 	mipmapTimer.stop();
 
+	// Depth prepass
+	{
+		GL_DEBUG_PUSH("Depth Prepass")
+		glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
+		glm::mat4 view = camera.lookAt();
+
+		glViewport(0, 0, width, height);
+		glEnable(GL_DEPTH_TEST);
+		glEnable(GL_CULL_FACE);
+		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+		shadowmapProgram.bind();
+
+		shadowmapProgram.setUniformMatrix4fv("projection", projection);
+		shadowmapProgram.setUniformMatrix4fv("view", view);
+
+		scene->draw(shadowmapProgram);
+
+		shadowmapProgram.unbind();
+
+		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+		GL_DEBUG_POP()
+	}
+
 	renderTimer.start();
 	// Render scene
 	{
 		GL_DEBUG_PUSH("Render Scene")
 		glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
 		glm::mat4 view = camera.lookAt();
-		glm::mat4 model;
 
 		glViewport(0, 0, width, height);
 		// glEnable(GL_FRAMEBUFFER_SRGB);
 		glEnable(GL_DEPTH_TEST);
+		glDepthFunc(GL_EQUAL);
+		glDepthMask(GL_FALSE);
 		glEnable(GL_CULL_FACE);
 		glPolygonMode(GL_FRONT_AND_BACK, settings.drawWireframe ? GL_LINE : GL_FILL);
 
 		program.bind();
 		program.setUniformMatrix4fv("projection", projection);
 		program.setUniformMatrix4fv("view", view);
-		program.setUniformMatrix4fv("model", model);
 		program.setUniform3fv("eye", camera.position);
-		// program.setUniform3fv("lightPos", mainlight.position);
-		// program.setUniform3fv("lightInt", mainlight.color);
 		program.setUniformMatrix4fv("ls", ls);
 
 		GLuint shadowmap = shadowmapFBO.getTexture(0);
@@ -436,6 +455,8 @@ void Application::render(float dt) {
 		glBindTextureUnit(4, 0);
 		program.unbind();
 
+		glDepthFunc(GL_LESS);
+		glDepthMask(GL_TRUE);
 		// glDisable(GL_FRAMEBUFFER_SRGB);
 		if (settings.drawWireframe) {
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
