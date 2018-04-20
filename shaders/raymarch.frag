@@ -20,20 +20,37 @@ uniform float near = 0.1, far = 100.0;
 uniform int voxelDim = 128;
 uniform vec3 voxelMin, voxelMax;
 uniform vec3 voxelCenter;
+uniform bool voxelWarp;
 
 uniform int lod = 0;
 
 uniform bool radiance = true;
 
+float sumGeometricSeries(float a, float r, float n) {
+	return a * (1 - pow(r, n + 1)) / (1 - r);
+}
+
+float calculateBaseVoxelSize(float origin, float voxelMax, int voxelDim) {
+	return (voxelMax - origin) / sumGeometricSeries(1, exp2(1 / (voxelDim - 1)), voxelDim - 1);
+}
+
+vec3 calculateVoxelPosition(vec3 d, int voxelDim, float baseSize) {
+	float r = exp2(1 / (voxelDim - 1));
+	return 3 * log2(1 - d / baseSize * (1 - r));
+}
+
 ivec3 voxelIndex(vec3 pos) {
     vec3 range = voxelMax - voxelMin;
     pos -= voxelCenter;
 
-    float x = voxelDim * ((pos.x - voxelMin.x) / range.x);
-    float y = voxelDim * ((pos.y - voxelMin.y) / range.y);
-    float z = voxelDim * (1 - (pos.z - voxelMin.z) / range.z);
+    vec3 unit = (pos - voxelMin) / range;
+    unit.z = 1 - unit.z;
 
-    return ivec3(x, y, z);
+    if (voxelWarp) {
+        unit = smoothstep(0, 1, unit);
+    }
+
+    return ivec3(voxelDim * unit);
 }
 
 void main() {

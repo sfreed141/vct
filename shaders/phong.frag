@@ -94,6 +94,7 @@ uniform int miplevel = 0;
 uniform int voxelDim;
 uniform vec3 voxelMin, voxelMax;
 uniform vec3 voxelCenter;
+uniform bool voxelWarp;
 
 uniform int vctSteps;
 uniform float vctConeAngle;
@@ -136,11 +137,14 @@ vec3 voxelIndex(vec3 pos) {
     vec3 range = voxelMax - voxelMin;
     pos -= voxelCenter;
 
-    float x = voxelDim * ((pos.x - voxelMin.x) / range.x);
-    float y = voxelDim * ((pos.y - voxelMin.y) / range.y);
-    float z = voxelDim * (1 - (pos.z - voxelMin.z) / range.z);
+    vec3 unit = (pos - voxelMin) / range;
+    unit.z = 1 - unit.z;
 
-    return vec3(x, y, z);
+    if (voxelWarp) {
+        unit = smoothstep(0, 1, unit);
+    }
+
+    return voxelDim * unit;
 }
 
 float calcShadowFactor(vec4 lsPosition) {

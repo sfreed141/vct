@@ -23,6 +23,7 @@ layout(binding = 0) uniform sampler2D diffuseTexture;
 
 uniform vec3 eye, lightPos, lightInt;
 uniform bool voxelizeDilate = false;
+uniform bool voxelWarp;
 
 // Map [-1, 1] -> [0, 1]
 vec3 ndcToUnit(vec3 p) { return (p + 1.0) * 0.5; }
@@ -47,10 +48,11 @@ vec3 getVoxelPosition() {
 		// looking down z axis
 	}
 
-	// map to voxel index
-	vec3 voxelIndex = unit * imageSize(voxelColor).x;
+    if (voxelWarp) {
+        unit = smoothstep(0, 1, unit);
+    }
 
-	return voxelIndex;
+	return imageSize(voxelColor) * unit;
 }
 
 // From OpenGL Insights
