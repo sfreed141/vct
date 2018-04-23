@@ -24,6 +24,7 @@ layout(binding = 0) uniform sampler2D diffuseTexture;
 uniform vec3 eye, lightPos, lightInt;
 uniform bool voxelizeDilate = false;
 uniform bool voxelWarp;
+uniform bool voxelizeAtomicMax = false;
 
 // Map [-1, 1] -> [0, 1]
 vec3 ndcToUnit(vec3 p) { return (p + 1.0) * 0.5; }
@@ -72,19 +73,19 @@ uint convVec4ToRGBA8(vec4 val) {
 		| (uint(val.x) & 0x000000FF);
 }
 
-// void imageAtomicRGBA8Avg(layout(r32ui) coherent volatile uimage3D imgUI, ivec3 coords, vec4 val) {
-// 	val.rgb *= 255.0;
-// 	uint newVal = convVec4ToRGBA8(val);
-// 	uint prevStoredVal = 0, curStoredVal;
-// 	while ((curStoredVal = imageAtomicCompSwap(imgUI, coords, prevStoredVal, newVal)) != prevStoredVal) {
-// 		prevStoredVal = curStoredVal;
-// 		vec4 rval = convRGBA8ToVec4(curStoredVal);
-// 		rval.xyz *= rval.w;
-// 		vec4 curValF = rval + val;
-// 		curValF.xyz /= curValF.w;
-// 		newVal = convVec4ToRGBA8(curValF);
-// 	}
-// }
+void imageAtomicRGBA8Avg(layout(r32ui) coherent volatile uimage3D imgUI, ivec3 coords, vec4 val) {
+	val.rgb *= 255.0;
+	uint newVal = convVec4ToRGBA8(val);
+	uint prevStoredVal = 0, curStoredVal;
+	while ((curStoredVal = imageAtomicCompSwap(imgUI, coords, prevStoredVal, newVal)) != prevStoredVal) {
+		prevStoredVal = curStoredVal;
+		vec4 rval = convRGBA8ToVec4(curStoredVal);
+		rval.xyz *= rval.w;
+		vec4 curValF = rval + val;
+		curValF.xyz /= curValF.w;
+		newVal = convVec4ToRGBA8(curValF);
+	}
+}
 
 void main() {
     vec3 color = texture(diffuseTexture, fs_in.texcoord).rgb;
@@ -121,9 +122,13 @@ void main() {
 	}
 #else
 	ivec3 voxelIndex = ivec3(getVoxelPosition());
-	// imageAtomicRGBA8Avg(voxelColor, voxelIndex, vec4(color, 1));
-	// imageAtomicRGBA8Avg(voxelNormal, voxelIndex, vec4(normal, 1));
-	imageAtomicMax(voxelColor, voxelIndex, convVec4ToRGBA8(255 * vec4(color, 1)));
-	imageAtomicMax(voxelNormal, voxelIndex, convVec4ToRGBA8(255 * vec4(normal, 1)));
+	if (voxelizeAtomicMax) {
+		imageAtomicMax(voxelColor, voxelIndex, convVec4ToRGBA8(255 * vec4(color, 1)));
+		imageAtomicMax(voxelNormal, voxelIndex, convVec4ToRGBA8(255 * vec4(normal, 1)));
+	}
+	else {
+		imageAtomicRGBA8Avg(voxelColor, voxelIndex, vec4(color, 1));
+		imageAtomicRGBA8Avg(voxelNormal, voxelIndex, vec4(normal, 1));
+	}
 #endif
 }

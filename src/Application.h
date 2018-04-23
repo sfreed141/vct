@@ -62,6 +62,7 @@ struct Settings {
 
 	int miplevel = 0;
 
+    int voxelizeAtomicMax = false;  // only used if voxel textures are rgba8
     int voxelTrackCamera = false;
     float voxelizeMultiplier = 1.0f;
     int voxelizeDilate = false;

@@ -202,6 +202,7 @@ void Application::render(float dt) {
 		voxelProgram.setUniform3fv("lightInt", mainlight.color);
 		voxelProgram.setUniform1i("voxelizeDilate", settings.voxelizeDilate);
 		voxelProgram.setUniform1i("voxelWarp", settings.voxelWarp);
+		voxelProgram.setUniform1i("voxelizeAtomicMax", settings.voxelizeAtomicMax);
 
 		glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
 		glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
