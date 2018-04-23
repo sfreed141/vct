@@ -246,8 +246,7 @@ std::string GLHelper::readText(const std::string &filename) {
 
 // Create a shader from a single file.
 GLuint GLHelper::createShaderFromFile(GLenum shaderType, const std::string &filename) {
-    std::string str = GLHelper::readText(filename);
-    const char *shaderString = str.c_str();
+    std::string shaderString = GLHelper::readText(filename);
 
 	GLuint shader = GLHelper::createShaderFromString(shaderType, shaderString);
 	if (shader == 0) {
@@ -257,12 +256,32 @@ GLuint GLHelper::createShaderFromFile(GLenum shaderType, const std::string &file
 	return shader;
 }
 
-// Create a shader from the provided string.
-GLuint GLHelper::createShaderFromString(GLenum shaderType, const char *shaderText) {
-    GLuint shader;
-    
-    shader = glCreateShader(shaderType);
+std::string &processGLSLInclude(std::string &s) {
+    const char *pragma = "#pragma include";
 
+    auto linestart = s.find(pragma);
+    while (linestart != std::string::npos) {
+        auto lineend = s.find_first_of('\n', linestart);
+        if (lineend == std::string::npos) {
+            LOG_ERROR("Error trying to process #pragma include");
+        }
+
+        std::string includefilename (s, s.find_first_of('\"', linestart) + 1, s.find_last_of('\"', lineend) - s.find_first_of('\"', linestart) - 1);
+
+        s.replace(linestart, lineend - linestart, GLHelper::readText(SHADER_DIR + includefilename));
+
+        linestart = s.find(pragma, lineend);
+    }
+
+    return s;
+}
+
+// Create a shader from the provided string.
+GLuint GLHelper::createShaderFromString(GLenum shaderType, std::string shaderString) {
+    processGLSLInclude(shaderString);
+
+    GLuint shader = glCreateShader(shaderType);
+    const char *shaderText = shaderString.c_str();
     glShaderSource(shader, 1, &shaderText, NULL);
     glCompileShader(shader);
     

@@ -20,7 +20,7 @@ public:
     static GLuint createCubemap(const std::vector<std::string> &imagenames);
     static std::string readText(const std::string &filename);
     static GLuint createShaderFromFile(GLenum shaderType, const std::string &filename);
-    static GLuint createShaderFromString(GLenum shaderType, const char *shaderText);
+    static GLuint createShaderFromString(GLenum shaderType, std::string shaderString);
     static bool checkShaderStatus(GLuint shader);
     static bool checkShaderProgramStatus(GLuint program);
     static bool checkFramebufferComplete(GLuint fbo);
