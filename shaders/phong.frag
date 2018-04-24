@@ -243,7 +243,7 @@ LightingResult calculateDirectLighting(Material m, vec3 eye, vec3 P, vec3 N) {
 
 void main() {
     if (voxelize) {
-        vec3 i = voxelIndex(fs_in.fragPosition) / voxelDim;
+        vec3 i = voxelIndex(fs_in.fragPosition, voxelDim, voxelCenter, voxelMin, voxelMax, voxelWarp) / voxelDim;
 
         if (normals) {
             vec3 normal = normalize(textureLod(voxelNormal, i, miplevel).rgb);
@@ -301,7 +301,7 @@ void main() {
         vec3 specularLighting = specularColor.rgb * (enableSpecular ? lighting.specular : vec3(0));
 
         if (enableIndirect) {
-            vec3 voxelPosition = voxelIndex(fs_in.fragPosition) / voxelDim;
+            vec3 voxelPosition = voxelIndex(fs_in.fragPosition, voxelDim, voxelCenter, voxelMin, voxelMax, voxelWarp) / voxelDim;
             vec3 indirect = vec3(0);
             indirect += traceCone(radiance ? voxelRadiance : voxelColor, voxelPosition, normal, vctSteps, vctBias, vctConeAngle, vctConeInitialHeight, vctLodOffset);
 

@@ -26,19 +26,7 @@ uniform bool voxelWarp;
 
 uniform bool radianceDilate = false;
 
-ivec3 voxelIndex(vec3 pos) {
-    vec3 range = voxelMax - voxelMin;
-    pos -= voxelCenter;
-
-    vec3 unit = (pos - voxelMin) / range;
-    unit.z = 1 - unit.z;
-
-    if (voxelWarp) {
-        unit = smoothstep(0, 1, unit);
-    }
-
-    return ivec3(voxelDim * unit);
-}
+#pragma include "common.glsl"
 
 void main() {
     ivec2 threadId = ivec2(gl_GlobalInvocationID.xy);
@@ -52,7 +40,7 @@ void main() {
     float shadowmapDepth = texture(shadowmap, shadowmapTexcoord).r;
     vec3 ndc = vec3(shadowmapTexcoord, shadowmapDepth) * 2 - vec3(1);
     vec3 worldPosition = (lsInverse * vec4(ndc, 1)).xyz;
-    ivec3 voxelPosition = voxelIndex(worldPosition);
+    ivec3 voxelPosition = ivec3(voxelIndex(worldPosition, voxelDim, voxelCenter, voxelMin, voxelMax, voxelWarp));
 
     if (radianceDilate) {
         const ivec3 offsets[] = ivec3[](

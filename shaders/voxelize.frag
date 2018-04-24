@@ -29,6 +29,8 @@ uniform bool voxelizeAtomicMax = false;
 // Map [-1, 1] -> [0, 1]
 vec3 ndcToUnit(vec3 p) { return (p + 1.0) * 0.5; }
 
+#pragma include "common.glsl"
+
 vec3 getVoxelPosition() {
 	// get ndc
 	vec3 ndc = vec3(fs_in.position);
@@ -50,7 +52,7 @@ vec3 getVoxelPosition() {
 	}
 
     if (voxelWarp) {
-        unit = smoothstep(0, 1, unit);
+        unit = voxelWarpFn(unit);
     }
 
 	return imageSize(voxelColor) * unit;
