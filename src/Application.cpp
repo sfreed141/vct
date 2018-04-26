@@ -148,7 +148,7 @@ void Application::update(float dt) {
 	}
 
 	if (settings.voxelTrackCamera) {
-		vct.center = camera.position;
+		vct.center = glm::floor(camera.position);
 	}
 
 	scene->update(dt);
