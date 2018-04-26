@@ -76,6 +76,7 @@ uniform bool voxelize = false;
 uniform bool normals = false;
 uniform bool dominant_axis = false;
 uniform bool radiance = false;
+uniform bool drawWarpSlope = false;
 
 uniform bool enablePostprocess = false;
 uniform bool enableShadows = true;
@@ -249,12 +250,30 @@ void main() {
             vec3 normal = normalize(textureLod(voxelNormal, i, miplevel).rgb);
             color = vec4(normal, 1);
         }
+        else if (drawWarpSlope) {
+            vec3 range = voxelMax - voxelMin;
+            vec3 pos = fs_in.fragPosition - voxelCenter;
+
+            vec3 unit = (pos - voxelMin) / range;
+            unit.z = 1 - unit.z;
+
+            float slope = ((voxelWarpFn(unit + vec3(0.01,0,0)) - voxelWarpFn(unit)) / 0.01).x;
+            unit = voxelWarpFn(unit);
+
+            const vec3 gradient[] = vec3[](
+                vec3(1, 0, 0),
+                vec3(0, 1, 0),
+                vec3(0, 0, 1)
+            );
+            color.rgb = mix(gradient[int(max(floor(slope), 0))], gradient[int(min(ceil(slope), gradient.length()))], fract(slope));
+        }
         else if (radiance) {
             color = textureLod(voxelRadiance, i, miplevel).rgba;
         }
         else {
             color = textureLod(voxelColor, i, miplevel).rgba;
         }
+
 
         return;
     }

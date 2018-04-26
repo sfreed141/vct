@@ -1,3 +1,16 @@
+float sumGeometricSeries(float a, float r, float n) {
+	return a * (1 - pow(r, n + 1)) / (1 - r);
+}
+
+float calculateBaseVoxelSize(float origin, float voxelMax, int voxelDim) {
+	return (voxelMax - origin) / sumGeometricSeries(1, exp2(1 / (voxelDim - 1)), voxelDim - 1);
+}
+
+vec3 calculateVoxelPosition(vec3 d, int voxelDim, float baseSize) {
+	float r = exp2(1 / (voxelDim - 1));
+	return 3 * log2(1 - d / baseSize * (1 - r));
+}
+
 vec3 voxelWarpFn(vec3 unit) {
     return smoothstep(0, 1, unit);
 }

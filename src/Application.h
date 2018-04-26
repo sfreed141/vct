@@ -43,6 +43,7 @@ struct Settings {
 	int axisOverride = -1;
     int drawShadowmap = false;
     int raymarch = false;
+    int drawWarpSlope = false;
 
 	enum ConservativeRasterizeMode { OFF, MSAA, NV };
     ConservativeRasterizeMode conservativeRasterization = MSAA;

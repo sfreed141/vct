@@ -415,6 +415,7 @@ void Application::render(float dt) {
 		program.setUniform1i("normals", settings.drawNormals);
 		program.setUniform1i("dominant_axis", settings.drawDominantAxis);
 		program.setUniform1i("radiance", settings.drawRadiance);
+		program.setUniform1i("drawWarpSlope", settings.drawWarpSlope);
 
 		program.setUniform1i("enablePostprocess", settings.enablePostprocess);
 		program.setUniform1i("enableShadows", settings.enableShadows);
