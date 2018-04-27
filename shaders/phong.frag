@@ -122,6 +122,9 @@ vec3 traceCone(sampler3D voxelTexture, vec3 position, vec3 direction, int steps,
     vec3 color = vec3(0);
     float alpha = 0;
 
+    // TODO incorporate voxel size (need to support warping too). one axis for now (assume extents symmetric)
+    float stepScale = linearVoxelSize(voxelDim, voxelMin, voxelMax).x;
+    direction *= stepScale;
     for (int i = 0; i < steps && alpha < 0.95; i++) {
         float coneRadius = coneHeight * tan(coneAngle / 2.0);
         float lod = log2(max(1.0, 2 * coneRadius));
@@ -257,7 +260,7 @@ void main() {
             vec3 unit = (pos - voxelMin) / range;
             unit.z = 1 - unit.z;
 
-            float slope = ((voxelWarpFn(unit + vec3(0.01,0,0)) - voxelWarpFn(unit)) / 0.01).x;
+            float slope = voxelWarpFnGradient(unit).x;
             unit = voxelWarpFn(unit);
 
             const vec3 gradient[] = vec3[](
