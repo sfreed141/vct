@@ -100,7 +100,7 @@ newmtl arch
 	Ks 0.0000 0.0000 0.0000
 	Ke 0.0000 0.0000 0.0000
 	map_Ka textures_dds\Dielectric_metallic.dds
-	map_Kd textures_dds\Sponza_Arch_diffuse.dds
+	map_Kd textures_pbr\Sponza_Arch_diffuse.png
 	map_Ns textures_dds\Sponza_Arch_roughness.dds
 	map_bump textures_dds\Sponza_Arch_normal.dds
 	bump textures_dds\Sponza_Arch_normal.dds
