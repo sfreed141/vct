@@ -21,7 +21,6 @@ layout(binding = 1, r32ui) uniform uimage3D voxelNormal;
 
 layout(binding = 0) uniform sampler2D diffuseTexture;
 
-uniform vec3 eye, lightPos, lightInt;
 uniform bool voxelizeDilate = false;
 uniform bool voxelWarp;
 uniform bool voxelizeAtomicMax = false;
@@ -91,10 +90,7 @@ void imageAtomicRGBA8Avg(layout(r32ui) coherent volatile uimage3D imgUI, ivec3 c
 
 void main() {
     vec3 color = texture(diffuseTexture, fs_in.texcoord).rgb;
-
 	vec3 normal = normalize(fs_in.normal);
-	vec3 light = normalize(lightPos - fs_in.position);
-	// color *= max(dot(normal, light), 0) * lightInt;
 
     // Store value (must be atomic, use alpha component as count)
 #if GL_NV_shader_atomic_fp16_vector

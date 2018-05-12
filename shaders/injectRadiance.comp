@@ -42,6 +42,10 @@ void main() {
     vec3 worldPosition = (lsInverse * vec4(ndc, 1)).xyz;
     ivec3 voxelPosition = ivec3(voxelIndex(worldPosition, voxelDim, voxelCenter, voxelMin, voxelMax, voxelWarp));
 
+    if (any(greaterThanEqual(voxelPosition, ivec3(voxelDim))) || any(lessThan(voxelPosition, ivec3(0)))) {
+        return;
+    }
+
     if (radianceDilate) {
         const ivec3 offsets[] = ivec3[](
             ivec3(0, 0, 0),

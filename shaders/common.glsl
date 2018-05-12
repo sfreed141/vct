@@ -12,7 +12,14 @@ vec3 calculateVoxelPosition(vec3 d, int voxelDim, float baseSize) {
 }
 
 vec3 voxelWarpFn(vec3 unit) {
-    return smoothstep(0, 1, unit);
+    if (any(greaterThan(unit, vec3(1))) || any(lessThan(unit, vec3(0)))) return unit;
+
+    // return smoothstep(0, 1, unit);
+    const float alpha = 0.25;
+    // float x = unit.x;
+    // unit.x = alpha * x + 3 * (1 - alpha) * x * x - x * x * x;
+    unit = alpha * unit + (3 - 3 * alpha) * unit * unit - unit * unit * unit;
+    return clamp(unit, 0, 1);
 }
 
 vec3 voxelWarpFnGradient(vec3 unit) {

@@ -47,7 +47,7 @@ struct Settings {
 
 	enum ConservativeRasterizeMode { OFF, MSAA, NV };
     ConservativeRasterizeMode conservativeRasterization = MSAA;
-    int enablePostprocess = false;
+    int enablePostprocess = true;
 	int enableShadows = true;
     int enableNormalMap = true;
     int enableIndirect = true;

@@ -148,7 +148,12 @@ void Application::update(float dt) {
 	}
 
 	if (settings.voxelTrackCamera) {
-		vct.center = glm::floor(camera.position);
+		// To prevent temporal artifacts, the voxel textures are 'snapped' to a discrete grid
+
+		// TODO
+		// glm::vec3 gridcell = glm::vec3(1.f);//vct.voxelWorldSize();
+		glm::vec3 gridcell = 16.f * vct.voxelWorldSize();
+		vct.center = glm::floor(camera.position / gridcell) * gridcell;
 	}
 
 	scene->update(dt);
