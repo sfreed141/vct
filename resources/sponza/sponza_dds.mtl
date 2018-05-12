@@ -35,7 +35,7 @@ newmtl vase_round
 	map_bump textures_dds\VaseRound_normal.dds
 	bump textures_dds\VaseRound_normal.dds
 	map_Ns textures_dds\VaseRound_roughness.dds
-
+	
 newmtl Material__57
 	Ns 10.0000
 	Ni 1.5000
@@ -69,7 +69,7 @@ newmtl Material__298
 	map_Kd textures_dds\Background_Albedo.dds
 	map_bump textures_dds\Background_Normal.dds
 	bump textures_dds\Background_Normal.dds
-	map_NS textures_dds\Background_roughness.dds
+	map_Ns textures_dds\Background_Roughness.dds
 
 newmtl bricks
 	Ns 10.0000

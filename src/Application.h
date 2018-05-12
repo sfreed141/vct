@@ -45,6 +45,7 @@ struct Settings {
     int raymarch = false;
     int drawWarpSlope = false;
 
+    int cooktorrance = true;
 	enum ConservativeRasterizeMode { OFF, MSAA, NV };
     ConservativeRasterizeMode conservativeRasterization = MSAA;
     int enablePostprocess = true;

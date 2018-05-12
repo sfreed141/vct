@@ -1,3 +1,5 @@
+const float PI = 3.1415982;
+
 float sumGeometricSeries(float a, float r, float n) {
 	return a * (1 - pow(r, n + 1)) / (1 - r);
 }

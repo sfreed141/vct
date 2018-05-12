@@ -422,6 +422,7 @@ void Application::render(float dt) {
 		program.setUniform1i("radiance", settings.drawRadiance);
 		program.setUniform1i("drawWarpSlope", settings.drawWarpSlope);
 
+		program.setUniform1i("cooktorrance", settings.cooktorrance);
 		program.setUniform1i("enablePostprocess", settings.enablePostprocess);
 		program.setUniform1i("enableShadows", settings.enableShadows);
 		program.setUniform1i("enableNormalMap", settings.enableNormalMap);
