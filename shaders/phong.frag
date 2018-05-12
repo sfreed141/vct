@@ -59,7 +59,7 @@ layout(std140) uniform MaterialBlock {
 };
 
 // uniform sampler2D ambientMap;
-// uniform sampler2D alphaMap;
+layout(binding = 9) uniform sampler2D alphaMap;
 
 layout(binding = 0) uniform sampler2D diffuseMap;
 layout(binding = 1) uniform sampler2D specularMap;
@@ -346,10 +346,6 @@ void main() {
 
         return;
     }
-
-
-
-    vec3 lightInt = lights[0].color;
 
     vec3 normal;
 #ifdef NORMAL_MAP

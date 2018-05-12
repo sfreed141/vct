@@ -69,6 +69,8 @@ void Application::init() {
 	temporalRadianceFilterProgram.setObjectLabel("Temporal Radiance Filter");
 	mipmapProgram.attachAndLink({SHADER_DIR "filterRadiance.comp"});
 	mipmapProgram.setObjectLabel("Filter Radiance");
+	ditherProgram.attachAndLink({SHADER_DIR "simple.vert", SHADER_DIR "dither.frag"});
+	ditherProgram.setObjectLabel("Dither");
 
 	// Create scene
 	scene = std::make_unique<Scene>();
@@ -378,15 +380,24 @@ void Application::render(float dt) {
 		glEnable(GL_DEPTH_TEST);
 		glEnable(GL_CULL_FACE);
 		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+		if (settings.msaa) {
+			glEnable(GL_MULTISAMPLE);
+		}
+		if (settings.alphatocoverage) {
+			glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+		}
+		else {
+			glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+		}
 
-		shadowmapProgram.bind();
+		ditherProgram.bind();
 
-		shadowmapProgram.setUniformMatrix4fv("projection", projection);
-		shadowmapProgram.setUniformMatrix4fv("view", view);
+		ditherProgram.setUniformMatrix4fv("projection", projection);
+		ditherProgram.setUniformMatrix4fv("view", view);
 
-		scene->draw(shadowmapProgram);
+		scene->draw(ditherProgram);
 
-		shadowmapProgram.unbind();
+		ditherProgram.unbind();
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		GL_DEBUG_POP()
@@ -466,6 +477,7 @@ void Application::render(float dt) {
 		glBindTextureUnit(4, 0);
 		program.unbind();
 
+		glDisable(GL_MULTISAMPLE);
 		glDepthFunc(GL_LESS);
 		glDepthMask(GL_TRUE);
 		// glDisable(GL_FRAMEBUFFER_SRGB);

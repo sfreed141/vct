@@ -45,6 +45,8 @@ struct Settings {
     int raymarch = false;
     int drawWarpSlope = false;
 
+    int msaa = false;
+    int alphatocoverage = false;
     int cooktorrance = true;
 	enum ConservativeRasterizeMode { OFF, MSAA, NV };
     ConservativeRasterizeMode conservativeRasterization = MSAA;
@@ -150,7 +152,7 @@ private:
 
 	GLShaderProgram injectRadianceProgram, temporalRadianceFilterProgram;
 
-    GLShaderProgram mipmapProgram;
+    GLShaderProgram mipmapProgram, ditherProgram;
 
     Settings settings;
 	GLBufferedTimer voxelizeTimer, shadowmapTimer, radianceTimer, mipmapTimer, renderTimer, totalTimer;

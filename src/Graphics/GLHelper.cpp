@@ -187,6 +187,10 @@ GLuint GLHelper::createTextureFromImage(const std::string &imagename) {
         }
 
         GLint levels = (GLint)std::log2(std::fmax(width, height)) + 1;
+        if (channels == 1) {
+            glTextureStorage2D(texture_id, levels, GL_R8, width, height);
+            glTextureSubImage2D(texture_id, 0, 0, 0, width, height, GL_RED, GL_UNSIGNED_BYTE, image);
+        }
         if (channels == 3) {
             glTextureStorage2D(texture_id, levels, GL_RGB8, width, height);
             glTextureSubImage2D(texture_id, 0, 0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, image);

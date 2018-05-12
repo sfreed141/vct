@@ -97,6 +97,11 @@ void Mesh::loadMesh(const std::string &meshname) {
                 LOG_INFO("loaded metallic map ", mp.metallic_texname);
             }
 
+            if (!mp.alpha_texname.empty() && textures.find(mp.alpha_texname) == textures.end()) {
+                m.alpha_map = loadImage(mp.alpha_texname);
+                LOG_INFO("loaded alpha map ", mp.alpha_texname);
+            }
+
             mats.push_back(m);
         }
 
@@ -347,12 +352,14 @@ void Mesh::draw(GLShaderProgram &program) const {
         bool hasNormalMap = m.normal_map != 0;
         bool hasRoughnessMap = m.roughness_map != 0;
         bool hasMetallicMap = m.ambient_map != 0;
+        bool hasAlphaMap = m.alpha_map != 0;
 
         glBindTextureUnit(0, m.diffuse_map);
         glBindTextureUnit(1, m.specular_map);
         glBindTextureUnit(5, m.normal_map);
         glBindTextureUnit(7, m.roughness_map);
         glBindTextureUnit(8, m.metallic_map);
+        glBindTextureUnit(9, m.alpha_map);
 
         if (program.getObjectLabel() == "Phong") {
             glBindBufferRange(GL_UNIFORM_BUFFER, 0, materialUBO, Material::getAlignment() * d.material_id, Material::glslSize);
@@ -365,10 +372,11 @@ void Mesh::draw(GLShaderProgram &program) const {
             program.setUniform1i("material.hasAmbientMap", false);
             program.setUniform1i("material.hasDiffuseMap", hasDiffuseMap);
             program.setUniform1i("material.hasSpecularMap", hasSpecularMap);
-            program.setUniform1i("material.hasAlphaMap", false);
+            program.setUniform1i("material.hasAlphaMap", hasAlphaMap);
             program.setUniform1i("material.hasNormalMap", hasNormalMap);
             program.setUniform1i("material.hasRoughnessMap", hasRoughnessMap);
             program.setUniform1i("material.hasMetallicMap", hasMetallicMap);
+            program.setUniform1i("material.hasAlphaMap", hasAlphaMap);
         }
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, d.ebo);

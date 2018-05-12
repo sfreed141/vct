@@ -156,6 +156,8 @@ void Overlay::render(float dt) {
             nk_checkbox_label(ctx, "Raymarch", &settings.raymarch);
             nk_checkbox_label(ctx, "Warp Slope", &settings.drawWarpSlope);
             nk_checkbox_label(ctx, "Cook Torrance", &settings.cooktorrance);
+            nk_checkbox_label(ctx, "MSAA", &settings.msaa);
+            nk_checkbox_label(ctx, "Alpha-to-Coverage", &settings.alphatocoverage);
 
             nk_layout_row_dynamic(ctx, rowheight, 2);
 			nk_labelf(ctx, NK_TEXT_LEFT, "Miplevel: %d", settings.miplevel);
