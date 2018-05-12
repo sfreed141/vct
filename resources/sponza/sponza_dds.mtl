@@ -95,7 +95,7 @@ newmtl arch
 	Ks 0.0000 0.0000 0.0000
 	Ke 0.0000 0.0000 0.0000
 	map_Pm textures_dds\Dielectric_metallic.dds
-	map_Kd textures_pbr\Sponza_Arch_diffuse.png
+	map_Kd textures_dds\Sponza_Arch_diffuse.dds
 	map_Pr textures_dds\Sponza_Arch_roughness.dds
 	norm textures_dds\Sponza_Arch_normal.dds
 
@@ -287,7 +287,7 @@ newmtl fabric_c
 	Ks 0.0000 0.0000 0.0000
 	Ke 0.0000 0.0000 0.0000
 	map_Pm textures_dds\Sponza_Curtain_metallic.dds
-	map_Kd textures_pbr\Sponza_Curtain_Red_diffuse.png
+	map_Kd textures_dds\Sponza_Curtain_Red_diffuse.dds
 	norm textures_dds\Sponza_Curtain_Red_normal.dds
 	map_Pr textures_dds\Sponza_Curtain_roughness.dds
 
