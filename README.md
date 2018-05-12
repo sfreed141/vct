@@ -5,6 +5,8 @@ At its core, the application is a standard forward rendering engine supporting m
 
 In general, the main steps in the rendering pipeline are generating a voxelized representation of the scene, creating a filtered representation of light from the voxels and light sources, and finally shading the scene.
 
+Screenshots are included at the bottom of the README.
+
 ## References
 * [Interactive Indirect Illumination Using Voxel Cone Tracing](https://research.nvidia.com/publication/interactive-indirect-illumination-using-voxel-cone-tracing)
 * [OpenGL Insights: Octree-Based Sparse Voxelization Using the GPU Hardware Rasterizer](https://www.seas.upenn.edu/~pcozzi/OpenGLInsights/OpenGLInsights-SparseVoxelization.pdf)
@@ -43,3 +45,12 @@ In general, the main steps in the rendering pipeline are generating a voxelized 
 3. If you didn't install vcpkg to `C:\src\vcpkg`, update the `CMAKE_TOOLCHAIN_FILE` variable in `CMakeSettings.json` appropriately.
 4. In Visual Studio, open the project by going to `File>Open>CMake...` and selecting the `CMakeLists.txt` file in the root project directory.
 5. Good to go!
+
+## Screenshots
+With global illumination: ![With Global Illumination](resources/screenshot_vct.png)
+
+Without global illumination: ![Without Global Illumination](resources/screenshot_novct.png)
+
+Voxelized representation of the scene (cracks are from not using perfect conservative rasterization, which is okay for our purposes): ![Voxelized Scene](resources/screenshot_voxels.png)
+
+The voxelized VPLs (virtual point lights) that are filtered and cone traced (to approximate indirect lighting): ![Radiance Voxels](resources/screenshot_radiance.png)
