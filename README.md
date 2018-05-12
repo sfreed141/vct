@@ -1,5 +1,9 @@
 # Voxel Cone Tracing
-Implementation of global illumination using voxel cone tracing.
+This is the implementation for my (still in progress) thesis, Real-Time Dynamic Global Illumination using Warped Voxel Cone Tracing.
+
+At its core, the application is a standard forward rendering engine supporting multiple lights, shadow mapping, and normal mapping---in addition, of course, to full real-time dynamic global illumination. The scene to be rendered is composed of one or more actors, which are simply meshes loaded from the generic Wavefront OBJ file format. Actors are also capable of rigid body animations.
+
+In general, the main steps in the rendering pipeline are generating a voxelized representation of the scene, creating a filtered representation of light from the voxels and light sources, and finally shading the scene.
 
 ## References
 * [Interactive Indirect Illumination Using Voxel Cone Tracing](https://research.nvidia.com/publication/interactive-indirect-illumination-using-voxel-cone-tracing)
@@ -14,7 +18,6 @@ Implementation of global illumination using voxel cone tracing.
 * [nuklear](https://github.com/vurtun/nuklear)
 
 ## Models
-* [Sponza](http://casual-effects.com/data/index.html)
 * [PBR Sponza](www.alexandre-pestana.com/pbr-textures-sponza/)
 
 ## Building
