@@ -80,7 +80,7 @@ GLuint make3DTexture(GLsizei size, GLsizei levels, GLenum internalFormat, GLint 
 class VCT {
 public:
     VCT() {
-        useRGBA16f = GLAD_GL_NV_shader_atomic_fp16_vector;
+        useRGBA16f = false; // GLAD_GL_NV_shader_atomic_fp16_vector; // MUST ALSO DEFINE USE_RGBA16F in voxelize.frag and injectRadiance.comp
 	    voxelFormat = useRGBA16f ? GL_RGBA16F : GL_RGBA8;
         make();
     }

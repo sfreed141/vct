@@ -1,8 +1,20 @@
 #version 430 core
 
+#define USE_RGBA16F 0
+
+#if USE_RGBA16F
 #extension GL_NV_gpu_shader5: enable
 #extension GL_NV_shader_atomic_float: enable
 #extension GL_NV_shader_atomic_fp16_vector: enable
+
+#if GL_NV_shader_atomic_fp16_vector
+layout(binding = 0, rgba16f) uniform image3D voxelColor;
+layout(binding = 1, rgba16f) uniform image3D voxelNormal;
+#endif // GL_NV_shader_atomic_fp16_vector
+#else
+layout(binding = 0, r32ui) uniform uimage3D voxelColor;
+layout(binding = 1, r32ui) uniform uimage3D voxelNormal;
+#endif // USE_RGBA16F
 
 in GS_OUT {
     vec3 position;
@@ -10,14 +22,6 @@ in GS_OUT {
     vec2 texcoord;
     flat int axis;
 } fs_in;
-
-#if GL_NV_shader_atomic_fp16_vector
-layout(binding = 0, rgba16f) uniform image3D voxelColor;
-layout(binding = 1, rgba16f) uniform image3D voxelNormal;
-#else
-layout(binding = 0, r32ui) uniform uimage3D voxelColor;
-layout(binding = 1, r32ui) uniform uimage3D voxelNormal;
-#endif
 
 layout(binding = 0) uniform sampler2D diffuseTexture;
 
@@ -90,10 +94,10 @@ void imageAtomicRGBA8Avg(layout(r32ui) coherent volatile uimage3D imgUI, ivec3 c
 
 void main() {
     vec3 color = texture(diffuseTexture, fs_in.texcoord).rgb;
-	vec3 normal = normalize(fs_in.normal);
+	vec3 normal = (normalize(fs_in.normal) + 1) * 0.5; // map normal [-1, 1] -> [0, 1]
 
     // Store value (must be atomic, use alpha component as count)
-#if GL_NV_shader_atomic_fp16_vector
+#if USE_RGBA16F && GL_NV_shader_atomic_fp16_vector
 	if (voxelizeDilate) {
 		vec3 voxelPosition = getVoxelPosition();
 		ivec3 voxelIndex = ivec3(voxelPosition);

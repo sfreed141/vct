@@ -2,7 +2,9 @@
 
 layout(local_size_x = 16, local_size_y = 16) in;
 
-#if GL_NV_shader_atomic_fp16_vector
+#define USE_RGBA16F 0
+
+#if USE_RGBA16F && GL_NV_shader_atomic_fp16_vector
 #define voxelLayout rgba16f
 #else
 #define voxelLayout rgba8
@@ -64,7 +66,8 @@ void main() {
     else {
         // Calculate diffuse lighting
         vec4 color = imageLoad(voxelColor, voxelPosition);
-        vec3 normal = normalize(imageLoad(voxelNormal, voxelPosition).xyz);
+        vec3 normal = imageLoad(voxelNormal, voxelPosition).xyz;
+        normal = 2 * normal - 1;    // need to remap normal from [0, 1] -> [-1, 1]
 
         vec3 lightVector = normalize(lightPos - worldPosition);
         float diffuse = max(dot(normal, lightVector), 0);
