@@ -54,20 +54,11 @@ void Mesh::loadMesh(const std::string &meshname) {
     else {
         auto start = chrono::high_resolution_clock::now();
 
+        mats.clear();
+        mats.reserve(materials.size() + 1);
         // Load materials and store name->id map
         for (material_t &mp : materials) {
-            // Material m;
-            // for (int i = 0; i < 3; i++) {
-            //     m.ambient[i] = mp.ambient[i];
-            //     m.diffuse[i] = mp.diffuse[i];
-            //     m.specular[i] = mp.specular[i];
-            // }
-            // m.shininess = mp.shininess;
-            // m.hasAmbientMap = !mp.diffuse_texname.empty();
-            // m.hasDiffuseMap = !mp.ambient_texname.empty();
-            // m.hasSpecularMap = !mp._texname.empty();
-            // m.hasAlphaMap = !mp.diffuse_texname.empty();
-            // m.hasNormalMap = !mp.diffuse_texname.empty();
+            Material m {mp};
 
             auto loadImage = [&] (const std::string &path) {
                 string texture_name = path;
@@ -78,32 +69,36 @@ void Mesh::loadMesh(const std::string &meshname) {
                 GLTexture2D texture {texture_id};
 
                 textures.insert(make_pair(path, std::move(texture)));
+                return texture_id;
             };
 
             if (!mp.diffuse_texname.empty() && textures.find(mp.diffuse_texname) == textures.end()) {
-                loadImage(mp.diffuse_texname);
+                m.diffuse_map = loadImage(mp.diffuse_texname);
                 LOG_INFO("loaded diffuse ", mp.diffuse_texname);
             }
 
             if (!mp.specular_texname.empty() && textures.find(mp.specular_texname) == textures.end()) {
-                loadImage(mp.specular_texname);
+                m.specular_map = loadImage(mp.specular_texname);
                 LOG_INFO("loaded specular ", mp.specular_texname);
             }
 
             if (!mp.bump_texname.empty() && textures.find(mp.bump_texname) == textures.end()) {
-                loadImage(mp.bump_texname);
+                m.normal_map = loadImage(mp.bump_texname);
                 LOG_INFO("loaded normal map ", mp.bump_texname);
             }
 
+            // TODO use tinyobj PBR extension names instead
             if (!mp.specular_highlight_texname.empty() && textures.find(mp.specular_highlight_texname) == textures.end()) {
-                loadImage(mp.specular_highlight_texname);
+                m.roughness_map = loadImage(mp.specular_highlight_texname);
                 LOG_INFO("loaded roughness map ", mp.specular_highlight_texname);
             }
 
             if (!mp.ambient_texname.empty() && textures.find(mp.ambient_texname) == textures.end()) {
-                loadImage(mp.ambient_texname);
+                m.metallic_map = loadImage(mp.ambient_texname);
                 LOG_INFO("loaded metallic map ", mp.ambient_texname);
             }
+
+            mats.push_back(m);
         }
 
         // Default material
@@ -118,6 +113,10 @@ void Mesh::loadMesh(const std::string &meshname) {
             GLuint texture_id = GLHelper::createTextureFromImage(string(RESOURCE_DIR) + default_material.diffuse_texname);
             GLTexture2D texture {texture_id};
             textures.insert(make_pair(default_material.diffuse_texname, std::move(texture)));
+
+            Material m {default_material};
+            m.diffuse_map = texture_id;
+            mats.push_back(m);
         }
 
         drawables.resize(materials.size());
@@ -248,37 +247,16 @@ void Mesh::loadMesh(const std::string &meshname) {
         glBindBuffer(GL_ARRAY_BUFFER, 0);
 
         {
-            glGetIntegerv(GL_UNIFORM_BUFFER_OFFSET_ALIGNMENT, &uboOffsetAlignment);
-            LOG_DEBUG("uboOffsetAlignment: ", uboOffsetAlignment);
-
             glGenBuffers(1, &materialUBO);
             glBindBuffer(GL_UNIFORM_BUFFER, materialUBO);
-            glBufferData(GL_UNIFORM_BUFFER, std::max(80, uboOffsetAlignment) * materials.size(), nullptr, GL_STATIC_DRAW);
+            glBufferData(GL_UNIFORM_BUFFER, Material::getAlignment() * mats.size(), nullptr, GL_STATIC_DRAW);
 
             for (const auto &d : drawables) {
-                const auto &m = materials[d.material_id];
+                const auto &m = mats[d.material_id];
 
-                GLuint hasAmbientMap = false;
-                GLuint hasDiffuseMap = textures.count(m.diffuse_texname) != 0;
-                GLuint hasSpecularMap = textures.count(m.specular_texname) != 0;
-                GLuint hasAlphaMap = false;
-                GLuint hasNormalMap = textures.count(m.bump_texname) != 0;
-                GLuint hasRoughnessMap = textures.count(m.specular_highlight_texname) != 0;
-                GLuint hasMetallicMap = textures.count(m.ambient_texname) != 0;
+                GLuint materialOffset = Material::getAlignment() * d.material_id;
 
-                GLuint materialOffset = std::max(80, uboOffsetAlignment) * d.material_id;
-
-                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset +  0, 12, m.ambient);
-                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 16, 12, m.diffuse);
-                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 32, 12, m.specular);
-                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 44,  4, &m.shininess);
-                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 48,  4, &hasAmbientMap);
-                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 52,  4, &hasDiffuseMap);
-                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 56,  4, &hasSpecularMap);
-                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 60,  4, &hasAlphaMap);
-                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 64,  4, &hasNormalMap);
-                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 68,  4, &hasRoughnessMap);
-                glBufferSubData(GL_UNIFORM_BUFFER, materialOffset + 72,  4, &hasMetallicMap);
+                m.writeUBO(materialOffset);
             }
 
             glBindBuffer(GL_UNIFORM_BUFFER, 0);
@@ -298,53 +276,6 @@ void Mesh::loadMesh(const std::string &meshname) {
             "\n\tradius = ", radius
         );
     }
-}
-
-void Mesh::draw(GLuint program) const {
-    glBindVertexArray(vao);
-    for (const auto &d : drawables) {
-        const auto &m = materials[d.material_id];
-
-        GLuint default_texture = textures.at(DEFAULT_TEXTURE).handle;
-        bool hasDiffuseMap = textures.count(m.diffuse_texname) != 0;
-        bool hasSpecularMap = textures.count(m.specular_texname) != 0;
-        bool hasNormalMap = textures.count(m.bump_texname) != 0;
-        bool hasRoughnessMap = textures.count(m.specular_highlight_texname) != 0;
-        bool hasMetallicMap = textures.count(m.ambient_texname) != 0;
-
-        GLuint diffuse_texture = hasDiffuseMap ? textures.at(m.diffuse_texname).handle : default_texture;
-        GLuint specular_texture = hasSpecularMap ? textures.at(m.specular_texname).handle : 0;
-        GLuint bump_texture = hasNormalMap ? textures.at(m.bump_texname).handle : 0;
-        GLuint roughness_texture = hasRoughnessMap ? textures.at(m.specular_highlight_texname).handle : 0;
-        GLuint metallic_texture = hasMetallicMap ? textures.at(m.ambient_texname).handle : 0;
-
-        glBindTextureUnit(0, diffuse_texture);
-        glBindTextureUnit(1, specular_texture);
-        glBindTextureUnit(5, bump_texture);
-        glBindTextureUnit(7, roughness_texture);
-        glBindTextureUnit(8, metallic_texture);
-
-        glUniform3fv(glGetUniformLocation(program, "material.ambient"), 1, m.ambient);
-        glUniform3fv(glGetUniformLocation(program, "material.diffuse"), 1, m.diffuse);
-        glUniform3fv(glGetUniformLocation(program, "material.specular"), 1, m.specular);
-        glUniform1f(glGetUniformLocation(program, "material.shininess"), m.shininess);
-        glUniform1i(glGetUniformLocation(program, "material.hasAmbientMap"), false);
-        glUniform1i(glGetUniformLocation(program, "material.hasDiffuseMap"), hasDiffuseMap);
-        glUniform1i(glGetUniformLocation(program, "material.hasSpecularMap"), hasSpecularMap);
-        glUniform1i(glGetUniformLocation(program, "material.hasAlphaMap"), false);
-        glUniform1i(glGetUniformLocation(program, "material.hasNormalMap"), hasNormalMap);
-        glUniform1i(glGetUniformLocation(program, "material.hasRoughnessMap"), hasRoughnessMap);
-        glUniform1i(glGetUniformLocation(program, "material.hasMetallicMap"), hasMetallicMap);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, d.ebo);
-        glDrawElements(GL_TRIANGLES, d.indices.size(), GL_UNSIGNED_INT, 0);
-    }
-
-    glBindTextureUnit(0, 0);
-    glBindTextureUnit(1, 0);
-    glBindTextureUnit(5, 0);
-    glBindVertexArray(0);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 void Mesh::draw(GLShaderProgram &program) const {
@@ -409,34 +340,28 @@ void Mesh::draw(GLShaderProgram &program) const {
 
     glBindVertexArray(vao);
     for (const auto &d : drawables) {
-        const auto &m = materials[d.material_id];
+        const auto &m = mats[d.material_id];
 
         GLuint default_texture = textures.at(DEFAULT_TEXTURE).handle;
-        bool hasDiffuseMap = textures.count(m.diffuse_texname) != 0;
-        bool hasSpecularMap = textures.count(m.specular_texname) != 0;
-        bool hasNormalMap = textures.count(m.bump_texname) != 0;
-        bool hasRoughnessMap = textures.count(m.specular_highlight_texname) != 0;
-        bool hasMetallicMap = textures.count(m.ambient_texname) != 0;
+        bool hasDiffuseMap = m.diffuse_map != 0;
+        bool hasSpecularMap = m.specular_map != 0;
+        bool hasNormalMap = m.normal_map != 0;
+        bool hasRoughnessMap = m.roughness_map != 0;
+        bool hasMetallicMap = m.ambient_map != 0;
 
-        GLuint diffuse_texture = hasDiffuseMap ? textures.at(m.diffuse_texname).handle : default_texture;
-        GLuint specular_texture = hasSpecularMap ? textures.at(m.specular_texname).handle : 0;
-        GLuint bump_texture = hasNormalMap ? textures.at(m.bump_texname).handle : 0;
-        GLuint roughness_texture = hasRoughnessMap ? textures.at(m.specular_highlight_texname).handle : 0;
-        GLuint metallic_texture = hasMetallicMap ? textures.at(m.ambient_texname).handle : 0;
-
-        glBindTextureUnit(0, diffuse_texture);
-        glBindTextureUnit(1, specular_texture);
-        glBindTextureUnit(5, bump_texture);
-        glBindTextureUnit(7, roughness_texture);
-        glBindTextureUnit(8, metallic_texture);
+        glBindTextureUnit(0, m.diffuse_map);
+        glBindTextureUnit(1, m.specular_map);
+        glBindTextureUnit(5, m.normal_map);
+        glBindTextureUnit(7, m.roughness_map);
+        glBindTextureUnit(8, m.metallic_map);
 
         if (program.getObjectLabel() == "Phong") {
-            glBindBufferRange(GL_UNIFORM_BUFFER, 0, materialUBO, std::max(80, uboOffsetAlignment) * d.material_id, 80);
+            glBindBufferRange(GL_UNIFORM_BUFFER, 0, materialUBO, Material::getAlignment() * d.material_id, Material::glslSize);
         }
         else {
-            program.setUniform3fv("material.ambient", 1, m.ambient);
-            program.setUniform3fv("material.diffuse", 1, m.diffuse);
-            program.setUniform3fv("material.specular", 1, m.specular);
+            program.setUniform3fv("material.ambient", m.ambient);
+            program.setUniform3fv("material.diffuse", m.diffuse);
+            program.setUniform3fv("material.specular", m.specular);
             program.setUniform1f("material.shininess", m.shininess);
             program.setUniform1i("material.hasAmbientMap", false);
             program.setUniform1i("material.hasDiffuseMap", hasDiffuseMap);

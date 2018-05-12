@@ -1,7 +1,7 @@
 #ifndef LOG_H
 #define LOG_H
 
-#include <stdio.h>
+#include <iostream>
 
 #ifdef _WIN32
 // Windows hates colors :(
