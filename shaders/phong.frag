@@ -273,9 +273,9 @@ LightingResult calculateDirectionalLight(vec3 diffuseColor, Light light, vec3 N,
 LightingResult calculateDirectLighting(Material m, vec4 diffuseColor, vec3 eye, vec3 P, vec3 N) {
     vec3 V = normalize(eye - P);
 
-    float roughness = 1;    // TODO better default roughness?
+    float roughness = .5;    // TODO better default roughness?
     if (m.hasRoughnessMap) {
-        roughness = texture(roughnessMap, fs_in.fragTexcoord).r;
+        roughness = texture(roughnessMap, fs_in.fragTexcoord).r;    // TODO always sample from level 0?
     }
 
     float metallic = 0;

@@ -176,7 +176,7 @@ void Mesh::loadMesh(const std::string &meshname) {
                         }
                         if (index.texcoord_index >= 0) {
                             vertices[tri[v]].texcoord[0] = attrib.texcoords[2 * index.texcoord_index];
-                            vertices[tri[v]].texcoord[1] = attrib.texcoords[2 * index.texcoord_index + 1];
+                            vertices[tri[v]].texcoord[1] = 1.f - attrib.texcoords[2 * index.texcoord_index + 1];
                         }
                     }
                     else {
