@@ -26,24 +26,26 @@
 #include "common.h"
 
 struct VCTSettings {
-    int steps = 16;
-    float coneAngle = 0.784398163f;
-    float bias = 1.0f;
-    float coneInitialHeight = 1.0f;
-    float lodOffset = 0.1f;
+    int steps;
+    float coneAngle;
+    float bias;
+    float coneInitialHeight;
+    float lodOffset;
 };
 
 struct Settings {
+    int toggle = false;
     int drawNormals = false;
     int drawDominantAxis = false;
     int drawWireframe = false;
     int drawVoxels = false;
-    int drawRadiance = true;
+    int drawRadiance = false;
     int drawAxes = false;
 	int axisOverride = -1;
     int drawShadowmap = false;
     int raymarch = false;
     int drawWarpSlope = false;
+    int drawOcclusion = false;
 
     int msaa = false;
     int alphatocoverage = false;
@@ -71,8 +73,8 @@ struct Settings {
     float voxelizeMultiplier = 1.0f;
     int voxelizeDilate = false;
     int voxelWarp = false;
-    VCTSettings diffuseConeSettings;
-    VCTSettings specularConeSettings { 16, 0.1f, 1.0f, 5.0f, 0.1f };
+    VCTSettings diffuseConeSettings { 16, glm::radians(60.f), 0.1f, 1.0f, 0.5f };
+    VCTSettings specularConeSettings { 32, glm::radians(30.f), 0.0f, 0.5f, 0.0f };
 };
 
 GLuint make3DTexture(GLsizei size, GLsizei levels, GLenum internalFormat, GLint minFilter, GLint magFilter);
@@ -112,7 +114,7 @@ public:
 
 private:
     void make() {
-        voxelColor = make3DTexture(voxelDim, 1, voxelFormat, GL_LINEAR, GL_NEAREST);
+        voxelColor = make3DTexture(voxelDim, voxelLevels, voxelFormat, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
         voxelNormal = make3DTexture(voxelDim, 1, voxelFormat, GL_NEAREST, GL_NEAREST);
         voxelRadiance = make3DTexture(voxelDim, voxelLevels, GL_RGBA8, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
     }

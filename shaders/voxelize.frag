@@ -18,16 +18,41 @@ layout(binding = 1, r32ui) uniform uimage3D voxelNormal;
 
 in GS_OUT {
     vec3 position;
+	vec3 worldPosition;
     vec3 normal;
     vec2 texcoord;
     flat int axis;
 } fs_in;
 
-layout(binding = 0) uniform sampler2D diffuseTexture;
+#define POINT_LIGHT 0
+#define DIRECTIONAL_LIGHT 1
+struct Light {
+                        // base		offset
+    vec3 position;		// 16		0
+    vec3 direction;		// 16		16
+    vec3 color;			// 16		32
+
+    float range;		// 4		44
+    float intensity;	// 4		48
+
+    bool enabled;		// 4		52
+    bool selected;		// 4		56
+    bool shadowCaster;	// 4		60
+    uint type;			// 4		64
+};
+
+layout(std140, binding = 3) buffer LightBlock {
+    Light lights[];
+};
+
+layout(binding = 0) uniform sampler2D diffuseMap;
+layout(binding = 6) uniform sampler2D shadowmap;
 
 uniform bool voxelizeDilate = false;
 uniform bool voxelWarp;
 uniform bool voxelizeAtomicMax = false;
+
+uniform mat4 ls;
 
 // Map [-1, 1] -> [0, 1]
 vec3 ndcToUnit(vec3 p) { return (p + 1.0) * 0.5; }
@@ -92,9 +117,61 @@ void imageAtomicRGBA8Avg(layout(r32ui) coherent volatile uimage3D imgUI, ivec3 c
 	}
 }
 
+// Evaluates how shadowed a point is using PCF with 5 samples
+float calcShadowFactor(vec4 lsPosition) {
+    vec3 shifted = (lsPosition.xyz / lsPosition.w + 1.0) * 0.5;
+
+    float shadowFactor = 0;
+    float bias = 0.01;
+    float fragDepth = shifted.z - bias;
+
+    if (fragDepth > 1.0) {
+        return 0;
+    }
+
+    const int numSamples = 5;
+    const ivec2 offsets[numSamples] = ivec2[](
+        ivec2(0, 0), ivec2(1, 0), ivec2(0, 1), ivec2(-1, 0), ivec2(0, -1)
+    );
+
+    for (int i = 0; i < numSamples; i++) {
+        if (fragDepth > textureOffset(shadowmap, shifted.xy, offsets[i]).r) {
+            shadowFactor += 1;
+        }
+    }
+    shadowFactor /= numSamples;
+
+    return shadowFactor;
+}
+
 void main() {
-    vec3 color = texture(diffuseTexture, fs_in.texcoord).rgb;
+    vec3 color = texture(diffuseMap, fs_in.texcoord).rgb;
 	vec3 normal = (normalize(fs_in.normal) + 1) * 0.5; // map normal [-1, 1] -> [0, 1]
+
+	vec3 finalLighting = vec3(0);
+	for (int i = 0; i < lights.length(); i++) {
+		if (!lights[i].enabled) continue;
+
+		vec3 lighting = vec3(0);
+		switch (lights[i].type) {
+			case POINT_LIGHT:
+				lighting = color * lights[i].intensity * lights[i].color * max(0, dot(normalize(fs_in.normal), normalize(lights[i].position-fs_in.worldPosition)));
+				lighting *= 1.0 - smoothstep(0.75 * lights[i].range, lights[i].range, distance(lights[i].position, fs_in.worldPosition));
+				break;
+			case DIRECTIONAL_LIGHT:
+				lighting = color * lights[i].color * lights[i].intensity * max(0, dot(normalize(fs_in.normal), normalize(-lights[i].direction)));
+				break;
+		}
+
+		// TODO this only works for the 'mainlight' right now
+		if (lights[i].shadowCaster) {
+			float shadowFactor = 1.0 - calcShadowFactor(ls * vec4(fs_in.worldPosition, 1));
+			lighting *= shadowFactor;
+		}
+
+		finalLighting += lighting;
+	}
+	color = clamp(finalLighting, 0, 1);
 
     // Store value (must be atomic, use alpha component as count)
 #if USE_RGBA16F && GL_NV_shader_atomic_fp16_vector

@@ -145,6 +145,10 @@ void Application::update(float dt) {
 		settings.drawVoxels = !settings.drawVoxels;
 	}
 
+	if (Keyboard::getKeyTap(GLFW_KEY_T)) {
+		settings.toggle = !settings.toggle;
+	}
+
 	if (GLFW_CURSOR_DISABLED == glfwGetInputMode(window, GLFW_CURSOR)) {
 		camera.update(dt);
 	}
@@ -166,7 +170,34 @@ void Application::render(float dt) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	Light mainlight = scene->lights[0];
-	
+
+	const float lz_near = 0.0f, lz_far = 100.0f, l_boundary = 25.0f;
+	glm::mat4 lp = glm::ortho(-l_boundary, l_boundary, -l_boundary, l_boundary, lz_near, lz_far);
+	glm::mat4 lv = glm::lookAt(mainlight.position, mainlight.position + mainlight.direction, glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 ls = lp * lv;
+	// Generate shadowmap
+	shadowmapTimer.start();
+	{
+		GL_DEBUG_PUSH("Shadowmap")
+		shadowmapFBO.bind();
+		glViewport(0, 0, SHADOWMAP_WIDTH, SHADOWMAP_HEIGHT);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		glDisable(GL_BLEND);
+		glEnable(GL_DEPTH_TEST);
+
+		shadowmapProgram.bind();
+		shadowmapProgram.setUniformMatrix4fv("projection", lp);
+		shadowmapProgram.setUniformMatrix4fv("view", lv);
+
+		scene->draw(shadowmapProgram);
+
+		shadowmapProgram.unbind();
+		shadowmapFBO.unbind();
+
+		GL_DEBUG_POP()
+	}
+	shadowmapTimer.stop();
+
 	voxelizeTimer.start();
 	// Voxelize scene
 	{
@@ -210,9 +241,16 @@ void Application::render(float dt) {
 		voxelProgram.setUniform1i("voxelizeDilate", settings.voxelizeDilate);
 		voxelProgram.setUniform1i("voxelWarp", settings.voxelWarp);
 		voxelProgram.setUniform1i("voxelizeAtomicMax", settings.voxelizeAtomicMax);
+		voxelProgram.setUniform1i("toggle", settings.toggle);
 
 		glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
 		glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
+
+		scene->bindLightSSBO(3);
+		voxelProgram.setUniformMatrix4fv("ls", ls);
+
+		GLuint shadowmap = shadowmapFBO.getTexture(0);
+		glBindTextureUnit(6, shadowmap);
 
 		scene->draw(voxelProgram);
 
@@ -241,32 +279,6 @@ void Application::render(float dt) {
 		GL_DEBUG_POP()
 	}
 	voxelizeTimer.stop();
-
-	// Generate shadowmap
-	shadowmapTimer.start();
-	const float lz_near = 0.0f, lz_far = 100.0f, l_boundary = 25.0f;
-	glm::mat4 lp = glm::ortho(-l_boundary, l_boundary, -l_boundary, l_boundary, lz_near, lz_far);
-	glm::mat4 lv = glm::lookAt(mainlight.position, mainlight.position + mainlight.direction, glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::mat4 ls = lp * lv;
-	{
-		GL_DEBUG_PUSH("Shadowmap")
-		shadowmapFBO.bind();
-		glViewport(0, 0, SHADOWMAP_WIDTH, SHADOWMAP_HEIGHT);
-		glClear(GL_DEPTH_BUFFER_BIT);
-		glDisable(GL_BLEND);
-
-		shadowmapProgram.bind();
-		shadowmapProgram.setUniformMatrix4fv("projection", lp);
-		shadowmapProgram.setUniformMatrix4fv("view", lv);
-
-		scene->draw(shadowmapProgram);
-
-		shadowmapProgram.unbind();
-		shadowmapFBO.unbind();
-
-		GL_DEBUG_POP()
-	}
-	shadowmapTimer.stop();
 
 	// Normalize vct.voxelColor and vct.voxelNormal textures (divides by alpha component)
 	if (vct.useRGBA16f) {
@@ -365,6 +377,19 @@ void Application::render(float dt) {
 
 			dim >>= 1;
 		}
+		dim = vct.voxelDim;
+		for (int level = 0; level < vct.voxelLevels; level++) {
+			glBindImageTexture(0, vct.voxelColor, level, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+			glBindImageTexture(1, vct.voxelColor, level + 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+
+			GLuint num_groups = ((dim >> 1) + local_size - 1) / local_size;
+			glDispatchCompute(num_groups, num_groups, num_groups);
+
+			glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+			glBindImageTexture(1, 0, 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+
+			dim >>= 1;
+		}
 
 		mipmapProgram.unbind();
 	}
@@ -432,6 +457,7 @@ void Application::render(float dt) {
 		program.setUniform1i("dominant_axis", settings.drawDominantAxis);
 		program.setUniform1i("radiance", settings.drawRadiance);
 		program.setUniform1i("drawWarpSlope", settings.drawWarpSlope);
+		program.setUniform1i("drawOcclusion", settings.drawOcclusion);
 
 		program.setUniform1i("cooktorrance", settings.cooktorrance);
 		program.setUniform1i("enablePostprocess", settings.enablePostprocess);

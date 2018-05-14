@@ -11,6 +11,7 @@ in VS_OUT {
 
 out GS_OUT {
     vec3 position;
+    vec3 worldPosition;
     vec3 normal;
     vec2 texcoord;
     flat int axis;
@@ -61,6 +62,7 @@ void main() {
         gl_Position = mvp * gl_in[i].gl_Position;
 
         gs_out.position = gl_Position.xyz;
+        gs_out.worldPosition = gs_in[i].position;
         gs_out.normal = gs_in[i].normal;
         gs_out.texcoord = gs_in[i].texcoord;
         gs_out.axis = axis;
