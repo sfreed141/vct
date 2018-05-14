@@ -46,6 +46,7 @@ struct Settings {
     int raymarch = false;
     int drawWarpSlope = false;
     int drawOcclusion = false;
+    int debugVoxels = false;
 
     int msaa = false;
     int alphatocoverage = false;
@@ -160,6 +161,7 @@ private:
 	GLBufferedTimer voxelizeTimer, shadowmapTimer, radianceTimer, mipmapTimer, renderTimer, totalTimer;
 
     void viewRaymarched();
+    void debugVoxels(GLuint texture_id, const glm::mat4 &mvp);
 };
 
 #endif

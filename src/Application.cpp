@@ -17,6 +17,7 @@
 #include "Graphics/GLShaderProgram.h"
 #include "Graphics/GLQuad.h"
 #include "Graphics/GLTimer.h"
+#include "Graphics/GLCube.h"
 
 #include "Input/Keyboard.h"
 #include "Input/Mouse.h"
@@ -394,124 +395,139 @@ void Application::render(float dt) {
 	}
 	mipmapTimer.stop();
 
-	// Depth prepass
-	{
-		GL_DEBUG_PUSH("Depth Prepass")
+	if (settings.debugVoxels) {
 		glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
 		glm::mat4 view = camera.lookAt();
+		glm::mat4 mvp = projection * view;
+		debugVoxels(settings.drawRadiance ? vct.voxelRadiance : vct.voxelColor, mvp);
+	}
+	else if (settings.raymarch) {
+		viewRaymarched();
+	}
+	else if (settings.drawShadowmap) {
+		view2DTexture(shadowmapFBO.getTexture(0));
+	}
+	else {
+		// Depth prepass
+		{
+			GL_DEBUG_PUSH("Depth Prepass")
+			glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
+			glm::mat4 view = camera.lookAt();
 
-		glViewport(0, 0, width, height);
-		glEnable(GL_DEPTH_TEST);
-		glEnable(GL_CULL_FACE);
-		glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-		if (settings.msaa) {
-			glEnable(GL_MULTISAMPLE);
+			glViewport(0, 0, width, height);
+			glEnable(GL_DEPTH_TEST);
+			glEnable(GL_CULL_FACE);
+			glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+			if (settings.msaa) {
+				glEnable(GL_MULTISAMPLE);
+			}
+			if (settings.alphatocoverage) {
+				glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+			}
+			else {
+				glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+			}
+
+			ditherProgram.bind();
+
+			ditherProgram.setUniformMatrix4fv("projection", projection);
+			ditherProgram.setUniformMatrix4fv("view", view);
+
+			scene->draw(ditherProgram);
+
+			ditherProgram.unbind();
+
+			glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+			GL_DEBUG_POP()
 		}
-		if (settings.alphatocoverage) {
-			glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+
+		renderTimer.start();
+		// Render scene
+		{
+			GL_DEBUG_PUSH("Render Scene")
+			glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
+			glm::mat4 view = camera.lookAt();
+
+			glViewport(0, 0, width, height);
+			// glEnable(GL_FRAMEBUFFER_SRGB);
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_EQUAL);
+			glDepthMask(GL_FALSE);
+			glEnable(GL_CULL_FACE);
+			glPolygonMode(GL_FRONT_AND_BACK, settings.drawWireframe ? GL_LINE : GL_FILL);
+
+			program.bind();
+			program.setUniformMatrix4fv("projection", projection);
+			program.setUniformMatrix4fv("view", view);
+			program.setUniform3fv("eye", camera.position);
+			program.setUniformMatrix4fv("ls", ls);
+
+			GLuint shadowmap = shadowmapFBO.getTexture(0);
+			glBindTextureUnit(6, shadowmap);
+
+			program.setUniform1i("voxelize", settings.drawVoxels);
+			program.setUniform1i("normals", settings.drawNormals);
+			program.setUniform1i("dominant_axis", settings.drawDominantAxis);
+			program.setUniform1i("radiance", settings.drawRadiance);
+			program.setUniform1i("drawWarpSlope", settings.drawWarpSlope);
+			program.setUniform1i("drawOcclusion", settings.drawOcclusion);
+
+			program.setUniform1i("cooktorrance", settings.cooktorrance);
+			program.setUniform1i("enablePostprocess", settings.enablePostprocess);
+			program.setUniform1i("enableShadows", settings.enableShadows);
+			program.setUniform1i("enableNormalMap", settings.enableNormalMap);
+			program.setUniform1i("enableIndirect", settings.enableIndirect);
+			program.setUniform1i("enableDiffuse", settings.enableDiffuse);
+			program.setUniform1i("enableSpecular", settings.enableSpecular);
+			program.setUniform1i("enableReflections", settings.enableReflections);
+			program.setUniform1f("ambientScale", settings.ambientScale);
+			program.setUniform1f("reflectScale", settings.reflectScale);
+
+			program.setUniform1i("miplevel", settings.miplevel);
+
+			program.setUniform1i("voxelWarp", settings.voxelWarp);
+			program.setUniform1i("voxelDim", vct.voxelDim);
+			program.setUniform3fv("voxelMin", vct.min);
+			program.setUniform3fv("voxelMax", vct.max);
+			program.setUniform3fv("voxelCenter", vct.center);
+			glBindTextureUnit(2, vct.voxelColor);
+			glBindTextureUnit(3, vct.voxelNormal);
+			glBindTextureUnit(4, vct.voxelRadiance);
+
+			program.setUniform1i("vctSteps", settings.diffuseConeSettings.steps);
+			program.setUniform1f("vctBias", settings.diffuseConeSettings.bias);
+			program.setUniform1f("vctConeAngle", settings.diffuseConeSettings.coneAngle);
+			program.setUniform1f("vctConeInitialHeight", settings.diffuseConeSettings.coneInitialHeight);
+			program.setUniform1f("vctLodOffset", settings.diffuseConeSettings.lodOffset);
+
+			program.setUniform1i("vctSpecularSteps", settings.specularConeSettings.steps);
+			program.setUniform1f("vctSpecularBias", settings.specularConeSettings.bias);
+			program.setUniform1f("vctSpecularConeAngle", settings.specularConeSettings.coneAngle);
+			program.setUniform1f("vctSpecularConeInitialHeight", settings.specularConeSettings.coneInitialHeight);
+			program.setUniform1f("vctSpecularLodOffset", settings.specularConeSettings.lodOffset);
+
+			scene->bindLightSSBO(3);
+
+			scene->draw(program);
+
+			glBindTextureUnit(1, 0);
+			glBindTextureUnit(2, 0);
+			glBindTextureUnit(3, 0);
+			glBindTextureUnit(4, 0);
+			program.unbind();
+
+			glDisable(GL_MULTISAMPLE);
+			glDepthFunc(GL_LESS);
+			glDepthMask(GL_TRUE);
+			// glDisable(GL_FRAMEBUFFER_SRGB);
+			if (settings.drawWireframe) {
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			}
+			GL_DEBUG_POP()
 		}
-		else {
-			glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
-		}
-
-		ditherProgram.bind();
-
-		ditherProgram.setUniformMatrix4fv("projection", projection);
-		ditherProgram.setUniformMatrix4fv("view", view);
-
-		scene->draw(ditherProgram);
-
-		ditherProgram.unbind();
-
-		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-		GL_DEBUG_POP()
+		renderTimer.stop();
 	}
 
-	renderTimer.start();
-	// Render scene
-	{
-		GL_DEBUG_PUSH("Render Scene")
-		glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
-		glm::mat4 view = camera.lookAt();
-
-		glViewport(0, 0, width, height);
-		// glEnable(GL_FRAMEBUFFER_SRGB);
-		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_EQUAL);
-		glDepthMask(GL_FALSE);
-		glEnable(GL_CULL_FACE);
-		glPolygonMode(GL_FRONT_AND_BACK, settings.drawWireframe ? GL_LINE : GL_FILL);
-
-		program.bind();
-		program.setUniformMatrix4fv("projection", projection);
-		program.setUniformMatrix4fv("view", view);
-		program.setUniform3fv("eye", camera.position);
-		program.setUniformMatrix4fv("ls", ls);
-
-		GLuint shadowmap = shadowmapFBO.getTexture(0);
-		glBindTextureUnit(6, shadowmap);
-
-		program.setUniform1i("voxelize", settings.drawVoxels);
-		program.setUniform1i("normals", settings.drawNormals);
-		program.setUniform1i("dominant_axis", settings.drawDominantAxis);
-		program.setUniform1i("radiance", settings.drawRadiance);
-		program.setUniform1i("drawWarpSlope", settings.drawWarpSlope);
-		program.setUniform1i("drawOcclusion", settings.drawOcclusion);
-
-		program.setUniform1i("cooktorrance", settings.cooktorrance);
-		program.setUniform1i("enablePostprocess", settings.enablePostprocess);
-		program.setUniform1i("enableShadows", settings.enableShadows);
-		program.setUniform1i("enableNormalMap", settings.enableNormalMap);
-		program.setUniform1i("enableIndirect", settings.enableIndirect);
-		program.setUniform1i("enableDiffuse", settings.enableDiffuse);
-		program.setUniform1i("enableSpecular", settings.enableSpecular);
-		program.setUniform1i("enableReflections", settings.enableReflections);
-		program.setUniform1f("ambientScale", settings.ambientScale);
-		program.setUniform1f("reflectScale", settings.reflectScale);
-
-		program.setUniform1i("miplevel", settings.miplevel);
-
-		program.setUniform1i("voxelWarp", settings.voxelWarp);
-		program.setUniform1i("voxelDim", vct.voxelDim);
-		program.setUniform3fv("voxelMin", vct.min);
-		program.setUniform3fv("voxelMax", vct.max);
-		program.setUniform3fv("voxelCenter", vct.center);
-		glBindTextureUnit(2, vct.voxelColor);
-		glBindTextureUnit(3, vct.voxelNormal);
-		glBindTextureUnit(4, vct.voxelRadiance);
-
-		program.setUniform1i("vctSteps", settings.diffuseConeSettings.steps);
-		program.setUniform1f("vctBias", settings.diffuseConeSettings.bias);
-		program.setUniform1f("vctConeAngle", settings.diffuseConeSettings.coneAngle);
-		program.setUniform1f("vctConeInitialHeight", settings.diffuseConeSettings.coneInitialHeight);
-		program.setUniform1f("vctLodOffset", settings.diffuseConeSettings.lodOffset);
-
-		program.setUniform1i("vctSpecularSteps", settings.specularConeSettings.steps);
-		program.setUniform1f("vctSpecularBias", settings.specularConeSettings.bias);
-		program.setUniform1f("vctSpecularConeAngle", settings.specularConeSettings.coneAngle);
-		program.setUniform1f("vctSpecularConeInitialHeight", settings.specularConeSettings.coneInitialHeight);
-		program.setUniform1f("vctSpecularLodOffset", settings.specularConeSettings.lodOffset);
-
-		scene->bindLightSSBO(3);
-
-		scene->draw(program);
-
-		glBindTextureUnit(1, 0);
-		glBindTextureUnit(2, 0);
-		glBindTextureUnit(3, 0);
-		glBindTextureUnit(4, 0);
-		program.unbind();
-
-		glDisable(GL_MULTISAMPLE);
-		glDepthFunc(GL_LESS);
-		glDepthMask(GL_TRUE);
-		// glDisable(GL_FRAMEBUFFER_SRGB);
-		if (settings.drawWireframe) {
-			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		}
-		GL_DEBUG_POP()
-	}
-	renderTimer.stop();
 	totalTimer.stop();
 
 	voxelizeTimer.getQueryResult();
@@ -520,16 +536,6 @@ void Application::render(float dt) {
 	mipmapTimer.getQueryResult();
 	renderTimer.getQueryResult();
 	totalTimer.getQueryResult();
-
-	// hacky view of shadowmap
-	if (settings.drawShadowmap) {
-		view2DTexture(shadowmapFBO.getTexture(0));
-	}
-
-	// hacky raymarcher
-	if (settings.raymarch) {
-		viewRaymarched();
-	}
 
 	// Render overlay
 	{
@@ -661,4 +667,50 @@ void Application::viewRaymarched() {
 	GLQuad::draw();
 
 	glUseProgram(0);
+}
+
+void Application::debugVoxels(GLuint texture_id, const glm::mat4 &mvp) {
+	static const float point[] = { 0.0f, 0.0f, 0.0f };
+	static GLuint vao = 0;
+	static GLShaderProgram *shader = nullptr;
+	if (!shader) {
+		GLuint vbo;
+		glGenVertexArrays(1, &vao);
+		glGenBuffers(1, &vbo);
+		glBindVertexArray(vao);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferData(GL_ARRAY_BUFFER, sizeof(point), point, GL_STATIC_DRAW);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (GLvoid *)0);
+		glEnableVertexAttribArray(0);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+
+		shader = new GLShaderProgram();
+		shader->attachAndLink({SHADER_DIR "debugVoxels.vert", SHADER_DIR "debugVoxels.geom", SHADER_DIR "debugVoxels.frag"});
+		shader->setObjectLabel("Debug Voxels");
+	}
+
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
+	shader->bind();
+
+	shader->setUniformMatrix4fv("mvp", mvp);
+	shader->setUniform1i("level", settings.miplevel);
+	shader->setUniform1f("voxelDim", vct.voxelDim);
+	shader->setUniform3fv("voxelMin", vct.min);
+	shader->setUniform3fv("voxelMax", vct.max);
+	shader->setUniform3fv("voxelCenter", vct.center);
+
+	glBindTextureUnit(0, texture_id);
+	
+	glBindVertexArray(vao);
+	glDrawArraysInstanced(GL_POINTS, 0, 1, vct.voxelDim * vct.voxelDim * vct.voxelDim);
+	glBindVertexArray(0);
+
+	glBindTextureUnit(0, 0);
+
+	shader->unbind();
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
 }
