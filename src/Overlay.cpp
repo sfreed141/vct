@@ -247,7 +247,7 @@ void Overlay::render(float dt) {
             nk_slider_int(ctx, minVoxelLevels, &nextVoxelLevels, std::log2(app.vct.voxelDim) + 1, 1);
 
             nk_layout_row_dynamic(ctx, rowheight, 1);
-            static glm::vec3 nextVoxelExtentMin = app.vct.min, nextVoxelExtentMax = app.vct.max, nextVoxelCenter = app.vct.center;
+            static glm::vec3 nextVoxelExtentMin = app.vct.min, nextVoxelExtentMax = app.vct.max;
             sprintf(tmp_buffer, "voxelExtentMin: %.2f, %.2f, %.2f", nextVoxelExtentMin[0], nextVoxelExtentMin[1], nextVoxelExtentMin[2]);
             if (nk_combo_begin_label(ctx, tmp_buffer, nk_vec2(200,200))) {
                 nk_layout_row_dynamic(ctx, rowheight, 1);
@@ -267,6 +267,7 @@ void Overlay::render(float dt) {
             app.vct.min = nextVoxelExtentMin;
             app.vct.max = nextVoxelExtentMax;
             
+            glm::vec3 nextVoxelCenter = app.vct.center;
             sprintf(tmp_buffer, "voxelCenter: %.2f, %.2f, %.2f", nextVoxelCenter[0], nextVoxelCenter[1], nextVoxelCenter[2]);
             if (nk_combo_begin_label(ctx, tmp_buffer, nk_vec2(200,200))) {
                 nk_layout_row_dynamic(ctx, rowheight, 1);

@@ -157,8 +157,7 @@ void Application::update(float dt) {
 		// To prevent temporal artifacts, the voxel textures are 'snapped' to a discrete grid
 
 		// TODO
-		// glm::vec3 gridcell = glm::vec3(1.f);//vct.voxelWorldSize();
-		glm::vec3 gridcell = 16.f * vct.voxelWorldSize();
+		glm::vec3 gridcell = glm::pow(2.f, (float)vct.voxelLevels) * (vct.max - vct.min) / (float)vct.voxelDim;
 		vct.center = glm::floor(camera.position / gridcell) * gridcell;
 	}
 
