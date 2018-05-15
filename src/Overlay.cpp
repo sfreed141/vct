@@ -2,6 +2,7 @@
 #include <Application.h>
 #include <Camera.h>
 #include <Graphics/GLHelper.h>
+#include <common.h>
 
 #include <Graphics/opengl.h>
 #include <cmath>
@@ -58,7 +59,7 @@ void Overlay::render(float dt) {
 
     nk_glfw3_new_frame();
 
-    // overview(this->ctx);
+    overview(this->ctx);
 
     const Camera &camera = app.camera;
     Settings &settings = app.settings;
@@ -75,6 +76,8 @@ void Overlay::render(float dt) {
 
         voxelSliceImage = nk_image_id((int)voxelSlice);
     }
+
+    static int show_light_editor = false;
 
     char tmp_buffer[128];
     const float rowheight = 20.0f;
@@ -117,46 +120,7 @@ void Overlay::render(float dt) {
             nk_labelf(ctx, NK_TEXT_LEFT, "Camera Position: (%4.1f, %4.1f, %4.1f)", camera.position.x, camera.position.y, camera.position.z);
             nk_labelf(ctx, NK_TEXT_LEFT, "Camera Direction: (%4.1f, %4.1f, %4.1f)", camera.front.x, camera.front.y, camera.front.z);
 
-            auto &lightPos = app.scene->lights[0].position;
-            auto &lightDir = app.scene->lights[0].direction;
-            auto &lightColor = app.scene->lights[0].color;
-
-            nk_layout_row_dynamic(ctx, rowheight, 1);
-            sprintf(tmp_buffer, "Light Position: %.2f, %.2f, %.2f", lightPos.x, lightPos.y, lightPos.z);
-            if (nk_combo_begin_label(ctx, tmp_buffer, nk_vec2(200, 200))) {
-                nk_layout_row_dynamic(ctx, rowheight, 1);
-                nk_property_float(ctx, "#X:", -100.0f, &lightPos[0], 100.0f, 1.0f, 0.2f);
-                nk_property_float(ctx, "#Y:", -100.0f, &lightPos[1], 100.0f, 1.0f, 0.2f);
-                nk_property_float(ctx, "#Z:", -100.0f, &lightPos[2], 100.0f, 1.0f, 0.2f);
-                if (nk_button_label(ctx, "Set to camera")) {
-                    lightPos = camera.position;
-                    lightDir = camera.front;
-                }
-                nk_combo_end(ctx);
-                app.scene->lights[0].dirty = true;
-            }
-
-            nk_layout_row_dynamic(ctx, rowheight, 1);
-            sprintf(tmp_buffer, "Light Direction: %.2f, %.2f, %.2f", lightDir.x, lightDir.y, lightDir.z);
-            if (nk_combo_begin_label(ctx, tmp_buffer, nk_vec2(200, 200))) {
-                nk_layout_row_dynamic(ctx, rowheight, 1);
-                nk_property_float(ctx, "#U:", -10.0f, &lightDir[0], 10.0f, 0.1f, 0.01f);
-                nk_property_float(ctx, "#V:", -10.0f, &lightDir[1], 10.0f, 0.1f, 0.01f);
-                nk_property_float(ctx, "#W:", -10.0f, &lightDir[2], 10.0f, 0.1f, 0.01f);
-                nk_combo_end(ctx);
-                app.scene->lights[0].dirty = true;
-            }
-
-            nk_layout_row_dynamic(ctx, rowheight, 1);
-            sprintf(tmp_buffer, "Light Color: %.2f, %.2f, %.2f", lightColor.x, lightColor.y, lightColor.z);
-            if (nk_combo_begin_label(ctx, tmp_buffer, nk_vec2(200, 200))) {
-                nk_layout_row_dynamic(ctx, rowheight, 1);
-                nk_property_float(ctx, "#R:", 0.0f, &lightColor[0], 1.0f, 0.1f, 0.01f);
-                nk_property_float(ctx, "#G:", 0.0f, &lightColor[1], 1.0f, 0.1f, 0.01f);
-                nk_property_float(ctx, "#B:", 0.0f, &lightColor[2], 1.0f, 0.1f, 0.01f);
-                nk_combo_end(ctx);
-                app.scene->lights[0].dirty = true;
-            }
+            nk_checkbox_label(ctx, "Light Editor", &show_light_editor);
 
             nk_layout_row_dynamic(ctx, rowheight, 2);
             nk_checkbox_label(ctx, "Voxels", &settings.drawVoxels);
@@ -301,10 +265,101 @@ void Overlay::render(float dt) {
     }
     nk_end(ctx);
 
+    if (show_light_editor) {
+        if (nk_begin(ctx, "Light Editor", nk_rect(WIDTH - 310, 10, 300, 300), window_flags)) {
+            nk_layout_row_dynamic(ctx, rowheight, 1);
+            static int which = 0;
+            nk_property_int(ctx, "Light Index", 0, &which, app.scene->lights.size() - 1, 1, 1.0f);
+
+            auto &light = app.scene->lights[which];
+            int dirty = light.dirty;
+
+            auto &lightPos = light.position;
+            auto &lightDir = light.direction;
+            auto &lightColor = light.color;
+
+            nk_layout_row_dynamic(ctx, rowheight, 1);
+            int enabled = light.enabled;
+            if (nk_checkbox_label(ctx, "Enabled", &enabled)) {
+                dirty = true;
+                light.enabled = enabled;
+            }
+
+            nk_layout_row_dynamic(ctx, rowheight, 1);
+            sprintf(tmp_buffer, "Position: %.2f, %.2f, %.2f", lightPos.x, lightPos.y, lightPos.z);
+            if (nk_combo_begin_label(ctx, tmp_buffer, nk_vec2(200, 200))) {
+                nk_layout_row_dynamic(ctx, rowheight, 1);
+                nk_property_float(ctx, "#X:", -100.0f, &lightPos[0], 100.0f, 1.0f, 0.2f);
+                nk_property_float(ctx, "#Y:", -100.0f, &lightPos[1], 100.0f, 1.0f, 0.2f);
+                nk_property_float(ctx, "#Z:", -100.0f, &lightPos[2], 100.0f, 1.0f, 0.2f);
+                if (nk_button_label(ctx, "Set to camera")) {
+                    lightPos = camera.position;
+                    lightDir = camera.front;
+                }
+                nk_combo_end(ctx);
+                dirty = true;
+            }
+
+            nk_layout_row_dynamic(ctx, rowheight, 1);
+            sprintf(tmp_buffer, "Direction: %.2f, %.2f, %.2f", lightDir.x, lightDir.y, lightDir.z);
+            if (nk_combo_begin_label(ctx, tmp_buffer, nk_vec2(200, 200))) {
+                nk_layout_row_dynamic(ctx, rowheight, 1);
+                nk_property_float(ctx, "#U:", -10.0f, &lightDir[0], 10.0f, 0.1f, 0.01f);
+                nk_property_float(ctx, "#V:", -10.0f, &lightDir[1], 10.0f, 0.1f, 0.01f);
+                nk_property_float(ctx, "#W:", -10.0f, &lightDir[2], 10.0f, 0.1f, 0.01f);
+                nk_combo_end(ctx);
+                dirty = true;
+            }
+
+            nk_color color;
+            color.r = std::floor(lightColor.r * 255);
+            color.g = std::floor(lightColor.g * 255);
+            color.b = std::floor(lightColor.b * 255);
+            color.a = 255;
+            nk_layout_row_dynamic(ctx, rowheight, 2);
+            nk_label(ctx, "Light Color", NK_TEXT_LEFT);
+            if (nk_combo_begin_color(ctx, color, nk_vec2(200,400))) {
+                enum color_mode {COL_RGB, COL_HSV};
+                static int col_mode = COL_RGB;
+
+                nk_layout_row_dynamic(ctx, 120, 1);
+                color = nk_color_picker(ctx, color, NK_RGB);
+
+                nk_layout_row_dynamic(ctx, 25, 2);
+                col_mode = nk_option_label(ctx, "RGB", col_mode == COL_RGB) ? COL_RGB : col_mode;
+                col_mode = nk_option_label(ctx, "HSV", col_mode == COL_HSV) ? COL_HSV : col_mode;
+
+                nk_layout_row_dynamic(ctx, 25, 1);
+                if (col_mode == COL_RGB) {
+                    color.r = (nk_byte)nk_propertyi(ctx, "#R:", 0, color.r, 255, 1,1);
+                    color.g = (nk_byte)nk_propertyi(ctx, "#G:", 0, color.g, 255, 1,1);
+                    color.b = (nk_byte)nk_propertyi(ctx, "#B:", 0, color.b, 255, 1,1);
+                    // color.a = (nk_byte)nk_propertyi(ctx, "#A:", 0, color.a, 255, 1,1);
+                } else {
+                    nk_byte tmp[4];
+                    nk_color_hsva_bv(tmp, color);
+                    tmp[0] = (nk_byte)nk_propertyi(ctx, "#H:", 0, tmp[0], 255, 1,1);
+                    tmp[1] = (nk_byte)nk_propertyi(ctx, "#S:", 0, tmp[1], 255, 1,1);
+                    tmp[2] = (nk_byte)nk_propertyi(ctx, "#V:", 0, tmp[2], 255, 1,1);
+                    // tmp[3] = (nk_byte)nk_propertyi(ctx, "#A:", 0, tmp[3], 255, 1,1);
+                    color = nk_hsva_bv(tmp);
+                }
+                nk_combo_end(ctx);
+                lightColor.r = color.r / 255.0f;
+                lightColor.g = color.g / 255.0f;
+                lightColor.b = color.b / 255.0f;
+                dirty = true;
+            }
+
+            light.dirty = dirty;
+        }
+        nk_end(ctx);
+    }
+
     nk_glfw3_render(NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
 }
 
-#if 0
+#if 1
 // demo code from nuklear
 static int overview(struct nk_context *ctx) {
     /* window flags */
