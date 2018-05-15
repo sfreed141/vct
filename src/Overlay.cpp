@@ -119,6 +119,7 @@ void Overlay::render(float dt) {
 
             auto &lightPos = app.scene->lights[0].position;
             auto &lightDir = app.scene->lights[0].direction;
+            auto &lightColor = app.scene->lights[0].color;
 
             nk_layout_row_dynamic(ctx, rowheight, 1);
             sprintf(tmp_buffer, "Light Position: %.2f, %.2f, %.2f", lightPos.x, lightPos.y, lightPos.z);
@@ -132,6 +133,7 @@ void Overlay::render(float dt) {
                     lightDir = camera.front;
                 }
                 nk_combo_end(ctx);
+                app.scene->lights[0].dirty = true;
             }
 
             nk_layout_row_dynamic(ctx, rowheight, 1);
@@ -142,6 +144,18 @@ void Overlay::render(float dt) {
                 nk_property_float(ctx, "#V:", -10.0f, &lightDir[1], 10.0f, 0.1f, 0.01f);
                 nk_property_float(ctx, "#W:", -10.0f, &lightDir[2], 10.0f, 0.1f, 0.01f);
                 nk_combo_end(ctx);
+                app.scene->lights[0].dirty = true;
+            }
+
+            nk_layout_row_dynamic(ctx, rowheight, 1);
+            sprintf(tmp_buffer, "Light Color: %.2f, %.2f, %.2f", lightColor.x, lightColor.y, lightColor.z);
+            if (nk_combo_begin_label(ctx, tmp_buffer, nk_vec2(200, 200))) {
+                nk_layout_row_dynamic(ctx, rowheight, 1);
+                nk_property_float(ctx, "#R:", 0.0f, &lightColor[0], 1.0f, 0.1f, 0.01f);
+                nk_property_float(ctx, "#G:", 0.0f, &lightColor[1], 1.0f, 0.1f, 0.01f);
+                nk_property_float(ctx, "#B:", 0.0f, &lightColor[2], 1.0f, 0.1f, 0.01f);
+                nk_combo_end(ctx);
+                app.scene->lights[0].dirty = true;
             }
 
             nk_layout_row_dynamic(ctx, rowheight, 2);

@@ -25,20 +25,10 @@ struct Light {
     bool shadowCaster = false;
     unsigned int type = Type::Point;
 
+    bool dirty = false;
+
     // Assumes buffer bound to GL_SHADER_STORAGE_BUFFER target
-    void writeSSBO(unsigned int offset) const {
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset + 0, 12, &position);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset + 16, 12, &direction);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset + 32, 12, &color);
-
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset + 44, 4, &range);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset + 48, 4, &intensity);
-
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset + 52, 4, &enabled);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset + 56, 4, &selected);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset + 60, 4, &shadowCaster);
-        glBufferSubData(GL_SHADER_STORAGE_BUFFER, offset + 64, 4, &type);
-    }
+    void writeSSBO(unsigned int offset) const;
 
     static const unsigned int glslSize = 80;
 };
@@ -52,31 +42,9 @@ public:
     void draw(GLShaderProgram &program);
 
     void addActor(std::shared_ptr<Actor> actor) { actors.push_back(actor); }
-    void addLight(const Light &light) {
-        if (lightSSBO == 0) {
-            glCreateBuffers(1, &lightSSBO);
-        }
+    void addLight(const Light &light);
 
-        lights.push_back(light);
-
-        // Extend buffer (orphaning old one)
-        glNamedBufferData(lightSSBO, lights.size() * Light::glslSize, nullptr, GL_STATIC_DRAW);
-
-        // Copy data to buffer
-        unsigned int offset = 0;
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
-        for (const auto &light : lights) {
-            light.writeSSBO(offset);
-            offset += Light::glslSize;
-        }
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    }
-
-    void bindLightSSBO(GLuint index) const {
-        assert(lights.size() > 0);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, lightSSBO);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
-    }
+    void bindLightSSBO(GLuint index) const;
 
 // private:
     std::vector<std::shared_ptr<Actor>> actors;
