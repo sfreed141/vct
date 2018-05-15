@@ -51,6 +51,7 @@ layout(binding = 6) uniform sampler2D shadowmap;
 uniform bool voxelizeDilate = false;
 uniform bool voxelWarp;
 uniform bool voxelizeAtomicMax = false;
+uniform bool voxelizeLighting;
 
 uniform mat4 ls;
 
@@ -148,30 +149,32 @@ void main() {
     vec3 color = texture(diffuseMap, fs_in.texcoord).rgb;
 	vec3 normal = (normalize(fs_in.normal) + 1) * 0.5; // map normal [-1, 1] -> [0, 1]
 
-	vec3 finalLighting = vec3(0);
-	for (int i = 0; i < lights.length(); i++) {
-		if (!lights[i].enabled) continue;
+	if (voxelizeLighting) {
+		vec3 finalLighting = vec3(0);
+		for (int i = 0; i < lights.length(); i++) {
+			if (!lights[i].enabled) continue;
 
-		vec3 lighting = vec3(0);
-		switch (lights[i].type) {
-			case POINT_LIGHT:
-				lighting = color * lights[i].intensity * lights[i].color * max(0, dot(normalize(fs_in.normal), normalize(lights[i].position-fs_in.worldPosition)));
-				lighting *= 1.0 - smoothstep(0.75 * lights[i].range, lights[i].range, distance(lights[i].position, fs_in.worldPosition));
-				break;
-			case DIRECTIONAL_LIGHT:
-				lighting = color * lights[i].color * lights[i].intensity * max(0, dot(normalize(fs_in.normal), normalize(-lights[i].direction)));
-				break;
+			vec3 lighting = vec3(0);
+			switch (lights[i].type) {
+				case POINT_LIGHT:
+					lighting = color * lights[i].intensity * lights[i].color * max(0, dot(normalize(fs_in.normal), normalize(lights[i].position-fs_in.worldPosition)));
+					lighting *= 1.0 - smoothstep(0.75 * lights[i].range, lights[i].range, distance(lights[i].position, fs_in.worldPosition));
+					break;
+				case DIRECTIONAL_LIGHT:
+					lighting = color * lights[i].color * lights[i].intensity * max(0, dot(normalize(fs_in.normal), normalize(-lights[i].direction)));
+					break;
+			}
+
+			// TODO this only works for the 'mainlight' right now
+			if (lights[i].shadowCaster) {
+				float shadowFactor = 1.0 - calcShadowFactor(ls * vec4(fs_in.worldPosition, 1));
+				lighting *= shadowFactor;
+			}
+
+			finalLighting += lighting;
 		}
-
-		// TODO this only works for the 'mainlight' right now
-		if (lights[i].shadowCaster) {
-			float shadowFactor = 1.0 - calcShadowFactor(ls * vec4(fs_in.worldPosition, 1));
-			lighting *= shadowFactor;
-		}
-
-		finalLighting += lighting;
+		color = clamp(finalLighting, 0, 1);
 	}
-	color = clamp(finalLighting, 0, 1);
 
     // Store value (must be atomic, use alpha component as count)
 #if USE_RGBA16F && GL_NV_shader_atomic_fp16_vector

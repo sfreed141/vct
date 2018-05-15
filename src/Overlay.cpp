@@ -160,7 +160,11 @@ void Overlay::render(float dt) {
             nk_checkbox_label(ctx, "Alpha-to-Coverage", &settings.alphatocoverage);
             nk_checkbox_label(ctx, "Toggle", &settings.toggle);
             nk_checkbox_label(ctx, "Occlusion", &settings.drawOcclusion);
+            nk_checkbox_label(ctx, "debugOcclusion", &settings.debugOcclusion);
+            nk_checkbox_label(ctx, "debugIndirect", &settings.debugIndirect);
             nk_checkbox_label(ctx, "debugVoxels", &settings.debugVoxels);
+            nk_checkbox_label(ctx, "debugVoxelsOpacity", &settings.debugVoxelOpacity);
+            nk_checkbox_label(ctx, "voxelizeLighting", &settings.voxelizeLighting);
 
             nk_layout_row_dynamic(ctx, rowheight, 2);
 			nk_labelf(ctx, NK_TEXT_LEFT, "Miplevel: %d", settings.miplevel);

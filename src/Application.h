@@ -45,8 +45,11 @@ struct Settings {
     int drawShadowmap = false;
     int raymarch = false;
     int drawWarpSlope = false;
-    int drawOcclusion = false;
+    int drawOcclusion = true;
     int debugVoxels = false;
+    int debugVoxelOpacity = false;
+    int debugOcclusion = false;
+    int debugIndirect = false;
 
     int msaa = false;
     int alphatocoverage = false;
@@ -69,6 +72,7 @@ struct Settings {
 
 	int miplevel = 0;
 
+    int voxelizeLighting = true;
     int voxelizeAtomicMax = false;  // only used if voxel textures are rgba8
     int voxelTrackCamera = false;
     float voxelizeMultiplier = 1.0f;

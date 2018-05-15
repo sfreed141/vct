@@ -242,6 +242,7 @@ void Application::render(float dt) {
 		voxelProgram.setUniform1i("voxelWarp", settings.voxelWarp);
 		voxelProgram.setUniform1i("voxelizeAtomicMax", settings.voxelizeAtomicMax);
 		voxelProgram.setUniform1i("toggle", settings.toggle);
+		voxelProgram.setUniform1i("voxelizeLighting", settings.voxelizeLighting);
 
 		glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
 		glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
@@ -296,6 +297,17 @@ void Application::render(float dt) {
 		glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 		glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 		p->unbind();
+	}
+
+	if (settings.toggle) {
+		static GLShaderProgram shader {SHADER_DIR "setVoxelOpacity.comp"};
+		shader.bind();
+
+		glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+		glDispatchCompute((vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4);
+		glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+
+		shader.unbind();
 	}
 
 	// Inject radiance into voxel grid
@@ -471,6 +483,8 @@ void Application::render(float dt) {
 			program.setUniform1i("radiance", settings.drawRadiance);
 			program.setUniform1i("drawWarpSlope", settings.drawWarpSlope);
 			program.setUniform1i("drawOcclusion", settings.drawOcclusion);
+			program.setUniform1i("debugOcclusion", settings.debugOcclusion);
+			program.setUniform1i("debugIndirect", settings.debugIndirect);
 
 			program.setUniform1i("cooktorrance", settings.cooktorrance);
 			program.setUniform1i("enablePostprocess", settings.enablePostprocess);
@@ -693,6 +707,11 @@ void Application::debugVoxels(GLuint texture_id, const glm::mat4 &mvp) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
+
+	if (settings.debugVoxelOpacity) {
+		glEnable(GL_BLEND);
+	}
+
 	shader->bind();
 
 	shader->setUniformMatrix4fv("mvp", mvp);
@@ -701,6 +720,7 @@ void Application::debugVoxels(GLuint texture_id, const glm::mat4 &mvp) {
 	shader->setUniform3fv("voxelMin", vct.min);
 	shader->setUniform3fv("voxelMax", vct.max);
 	shader->setUniform3fv("voxelCenter", vct.center);
+	shader->setUniform1i("debugOpacity", settings.debugVoxelOpacity);
 
 	glBindTextureUnit(0, texture_id);
 	
@@ -713,4 +733,7 @@ void Application::debugVoxels(GLuint texture_id, const glm::mat4 &mvp) {
 	shader->unbind();
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
+	if (settings.debugVoxelOpacity) {
+		glDisable(GL_BLEND);
+	}
 }
