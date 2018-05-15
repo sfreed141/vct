@@ -82,6 +82,8 @@ uniform bool dominant_axis = false;
 uniform bool radiance = false;
 uniform bool drawWarpSlope = false;
 uniform bool drawOcclusion = false;
+uniform bool debugOcclusion = false;
+uniform bool debugIndirect = false;
 
 uniform bool cooktorrance = true;
 
@@ -121,11 +123,13 @@ out vec4 color;
 
 // Performs voxel cone tracing through a given voxelTexture
 // based on https://github.com/godotengine/godot/blob/master/drivers/gles3/shaders/scene.glsl
-vec4 traceCone(sampler3D voxelTexture, vec3 position, vec3 direction, int steps, float bias, float coneAngle, float coneHeight, float lodOffset) {
+vec4 traceCone(sampler3D voxelTexture, vec3 position, vec3 normal, vec3 direction, int steps, float bias, float coneAngle, float coneHeight, float lodOffset) {
     direction = normalize(direction);
     direction.z = -direction.z;
     direction /= voxelDim;
-    vec3 start = position + bias * direction;
+    normal.z = -normal.z;
+    normal /= voxelDim;
+    vec3 start = position + bias * normal;
 
     vec3 color = vec3(0);
     float alpha = 0;
@@ -399,7 +403,7 @@ void main() {
             float coneWeights[] = float[](0.2, 0.2, 0.2, 0.2, 0.2);
 #else
             // https://simonstechblog.blogspot.com/2013/01/implementing-voxel-cone-tracing.html
-            vec3 coneDirs[] = vec3[] (
+            const vec3 coneDirs[] = vec3[] (
                 vec3(0, 1, 0),
                 vec3(0, 0.5, 0.866025),
                 vec3(0.823639, 0.5, 0.267617),
@@ -407,34 +411,29 @@ void main() {
                 vec3(-0.5909037, 0.5, -0.700629),
                 vec3(-0.823639, 0.5, 0.267617)
             );
-            float coneWeights[] = float[](
-                PI / 4,
-                3 * PI / 20,
-                3 * PI / 20,
-                3 * PI / 20,
-                3 * PI / 20,
-                3 * PI / 20
-            );
+            const float coneWeights[] = float[](0.25, 0.15, 0.15, 0.15, 0.15, 0.15);
 #endif
             for (int i = 0; i < coneDirs.length(); i++) {
                 vec3 dir = normalize(fs_in.TBN * coneDirs[i]);
                 indirect += coneWeights[i] * traceCone(
-                    radiance ? voxelRadiance : voxelColor, voxelPosition, dir,
+                    radiance ? voxelRadiance : voxelColor, voxelPosition, normalize(fs_in.fragNormal), dir,
                     vctSteps, vctBias, vctConeAngle, vctConeInitialHeight, vctLodOffset
                 );
             }
+            float occlusion = 1 - clamp(indirect.a, 0, 1);
 
-            if (drawOcclusion) { color = vec4(vec3(1 - clamp(indirect.a, 0, 1)), 1); return; }
+            if (debugIndirect) { color = vec4(indirect.rgb * (drawOcclusion ? occlusion : 1.0), 1); return; }
+            if (debugOcclusion) { color = vec4(vec3(occlusion), 1); return; }
 
             indirect.rgb *= ambientScale;
             indirect.rgb *= diffuseColor.rgb;
             color = vec4(indirect.rgb + diffuseLighting + specularLighting, 1);
-            color *= 1 - clamp(indirect.a, 0, 1);
+            if (drawOcclusion) color *= occlusion;
 
             if (enableReflections) {
                 vec4 reflectColor = traceCone(
                     radiance ? voxelRadiance : voxelColor,
-                    voxelPosition,
+                    voxelPosition, normal,
                     reflect(fs_in.fragPosition - eye, normalize(fs_in.fragNormal)),
                     vctSpecularSteps, vctSpecularBias, vctSpecularConeAngle, vctSpecularConeInitialHeight, vctSpecularLodOffset
                 );
