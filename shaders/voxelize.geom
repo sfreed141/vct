@@ -26,7 +26,7 @@ void main() {
     // find dominant axis (using face normal)
     //vec3 faceNormal = normalize(cross(gs_in[1].position - gs_in[0].position, gs_in[2].position - gs_in[0].position));
     vec3 faceNormal = normalize(gs_in[0].normal + gs_in[1].normal + gs_in[2].normal);
-	vec3 absNormal = abs(faceNormal);
+    vec3 absNormal = abs(faceNormal);
 
     // since projecting onto std basis just find max component
     mat4 mvp;
@@ -44,18 +44,18 @@ void main() {
         axis = 2;
     }
 
-	if (axis_override == 0) {
-		mvp = mvp_x;
-		axis = 0;
-	}
-	else if (axis_override == 1) {
-		mvp = mvp_y;
-		axis = 1;
-	}
-	else if (axis_override == 2) {
-		mvp = mvp_z;
-		axis = 2;
-	}
+    if (axis_override == 0) {
+        mvp = mvp_x;
+        axis = 0;
+    }
+    else if (axis_override == 1) {
+        mvp = mvp_y;
+        axis = 1;
+    }
+    else if (axis_override == 2) {
+        mvp = mvp_z;
+        axis = 2;
+    }
 
     // project and emit vertices
     for (int i = 0; i < 3; i++) {

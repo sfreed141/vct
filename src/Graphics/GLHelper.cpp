@@ -15,7 +15,7 @@
 static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam);
 
 std::string getExtension(const std::string &path) {
-    size_t pos = path.find_last_of('.');    
+    size_t pos = path.find_last_of('.');
     std::string ext = (pos == std::string::npos) ? path : path.substr(pos + 1);
     return ext;
 }
@@ -42,7 +42,7 @@ void GLHelper::printGLExtensions() {
     std::cout << std::endl << std::endl;
 }
 
-void GLHelper::registerDebugOutputCallback() { 
+void GLHelper::registerDebugOutputCallback() {
     GLint flags;
     glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
     if (flags & GL_CONTEXT_FLAG_DEBUG_BIT) {
@@ -61,20 +61,20 @@ void GLHelper::registerDebugOutputCallback() {
 void GLHelper::printUniformInfo(GLuint program) {
     GLint uniformCount;
     glGetProgramiv(program, GL_ACTIVE_UNIFORMS, &uniformCount);
-    
-	std::vector<GLuint> uniformIndices((GLuint)uniformCount);
+
+    std::vector<GLuint> uniformIndices((GLuint)uniformCount);
     std::vector<std::string> uniformNames((GLuint)uniformCount);
     for (int i = 0; i < uniformCount; i++) {
         uniformIndices[i] = i;
 
-		const GLsizei bufSize = 1024;
-		GLsizei length;
+        const GLsizei bufSize = 1024;
+        GLsizei length;
         char uniformName[bufSize];
         glGetActiveUniformName(program, i, bufSize, &length, uniformName);
         uniformNames[i] = std::string(uniformName);
     }
 
-	std::vector<GLint> uniformType(uniformCount);
+    std::vector<GLint> uniformType(uniformCount);
     std::vector<GLint> uniformSize(uniformCount);
     std::vector<GLint> uniformBlockIndex(uniformCount);
     std::vector<GLint> uniformOffset(uniformCount);
@@ -111,52 +111,52 @@ void GLHelper::getMemoryUsage(GLint &totalMem, GLint &availableMem) {
 }
 
 static void APIENTRY glDebugOutput(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam) {
-	// Ignore "Texture 0 is base level inconsistent" warning
-	if (id == 131204) return;
-	// Ignore buffer creation info
-	if (id == 131185) return;
-	// Ignore framebuffer creation info
-	if (id == 131169) return;
-	// Ignore allocation info
-	if (id == 131184) return;
+    // Ignore "Texture 0 is base level inconsistent" warning
+    if (id == 131204) return;
+    // Ignore buffer creation info
+    if (id == 131185) return;
+    // Ignore framebuffer creation info
+    if (id == 131169) return;
+    // Ignore allocation info
+    if (id == 131184) return;
 
-	std::cout << "DEBUG (" << id << "): " << message << std::endl;
+    std::cout << "DEBUG (" << id << "): " << message << std::endl;
 
-	std::cout << "Source: ";
-	switch (source) {
-		case GL_DEBUG_SOURCE_API: std::cout << "API"; break;
-		case GL_DEBUG_SOURCE_WINDOW_SYSTEM: std::cout << "Window System"; break;
-		case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Shader Compiler"; break;
-		case GL_DEBUG_SOURCE_THIRD_PARTY: std::cout << "Third Party"; break;
-		case GL_DEBUG_SOURCE_APPLICATION: std::cout << "Application"; break;
-		case GL_DEBUG_SOURCE_OTHER: std::cout << "Other"; break;
-		default: std::cout << "Unknown"; break;
-	}
+    std::cout << "Source: ";
+    switch (source) {
+        case GL_DEBUG_SOURCE_API: std::cout << "API"; break;
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM: std::cout << "Window System"; break;
+        case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Shader Compiler"; break;
+        case GL_DEBUG_SOURCE_THIRD_PARTY: std::cout << "Third Party"; break;
+        case GL_DEBUG_SOURCE_APPLICATION: std::cout << "Application"; break;
+        case GL_DEBUG_SOURCE_OTHER: std::cout << "Other"; break;
+        default: std::cout << "Unknown"; break;
+    }
 
-	std::cout << std::endl << "Type: ";
-	switch (type) {
-		case GL_DEBUG_TYPE_ERROR: std::cout << "Error"; break;
-		case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Deprecated Behavior"; break;
-		case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: std::cout << "Undefined Behavior"; break;
-		case GL_DEBUG_TYPE_PORTABILITY: std::cout << "Portability"; break;
-		case GL_DEBUG_TYPE_PERFORMANCE: std::cout << "Performance"; break;
-		case GL_DEBUG_TYPE_MARKER: std::cout << "Marker"; break;
-		case GL_DEBUG_TYPE_PUSH_GROUP: std::cout << "Push Group"; break;
-		case GL_DEBUG_TYPE_POP_GROUP: std::cout << "Pop Group"; break;
-		case GL_DEBUG_TYPE_OTHER: std::cout << "Other"; break;
-		default: std::cout << "Unknown"; break;
-	}
+    std::cout << std::endl << "Type: ";
+    switch (type) {
+        case GL_DEBUG_TYPE_ERROR: std::cout << "Error"; break;
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Deprecated Behavior"; break;
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: std::cout << "Undefined Behavior"; break;
+        case GL_DEBUG_TYPE_PORTABILITY: std::cout << "Portability"; break;
+        case GL_DEBUG_TYPE_PERFORMANCE: std::cout << "Performance"; break;
+        case GL_DEBUG_TYPE_MARKER: std::cout << "Marker"; break;
+        case GL_DEBUG_TYPE_PUSH_GROUP: std::cout << "Push Group"; break;
+        case GL_DEBUG_TYPE_POP_GROUP: std::cout << "Pop Group"; break;
+        case GL_DEBUG_TYPE_OTHER: std::cout << "Other"; break;
+        default: std::cout << "Unknown"; break;
+    }
 
-	std::cout << std::endl << "Severity: ";
-	switch (severity) {
-		case GL_DEBUG_SEVERITY_HIGH: std::cout << "High"; break;
-		case GL_DEBUG_SEVERITY_MEDIUM: std::cout << "Medium"; break;
-		case GL_DEBUG_SEVERITY_LOW: std::cout << "Low"; break;
-		case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Notification"; break;
-		default: std::cout << "Unkown"; break;
-	}
+    std::cout << std::endl << "Severity: ";
+    switch (severity) {
+        case GL_DEBUG_SEVERITY_HIGH: std::cout << "High"; break;
+        case GL_DEBUG_SEVERITY_MEDIUM: std::cout << "Medium"; break;
+        case GL_DEBUG_SEVERITY_LOW: std::cout << "Low"; break;
+        case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Notification"; break;
+        default: std::cout << "Unkown"; break;
+    }
 
-	std::cout << std::endl << std::endl;
+    std::cout << std::endl << std::endl;
 }
 
 // Creates texture and loads it with data from provided image file.
@@ -197,7 +197,7 @@ GLuint GLHelper::createTextureFromImage(const std::string &imagename) {
         }
         else if (channels == 4) {
             glTextureStorage2D(texture_id, levels, GL_RGBA8, width, height);
-            glTextureSubImage2D(texture_id, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image); 
+            glTextureSubImage2D(texture_id, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, image);
         }
 
         glGenerateTextureMipmap(texture_id);
@@ -227,7 +227,7 @@ GLuint GLHelper::createCubemap(const std::vector<std::string> &imagenames) {
         if (image == NULL) {
             LOG_ERROR("CUBEMAP::LOAD_FAILED::", imagenames[i]);
         }
-        
+
         glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, image);
 
         stbi_image_free(image);
@@ -239,7 +239,7 @@ GLuint GLHelper::createCubemap(const std::vector<std::string> &imagenames) {
 // Reads contents of file into a string.
 std::string GLHelper::readText(const std::string &filename) {
     std::ifstream ifs {filename};
-    
+
     std::stringstream buffer;
     buffer << ifs.rdbuf();
 
@@ -252,12 +252,12 @@ std::string GLHelper::readText(const std::string &filename) {
 GLuint GLHelper::createShaderFromFile(GLenum shaderType, const std::string &filename) {
     std::string shaderString = GLHelper::readText(filename);
 
-	GLuint shader = GLHelper::createShaderFromString(shaderType, shaderString);
-	if (shader == 0) {
-		std::cerr << "\tin shader " << filename << std::endl;
-	}
+    GLuint shader = GLHelper::createShaderFromString(shaderType, shaderString);
+    if (shader == 0) {
+        std::cerr << "\tin shader " << filename << std::endl;
+    }
 
-	return shader;
+    return shader;
 }
 
 std::string &processGLSLInclude(std::string &s) {
@@ -288,11 +288,11 @@ GLuint GLHelper::createShaderFromString(GLenum shaderType, std::string shaderStr
     const char *shaderText = shaderString.c_str();
     glShaderSource(shader, 1, &shaderText, NULL);
     glCompileShader(shader);
-    
-	if (!GLHelper::checkShaderStatus(shader)) {
-		glDeleteShader(shader);
-		shader = 0;
-	}
+
+    if (!GLHelper::checkShaderStatus(shader)) {
+        glDeleteShader(shader);
+        shader = 0;
+    }
 
     return shader;
 }
@@ -326,13 +326,13 @@ bool GLHelper::checkShaderStatus(GLuint shader) {
 // Check link status of shader program. Prints error message if linking failed.
 bool GLHelper::checkShaderProgramStatus(GLuint program) {
     GLint success;
-	GLchar infoLog[512];
+    GLchar infoLog[512];
 
     glGetProgramiv(program, GL_LINK_STATUS, &success);
-	if (!success) {
-		glGetProgramInfoLog(program, 512, NULL, infoLog);
-		LOG_ERROR("SHADER_PROGRAM::COMPILATION_FAILED\n", infoLog);
-	}
+    if (!success) {
+        glGetProgramInfoLog(program, 512, NULL, infoLog);
+        LOG_ERROR("SHADER_PROGRAM::COMPILATION_FAILED\n", infoLog);
+    }
 
     return success;
 }

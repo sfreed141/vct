@@ -111,7 +111,7 @@ void Mesh::loadMesh(const std::string &meshname) {
             default_material.name = "default";
             default_material.diffuse_texname = DEFAULT_TEXTURE;
             default_material.shininess = 1.0f;
-                        
+
             materials.push_back(default_material);
 
             GLuint texture_id = GLHelper::createTextureFromImage(string(RESOURCE_DIR) + default_material.diffuse_texname);
@@ -165,7 +165,7 @@ void Mesh::loadMesh(const std::string &meshname) {
                         vertexMap.insert(make_pair(index_str, vertIndex));
                         vertices.push_back(Vertex{});
                         tri[v] = vertIndex;
-                        
+
                         vertices[tri[v]].position[0] = attrib.vertices[3 * index.vertex_index];
                         vertices[tri[v]].position[1] = attrib.vertices[3 * index.vertex_index + 1];
                         vertices[tri[v]].position[2] = attrib.vertices[3 * index.vertex_index + 2];
@@ -180,7 +180,7 @@ void Mesh::loadMesh(const std::string &meshname) {
                         }
                     }
                     else {
-                        // existing vertex 
+                        // existing vertex
                         vertIndex = vertexMap.at(index_str);
                         tri[v] = vertIndex;
                     }

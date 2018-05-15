@@ -57,7 +57,7 @@ public:
         fread(buffer, 1, bufsize, fp);
 
         fclose(fp);
-        
+
         unsigned int components, format;
         if (strncmp((char *)&hdr.ddspf.dwFourCC, "DXT1", 4) == 0) {
             components = 3;

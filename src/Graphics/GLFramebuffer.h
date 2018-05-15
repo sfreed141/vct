@@ -7,33 +7,33 @@
 
 class GLFramebuffer {
 public:
-	GLFramebuffer();
-	~GLFramebuffer();
+    GLFramebuffer();
+    ~GLFramebuffer();
 
-	GLFramebuffer(const GLFramebuffer &) = delete;
-	GLFramebuffer &operator=(const GLFramebuffer &) = delete;
+    GLFramebuffer(const GLFramebuffer &) = delete;
+    GLFramebuffer &operator=(const GLFramebuffer &) = delete;
 
-	// TODO add move constructor and move assignment
-	GLFramebuffer(GLFramebuffer &&other) = delete;
-	GLFramebuffer &operator=(GLFramebuffer &&other) = delete;
+    // TODO add move constructor and move assignment
+    GLFramebuffer(GLFramebuffer &&other) = delete;
+    GLFramebuffer &operator=(GLFramebuffer &&other) = delete;
 
-	void attachTexture(GLenum attachment, GLint internalFormat, GLsizei width, GLsizei height, GLenum format, GLenum type, GLint minFilter = GL_NEAREST, GLint magFilter = GL_NEAREST, GLint wrapS = GL_REPEAT, GLint wrapT = GL_REPEAT, const glm::vec4 *borderColor = nullptr);
-	void attachRenderbuffer(GLenum attachment, GLenum internalFormat, GLsizei width, GLsizei height);
+    void attachTexture(GLenum attachment, GLint internalFormat, GLsizei width, GLsizei height, GLenum format, GLenum type, GLint minFilter = GL_NEAREST, GLint magFilter = GL_NEAREST, GLint wrapS = GL_REPEAT, GLint wrapT = GL_REPEAT, const glm::vec4 *borderColor = nullptr);
+    void attachRenderbuffer(GLenum attachment, GLenum internalFormat, GLsizei width, GLsizei height);
 
-	void bind(GLenum target = GL_FRAMEBUFFER);
-	void bindTextures();
-	void unbind();
-	void unbindTextures();
+    void bind(GLenum target = GL_FRAMEBUFFER);
+    void bindTextures();
+    void unbind();
+    void unbindTextures();
 
-	GLenum getStatus() const;
-	GLuint getHandle() const;
-	GLuint getTexture(std::vector<GLuint>::size_type index) const;
-	GLuint getRenderbuffer(std::vector<GLuint>::size_type index) const;
+    GLenum getStatus() const;
+    GLuint getHandle() const;
+    GLuint getTexture(std::vector<GLuint>::size_type index) const;
+    GLuint getRenderbuffer(std::vector<GLuint>::size_type index) const;
 private:
-	GLuint handle;
-	GLenum currentTarget;
-	std::vector<GLuint> textures;
-	std::vector<GLuint> renderbuffers;
+    GLuint handle;
+    GLenum currentTarget;
+    std::vector<GLuint> textures;
+    std::vector<GLuint> renderbuffers;
 };
 
 #endif

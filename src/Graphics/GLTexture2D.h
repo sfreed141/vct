@@ -11,9 +11,9 @@ public:
     ~GLTexture2D() { glDeleteTextures(1, &handle); }
 
     GLTexture2D(const GLTexture2D &other) = delete;
-	GLTexture2D &operator=(const GLTexture2D &other) = delete;
+    GLTexture2D &operator=(const GLTexture2D &other) = delete;
 
-	GLTexture2D(GLTexture2D &&other) :
+    GLTexture2D(GLTexture2D &&other) :
         handle(other.handle),
         width(other.width), height(other.height),
         components(other.components), levels(other.levels), format(other.format)
@@ -21,7 +21,7 @@ public:
         other.handle = 0;
     }
 
-	GLTexture2D &operator=(GLTexture2D &&other) {
+    GLTexture2D &operator=(GLTexture2D &&other) {
         if (this != &other) {
             glDeleteTextures(1, &handle);
 

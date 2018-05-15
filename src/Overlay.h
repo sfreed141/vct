@@ -19,10 +19,10 @@ public:
     Overlay(GLFWwindow *window, Application &app);
     ~Overlay();
 
-	Overlay(const Overlay &other) = delete;
-	Overlay &operator=(const Overlay &other) = delete;
-	Overlay(Overlay &&other) = delete;
-	Overlay &operator=(Overlay &&other) = delete;
+    Overlay(const Overlay &other) = delete;
+    Overlay &operator=(const Overlay &other) = delete;
+    Overlay(Overlay &&other) = delete;
+    Overlay &operator=(Overlay &&other) = delete;
 
     void render(float dt);
 

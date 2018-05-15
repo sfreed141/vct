@@ -13,14 +13,14 @@
 Scene::Scene() {}
 
 void Scene::update(float dt) {
-	for (auto &actor : actors) {
-		actor->update(dt);
-	}
+    for (auto &actor : actors) {
+        actor->update(dt);
+    }
 }
 
 void Scene::draw(GLShaderProgram &program) {
-	for (auto &actor : actors) {
-		program.setUniformMatrix4fv("model", actor->getTransform());
-		actor->draw(program);
-	}
+    for (auto &actor : actors) {
+        program.setUniformMatrix4fv("model", actor->getTransform());
+        actor->draw(program);
+    }
 }

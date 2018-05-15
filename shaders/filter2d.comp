@@ -27,7 +27,7 @@ void main() {
 
     if (any(greaterThan(threadId, dstSize)))
         return;
-    
+
     vec2 tc = vec2(threadId) / vec2(dstSize);
     // vec2 texelSize = 1.0 / srcSize;
     // tc += 0.5 * texelSize;

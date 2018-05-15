@@ -8,11 +8,11 @@
 #include <common.h>
 
 GLShaderProgram::GLShaderProgram() {
-	handle = glCreateProgram();
+    handle = glCreateProgram();
 }
 
 GLShaderProgram::GLShaderProgram(std::initializer_list<const std::string> shaderFiles) : GLShaderProgram() {
-	attachAndLink(shaderFiles);
+    attachAndLink(shaderFiles);
 }
 
 GLShaderProgram::~GLShaderProgram() {
@@ -20,42 +20,42 @@ GLShaderProgram::~GLShaderProgram() {
 }
 
 GLShaderProgram &GLShaderProgram::attachShader(const std::string &shaderFile) {
-	return attachShader(GLHelper::shaderTypeFromExtension(shaderFile), shaderFile);
+    return attachShader(GLHelper::shaderTypeFromExtension(shaderFile), shaderFile);
 }
 
 GLShaderProgram &GLShaderProgram::attachShader(GLenum shaderType, const std::string &shaderFile) {
-	GLShader shader { shaderType, shaderFile };
-	glAttachShader(handle, shader.getHandle());
+    GLShader shader { shaderType, shaderFile };
+    glAttachShader(handle, shader.getHandle());
 
-	return *this;
+    return *this;
 }
 
 void GLShaderProgram::linkProgram() {
-	glLinkProgram(handle);
-	linkStatus = GLHelper::checkShaderProgramStatus(handle);
+    glLinkProgram(handle);
+    linkStatus = GLHelper::checkShaderProgramStatus(handle);
 
-	if (linkStatus) {
-		GLint uniformCount, uniformMaxLength;
-		glGetProgramiv(handle, GL_ACTIVE_UNIFORMS, &uniformCount);
-		glGetProgramiv(handle, GL_ACTIVE_UNIFORM_MAX_LENGTH, &uniformMaxLength);
-		
-		for (int i = 0; i < uniformCount; i++) {
-			GLsizei length = 0;
-			GLint location = 0, size = 0;
-			GLenum type = GL_NONE;
-			std::vector<GLchar> name(uniformMaxLength);
-			glGetActiveUniform(handle, i, uniformMaxLength, &length, &size, &type, name.data()); 
-			location = glGetUniformLocation(handle, name.data());
-			uniforms[name.data()] = location;
-		}
-	}
+    if (linkStatus) {
+        GLint uniformCount, uniformMaxLength;
+        glGetProgramiv(handle, GL_ACTIVE_UNIFORMS, &uniformCount);
+        glGetProgramiv(handle, GL_ACTIVE_UNIFORM_MAX_LENGTH, &uniformMaxLength);
+
+        for (int i = 0; i < uniformCount; i++) {
+            GLsizei length = 0;
+            GLint location = 0, size = 0;
+            GLenum type = GL_NONE;
+            std::vector<GLchar> name(uniformMaxLength);
+            glGetActiveUniform(handle, i, uniformMaxLength, &length, &size, &type, name.data());
+            location = glGetUniformLocation(handle, name.data());
+            uniforms[name.data()] = location;
+        }
+    }
 }
 
 void GLShaderProgram::attachAndLink(std::initializer_list<const std::string> shaderFiles) {
-	for (const auto &s : shaderFiles) {
-		attachShader(s);
-	}
-	linkProgram();
+    for (const auto &s : shaderFiles) {
+        attachShader(s);
+    }
+    linkProgram();
 }
 
 GLuint GLShaderProgram::getHandle() const {
@@ -71,15 +71,15 @@ void GLShaderProgram::unbind() const {
 }
 
 void GLShaderProgram::setObjectLabel(const std::string &label) {
-	glObjectLabel(GL_PROGRAM, handle, label.size(), label.c_str());
-	this->label = label;
+    glObjectLabel(GL_PROGRAM, handle, label.size(), label.c_str());
+    this->label = label;
 }
 
 GLint GLShaderProgram::uniformLocation(const GLchar *name) const {
-	if (uniforms.count(name) == 0) {
-		// This should only happen for non-active uniforms (e.g. optimized out)
-		return -1;
-	}
+    if (uniforms.count(name) == 0) {
+        // This should only happen for non-active uniforms (e.g. optimized out)
+        return -1;
+    }
 
     return uniforms.at(name);
 }

@@ -18,9 +18,9 @@ public:
     }
 
     GLTimer(const GLTimer &other) = delete;
-	GLTimer &operator=(const GLTimer &other) = delete;
-	GLTimer(GLTimer &&other) = delete;
-	GLTimer &operator=(GLTimer &&other) = delete;
+    GLTimer &operator=(const GLTimer &other) = delete;
+    GLTimer(GLTimer &&other) = delete;
+    GLTimer &operator=(GLTimer &&other) = delete;
 
     void start() {
         glQueryCounter(id[startId], GL_TIMESTAMP);
@@ -52,9 +52,9 @@ public:
     ~GLBufferedTimer() = default;
 
     GLBufferedTimer(const GLBufferedTimer &other) = delete;
-	GLBufferedTimer &operator=(const GLBufferedTimer &other) = delete;
-	GLBufferedTimer(GLBufferedTimer &&other) = delete;
-	GLBufferedTimer &operator=(GLBufferedTimer &&other) = delete;
+    GLBufferedTimer &operator=(const GLBufferedTimer &other) = delete;
+    GLBufferedTimer(GLBufferedTimer &&other) = delete;
+    GLBufferedTimer &operator=(GLBufferedTimer &&other) = delete;
 
     void start() {
         timers[backBuffer].start();

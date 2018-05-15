@@ -12,7 +12,7 @@
 class Mouse {
 public:
     static void update();
-    
+
     static double getX();
     static double getY();
 

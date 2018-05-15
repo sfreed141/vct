@@ -41,7 +41,7 @@ struct Settings {
     int drawVoxels = false;
     int drawRadiance = false;
     int drawAxes = false;
-	int axisOverride = -1;
+    int axisOverride = -1;
     int drawShadowmap = false;
     int raymarch = false;
     int drawWarpSlope = false;
@@ -54,10 +54,10 @@ struct Settings {
     int msaa = false;
     int alphatocoverage = false;
     int cooktorrance = true;
-	enum ConservativeRasterizeMode { OFF, MSAA, NV };
+    enum ConservativeRasterizeMode { OFF, MSAA, NV };
     ConservativeRasterizeMode conservativeRasterization = MSAA;
     int enablePostprocess = true;
-	int enableShadows = true;
+    int enableShadows = true;
     int enableNormalMap = true;
     int enableIndirect = true;
     int enableDiffuse = true;
@@ -70,7 +70,7 @@ struct Settings {
     int temporalFilterRadiance = false;
     float temporalDecay = 0.8f;
 
-	int miplevel = 0;
+    int miplevel = 0;
 
     int voxelizeLighting = true;
     int voxelizeAtomicMax = false;  // only used if voxel textures are rgba8
@@ -88,7 +88,7 @@ class VCT {
 public:
     VCT() {
         useRGBA16f = false; // GLAD_GL_NV_shader_atomic_fp16_vector; // MUST ALSO DEFINE USE_RGBA16F in voxelize.frag and injectRadiance.comp
-	    voxelFormat = useRGBA16f ? GL_RGBA16F : GL_RGBA8;
+        voxelFormat = useRGBA16f ? GL_RGBA16F : GL_RGBA8;
         make();
     }
 
@@ -150,19 +150,19 @@ private:
 
     std::unique_ptr<Scene> scene = nullptr;
     GLShaderProgram program;
-    
+
     GLShaderProgram voxelProgram;
     VCT vct;
 
-	GLFramebuffer shadowmapFBO;
-	GLShaderProgram shadowmapProgram;
+    GLFramebuffer shadowmapFBO;
+    GLShaderProgram shadowmapProgram;
 
-	GLShaderProgram injectRadianceProgram, temporalRadianceFilterProgram;
+    GLShaderProgram injectRadianceProgram, temporalRadianceFilterProgram;
 
     GLShaderProgram mipmapProgram, ditherProgram;
 
     Settings settings;
-	GLBufferedTimer voxelizeTimer, shadowmapTimer, radianceTimer, mipmapTimer, renderTimer, totalTimer;
+    GLBufferedTimer voxelizeTimer, shadowmapTimer, radianceTimer, mipmapTimer, renderTimer, totalTimer;
 
     void viewRaymarched();
     void debugVoxels(GLuint texture_id, const glm::mat4 &mvp);

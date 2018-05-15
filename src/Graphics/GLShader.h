@@ -27,12 +27,12 @@ public:
         glDeleteShader(this->handle);
     }
 
-	GLShader(const GLShader &other) = delete;
-	GLShader &operator=(const GLShader &other) = delete;
+    GLShader(const GLShader &other) = delete;
+    GLShader &operator=(const GLShader &other) = delete;
 
-	GLShader(GLShader &&other) = delete;
-	GLShader &operator=(GLShader &&other) = delete;
-    
+    GLShader(GLShader &&other) = delete;
+    GLShader &operator=(GLShader &&other) = delete;
+
     GLuint getHandle() const { return handle; }
     GLenum getType() const { return type; }
     const std::string &getName() const { return name; }

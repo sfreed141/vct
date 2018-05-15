@@ -5,10 +5,10 @@
 
 class GLQuad {
 public:
-	static void init();
-	static void draw();
+    static void init();
+    static void draw();
 private:
-	static GLuint vao;
+    static GLuint vao;
 };
 
 #endif

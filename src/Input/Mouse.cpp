@@ -21,7 +21,7 @@ double Mouse::getX() {
 }
 
 double Mouse::getY() {
-    return Mouse::y; 
+    return Mouse::y;
 }
 
 double Mouse::getDeltaX() {
@@ -53,5 +53,5 @@ void Mouse::setMousePos(double nextX, double nextY) {
 
 void Mouse::setMouseButton(int button, int action) {
     assert(button >= 0 && button <= GLFW_MOUSE_BUTTON_LAST);
-    Mouse::buttons[button] = action;        
+    Mouse::buttons[button] = action;
 }

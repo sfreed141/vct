@@ -17,12 +17,12 @@ uniform vec3 voxelMin, voxelMax, voxelCenter;
 
 void main() {
     float instance = float(gl_InstanceID);
-	float x = modf(instance / voxelDim, instance);
-	float y = modf(instance / voxelDim, instance);
-	float z = instance / voxelDim;
+    float x = modf(instance / voxelDim, instance);
+    float y = modf(instance / voxelDim, instance);
+    float z = instance / voxelDim;
     vec3 voxelPosition = vec3(x,y,z) + 0.5 / voxelDim;
 
-	vec3 tc = vec3(voxelPosition.x, voxelPosition.y, 1 - voxelPosition.z);
+    vec3 tc = vec3(voxelPosition.x, voxelPosition.y, 1 - voxelPosition.z);
     vs_out.voxelColor = textureLod(voxels, tc, level);
     vs_out.worldPosition = position + voxelCenter + mix(voxelMin, voxelMax, voxelPosition);
 

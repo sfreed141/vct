@@ -16,13 +16,13 @@ public:
     void rotate(float angle, const glm::vec3 &axis) {
         glm::quat rotation = glm::angleAxis(angle, axis);
         this->localRotation = glm::normalize(rotation * this->localRotation);
-        forward = glm::mat3_cast(localRotation) * worldForward;    
+        forward = glm::mat3_cast(localRotation) * worldForward;
         isDirty = true;
     }
 
     void rotate(const glm::quat &rotation) {
         this->localRotation = glm::normalize(rotation * this->localRotation);
-        forward = glm::mat3_cast(localRotation) * worldForward;    
+        forward = glm::mat3_cast(localRotation) * worldForward;
         isDirty = true;
     }
 
@@ -57,7 +57,7 @@ public:
         this->isDirty = true;
     }
 
-	void setY(float y) {
+    void setY(float y) {
         this->localPosition.y = y;
         this->isDirty = true;
     }
@@ -67,7 +67,7 @@ public:
         this->forward = glm::normalize(glm::mat3_cast(this->localRotation) * worldForward);
         this->isDirty = true;
     }
-    
+
     void setScale(const glm::vec3 &scale) {
         this->localScale = scale;
         this->isDirty = true;
@@ -80,9 +80,9 @@ public:
     }
 
 private:
-	glm::vec3 localPosition;
-	glm::quat localRotation;
-	glm::vec3 localScale;
+    glm::vec3 localPosition;
+    glm::quat localRotation;
+    glm::vec3 localScale;
 
     glm::vec3 forward;
 

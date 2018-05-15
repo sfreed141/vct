@@ -81,10 +81,10 @@ void Overlay::render(float dt) {
     const nk_flags window_flags = NK_WINDOW_BORDER | NK_WINDOW_MOVABLE
         | NK_WINDOW_SCALABLE | NK_WINDOW_MINIMIZABLE | NK_WINDOW_TITLE;
     if (nk_begin(ctx, "", nk_rect(10, 10, 400, 700), window_flags)) {
-		nk_layout_row_dynamic(ctx, rowheight, 1);
-		nk_label(ctx, "WASD + Mouse: Movement", NK_TEXT_LEFT);
-		nk_label(ctx, "Left Ctrl: Toggle mouse capture", NK_TEXT_LEFT);
-		nk_label(ctx, "Grave/Tilde: Toggle overlay", NK_TEXT_LEFT);
+        nk_layout_row_dynamic(ctx, rowheight, 1);
+        nk_label(ctx, "WASD + Mouse: Movement", NK_TEXT_LEFT);
+        nk_label(ctx, "Left Ctrl: Toggle mouse capture", NK_TEXT_LEFT);
+        nk_label(ctx, "Grave/Tilde: Toggle overlay", NK_TEXT_LEFT);
 
         if (nk_tree_push(ctx, NK_TREE_TAB, "Performance", NK_MAXIMIZED)) {
             const float ratio[] = {0.25f, 0.75f};
@@ -97,17 +97,17 @@ void Overlay::render(float dt) {
             availableMem /= 1024;
             nk_labelf(ctx, NK_TEXT_RIGHT, "GPU Memory Usage: %d / %d MB ", totalMem - availableMem, totalMem);
 
-			if (nk_tree_push(ctx, NK_TREE_NODE, "Timing Breakdown", NK_MINIMIZED)) {
+            if (nk_tree_push(ctx, NK_TREE_NODE, "Timing Breakdown", NK_MINIMIZED)) {
                 nk_layout_row_dynamic(ctx, rowheight, 1);
-				nk_labelf(ctx, NK_TEXT_LEFT, "Voxelize: %.2f ms", app.voxelizeTimer.getTime() / 1.0e6);
-				nk_labelf(ctx, NK_TEXT_LEFT, "Shadowmap: %.2f ms", app.shadowmapTimer.getTime() / 1.0e6);
-				nk_labelf(ctx, NK_TEXT_LEFT, "Radiance: %.2f ms", app.radianceTimer.getTime() / 1.0e6);
-				nk_labelf(ctx, NK_TEXT_LEFT, "Mipmap: %.2f ms", app.mipmapTimer.getTime() / 1.0e6);
-				nk_labelf(ctx, NK_TEXT_LEFT, "Render: %.2f ms", app.renderTimer.getTime() / 1.0e6);
-				nk_labelf(ctx, NK_TEXT_LEFT, "Total: %.2f ms", app.totalTimer.getTime() / 1.0e6);
+                nk_labelf(ctx, NK_TEXT_LEFT, "Voxelize: %.2f ms", app.voxelizeTimer.getTime() / 1.0e6);
+                nk_labelf(ctx, NK_TEXT_LEFT, "Shadowmap: %.2f ms", app.shadowmapTimer.getTime() / 1.0e6);
+                nk_labelf(ctx, NK_TEXT_LEFT, "Radiance: %.2f ms", app.radianceTimer.getTime() / 1.0e6);
+                nk_labelf(ctx, NK_TEXT_LEFT, "Mipmap: %.2f ms", app.mipmapTimer.getTime() / 1.0e6);
+                nk_labelf(ctx, NK_TEXT_LEFT, "Render: %.2f ms", app.renderTimer.getTime() / 1.0e6);
+                nk_labelf(ctx, NK_TEXT_LEFT, "Total: %.2f ms", app.totalTimer.getTime() / 1.0e6);
 
-				nk_tree_pop(ctx);
-			}
+                nk_tree_pop(ctx);
+            }
 
             nk_tree_pop(ctx);
         }
@@ -130,7 +130,7 @@ void Overlay::render(float dt) {
                 if (nk_button_label(ctx, "Set to camera")) {
                     lightPos = camera.position;
                     lightDir = camera.front;
-                }  
+                }
                 nk_combo_end(ctx);
             }
 
@@ -167,29 +167,8 @@ void Overlay::render(float dt) {
             nk_checkbox_label(ctx, "voxelizeLighting", &settings.voxelizeLighting);
 
             nk_layout_row_dynamic(ctx, rowheight, 2);
-			nk_labelf(ctx, NK_TEXT_LEFT, "Miplevel: %d", settings.miplevel);
-			nk_slider_int(ctx, 0, &settings.miplevel, app.vct.voxelLevels - 1, 1);
-
-            // nk_layout_row_dynamic(ctx, rowheight, 2);
-			// nk_labelf(ctx, NK_TEXT_LEFT, "Axis Override: %d", settings.axisOverride);
-			// nk_slider_int(ctx, -1, &settings.axisOverride, 2, 1);
-
-            if (nk_tree_push(ctx, NK_TREE_NODE, "Voxel Grid Slicer", NK_MINIMIZED)) {
-                static int slice = 0;
-                nk_layout_row_dynamic(ctx, rowheight, 2);
-                nk_labelf(ctx, NK_TEXT_LEFT, "Slice %d", slice);
-                nk_slider_int(ctx, 0, &slice, app.vct.voxelDim - 1, 1);
-                glCopyImageSubData(
-                    app.vct.voxelColor, GL_TEXTURE_3D, 0, 0, 0, slice,
-                    voxelSlice, GL_TEXTURE_2D, 0, 0, 0, 0,
-                    app.vct.voxelDim, app.vct.voxelDim, 1
-                );
-
-                nk_layout_row_static(ctx, 64, 64, 1);
-                nk_image(ctx, voxelSliceImage);
-
-                nk_tree_pop(ctx);
-            }
+            nk_labelf(ctx, NK_TEXT_LEFT, "Miplevel: %d", settings.miplevel);
+            nk_slider_int(ctx, 0, &settings.miplevel, app.vct.voxelLevels - 1, 1);
 
             nk_tree_pop(ctx);
         }
@@ -205,24 +184,24 @@ void Overlay::render(float dt) {
             }
 
             nk_layout_row_dynamic(ctx, rowheight, 2);
-			nk_checkbox_label(ctx, "Shadows", &settings.enableShadows);
-			nk_checkbox_label(ctx, "Normal Map", &settings.enableNormalMap);
-			nk_checkbox_label(ctx, "Indirect", &settings.enableIndirect);
-			nk_checkbox_label(ctx, "Diffuse", &settings.enableDiffuse);
-			nk_checkbox_label(ctx, "Specular", &settings.enableSpecular);
-			nk_checkbox_label(ctx, "Reflections", &settings.enableReflections);
+            nk_checkbox_label(ctx, "Shadows", &settings.enableShadows);
+            nk_checkbox_label(ctx, "Normal Map", &settings.enableNormalMap);
+            nk_checkbox_label(ctx, "Indirect", &settings.enableIndirect);
+            nk_checkbox_label(ctx, "Diffuse", &settings.enableDiffuse);
+            nk_checkbox_label(ctx, "Specular", &settings.enableSpecular);
+            nk_checkbox_label(ctx, "Reflections", &settings.enableReflections);
             nk_checkbox_label(ctx, "radianceDilate", &settings.radianceDilate);
             nk_checkbox_label(ctx, "temporalFilterRadiance", &settings.temporalFilterRadiance);
-			nk_checkbox_label(ctx, "voxelizeDilate", &settings.voxelizeDilate);
-			nk_checkbox_label(ctx, "voxelWarp", &settings.voxelWarp);
-			nk_checkbox_label(ctx, "voxelizeAtomicMax", &settings.voxelizeAtomicMax);
-			if (nk_checkbox_label(ctx, "voxelTrackCamera", &settings.voxelTrackCamera)) {
+            nk_checkbox_label(ctx, "voxelizeDilate", &settings.voxelizeDilate);
+            nk_checkbox_label(ctx, "voxelWarp", &settings.voxelWarp);
+            nk_checkbox_label(ctx, "voxelizeAtomicMax", &settings.voxelizeAtomicMax);
+            if (nk_checkbox_label(ctx, "voxelTrackCamera", &settings.voxelTrackCamera)) {
                 // reset voxel center to origin after tracking
                 if (!settings.voxelTrackCamera) {
                     app.vct.center = glm::vec3(0.0f);
                 }
             }
-            
+
             nk_layout_row_dynamic(ctx, rowheight, 2);
             nk_labelf(ctx, NK_TEXT_LEFT, "Ambient Scale: %0.1f", settings.ambientScale);
             nk_slider_float(ctx, 0.0f, &settings.ambientScale, 1.0f, 0.1f);
@@ -271,7 +250,7 @@ void Overlay::render(float dt) {
             }
             app.vct.min = nextVoxelExtentMin;
             app.vct.max = nextVoxelExtentMax;
-            
+
             glm::vec3 nextVoxelCenter = app.vct.center;
             sprintf(tmp_buffer, "voxelCenter: %.2f, %.2f, %.2f", nextVoxelCenter[0], nextVoxelCenter[1], nextVoxelCenter[2]);
             if (nk_combo_begin_label(ctx, tmp_buffer, nk_vec2(200,200))) {

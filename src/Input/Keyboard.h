@@ -15,7 +15,7 @@ public:
     static bool getKeyDown(int key);
 
     static bool getKeyUp(int key);
-    
+
     static bool getKeyTap(int key);
 
     static void setKeyStatus(int key, int action);

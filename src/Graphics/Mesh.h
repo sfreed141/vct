@@ -29,7 +29,7 @@ struct Material {
         ambient_map(0), diffuse_map(0), specular_map(0), alpha_map(0),
         normal_map(0), roughness_map(0), metallic_map(0)
         {}
-    
+
     Material(tinyobj::material_t m) : Material() {
         for (int i = 0; i < 3; i++) {
             this->ambient[i] = ambient[i];
@@ -40,7 +40,7 @@ struct Material {
         this->roughness = roughness;
         this->metallic = metallic;
     }
-    
+
     void writeUBO(unsigned int offset) const {
         glBufferSubData(GL_UNIFORM_BUFFER, offset +  0, 12, &ambient);
         glBufferSubData(GL_UNIFORM_BUFFER, offset + 16, 12, &diffuse);
@@ -64,7 +64,7 @@ struct Material {
 
         return std::max((GLint)Material::glslSize, uboOffsetAlignment);
     }
-    
+
     static const unsigned int glslSize = 80;
 };
 

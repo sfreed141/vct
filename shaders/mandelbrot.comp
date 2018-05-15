@@ -15,7 +15,7 @@ void main() {
 
     if (any(greaterThan(threadId, dstSize)))
         return;
-    
+
     vec2 z, c;
     c = (vec2(threadId) / min(dstSize.x, dstSize.y)) * scale - center;
     z = vec2(0);
@@ -26,7 +26,7 @@ void main() {
 
         if (x * x + y * y > 4.0)
             break;
-        
+
         z.x = x;
         z.y = y;
     }
