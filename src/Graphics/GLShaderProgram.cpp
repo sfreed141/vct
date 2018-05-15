@@ -11,8 +11,9 @@ GLShaderProgram::GLShaderProgram() {
     handle = glCreateProgram();
 }
 
-GLShaderProgram::GLShaderProgram(std::initializer_list<const std::string> shaderFiles) : GLShaderProgram() {
+GLShaderProgram::GLShaderProgram(std::string label, std::initializer_list<const std::string> shaderFiles) : GLShaderProgram() {
     attachAndLink(shaderFiles);
+    setObjectLabel(label);
 }
 
 GLShaderProgram::~GLShaderProgram() {

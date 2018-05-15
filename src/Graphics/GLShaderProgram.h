@@ -11,7 +11,7 @@
 class GLShaderProgram {
 public:
     GLShaderProgram();
-    GLShaderProgram(std::initializer_list<const std::string> shaderFiles);
+    GLShaderProgram(std::string label, std::initializer_list<const std::string> shaderFiles);
     ~GLShaderProgram();
 
     GLShaderProgram(const GLShaderProgram &other) = delete;

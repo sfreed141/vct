@@ -283,12 +283,9 @@ void Application::render(float dt) {
 
     // Normalize vct.voxelColor and vct.voxelNormal textures (divides by alpha component)
     if (vct.useRGBA16f) {
-        static GLShaderProgram *p = nullptr;
-        if (!p) {
-            p = new GLShaderProgram({SHADER_DIR "normalizeVoxels.comp"});
-            p->setObjectLabel("Normalize Voxels");
-        }
-        p->bind();
+        static GLShaderProgram p ("Normalize Voxels", {SHADER_DIR "normalizeVoxels.comp"});
+
+        p.bind();
         glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
         glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
 
@@ -296,11 +293,11 @@ void Application::render(float dt) {
 
         glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
         glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
-        p->unbind();
+        p.unbind();
     }
 
     if (settings.toggle) {
-        static GLShaderProgram shader {SHADER_DIR "setVoxelOpacity.comp"};
+        static GLShaderProgram shader {"Set Voxel Opacity", {SHADER_DIR "setVoxelOpacity.comp"}};
         shader.bind();
 
         glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
