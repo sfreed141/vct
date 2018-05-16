@@ -149,6 +149,10 @@ void Overlay::render(float dt) {
             nk_labelf(ctx, NK_TEXT_LEFT, "Miplevel: %d", settings.miplevel);
             nk_slider_int(ctx, 0, &settings.miplevel, app.vct.voxelLevels - 1, 1);
 
+            nk_layout_row_dynamic(ctx, rowheight, 2);
+            nk_labelf(ctx, NK_TEXT_LEFT, "Voxel Opacity: %0.1f", settings.voxelSetOpacity);
+            nk_slider_float(ctx, 0.0f, &settings.voxelSetOpacity, 1.0f, 0.1f);
+
             nk_tree_pop(ctx);
         }
 

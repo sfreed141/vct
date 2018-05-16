@@ -70,6 +70,7 @@ struct Settings {
     int radianceDilate = false;
     int temporalFilterRadiance = false;
     float temporalDecay = 0.8f;
+    float voxelSetOpacity = 0.5f;
 
     int miplevel = 0;
 

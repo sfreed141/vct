@@ -307,7 +307,7 @@ void Application::render(float dt) {
             static GLShaderProgram shader {"Set Voxel Opacity", {SHADER_DIR "setVoxelOpacity.comp"}};
             shader.bind();
 
-            shader.setUniform1i("voxelSetOpacity", settings.toggle);
+            shader.setUniform1f("voxelSetOpacity", settings.voxelSetOpacity);
 
             glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
             glBindImageTexture(1, vct.voxelRadiance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
