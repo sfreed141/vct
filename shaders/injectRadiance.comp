@@ -24,10 +24,11 @@ uniform vec3 lightInt;
 uniform int voxelDim;
 uniform vec3 voxelMin, voxelMax;
 uniform vec3 voxelCenter;
-uniform bool voxelWarp;
+uniform bool warpVoxels;
 
 uniform bool radianceDilate = false;
 
+uniform vec3 eye;
 #pragma include "common.glsl"
 
 void main() {
@@ -42,7 +43,7 @@ void main() {
     float shadowmapDepth = texture(shadowmap, shadowmapTexcoord).r;
     vec3 ndc = vec3(shadowmapTexcoord, shadowmapDepth) * 2 - vec3(1);
     vec3 worldPosition = (lsInverse * vec4(ndc, 1)).xyz;
-    ivec3 voxelPosition = ivec3(voxelIndex(worldPosition, voxelDim, voxelCenter, voxelMin, voxelMax, voxelWarp));
+    ivec3 voxelPosition = ivec3(voxelIndex(worldPosition, voxelDim, voxelCenter, voxelMin, voxelMax, warpVoxels));
 
     if (any(greaterThanEqual(voxelPosition, ivec3(voxelDim))) || any(lessThan(voxelPosition, ivec3(0)))) {
         return;

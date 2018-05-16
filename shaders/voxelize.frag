@@ -49,10 +49,11 @@ layout(binding = 0) uniform sampler2D diffuseMap;
 layout(binding = 6) uniform sampler2D shadowmap;
 
 uniform bool voxelizeDilate = false;
-uniform bool voxelWarp;
+uniform bool warpVoxels;
 uniform bool voxelizeAtomicMax = false;
 uniform bool voxelizeLighting;
-
+uniform vec3 eye;
+uniform vec3 voxelCenter, voxelMin, voxelMax;
 uniform mat4 ls;
 
 // Map [-1, 1] -> [0, 1]
@@ -80,8 +81,8 @@ vec3 getVoxelPosition() {
         // looking down z axis
     }
 
-    if (voxelWarp) {
-        unit = voxelWarpFn(unit);
+    if (warpVoxels) {
+        unit = voxelWarp(unit, voxelLinearPosition(eye, voxelCenter, voxelMin, voxelMax));
     }
 
     return imageSize(voxelColor) * unit;

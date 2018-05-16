@@ -24,6 +24,8 @@ void main() {
 
     vec3 tc = vec3(voxelPosition.x, voxelPosition.y, 1 - voxelPosition.z);
     vs_out.voxelColor = textureLod(voxels, tc, level);
+
+    // TODO doesn't account for warping (will need to scale cubes differently too)
     vs_out.worldPosition = position + voxelCenter + mix(voxelMin, voxelMax, voxelPosition);
 
     gl_Position = vec4(vs_out.worldPosition, 1);

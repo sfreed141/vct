@@ -171,7 +171,7 @@ void Overlay::render(float dt) {
             nk_checkbox_label(ctx, "radianceDilate", &settings.radianceDilate);
             nk_checkbox_label(ctx, "temporalFilterRadiance", &settings.temporalFilterRadiance);
             nk_checkbox_label(ctx, "voxelizeDilate", &settings.voxelizeDilate);
-            nk_checkbox_label(ctx, "voxelWarp", &settings.voxelWarp);
+            nk_checkbox_label(ctx, "warpVoxels", &settings.warpVoxels);
             nk_checkbox_label(ctx, "voxelizeAtomicMax", &settings.voxelizeAtomicMax);
             if (nk_checkbox_label(ctx, "voxelTrackCamera", &settings.voxelTrackCamera)) {
                 // reset voxel center to origin after tracking

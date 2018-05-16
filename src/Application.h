@@ -77,7 +77,7 @@ struct Settings {
     int voxelTrackCamera = false;
     float voxelizeMultiplier = 1.0f;
     int voxelizeDilate = false;
-    int voxelWarp = false;
+    int warpVoxels = false;
     VCTSettings diffuseConeSettings { 16, glm::radians(60.f), 0.1f, 1.0f, 0.5f };
     VCTSettings specularConeSettings { 32, glm::radians(30.f), 0.0f, 0.5f, 0.0f };
 };

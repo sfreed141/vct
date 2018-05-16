@@ -104,7 +104,7 @@ uniform int miplevel = 0;
 uniform int voxelDim;
 uniform vec3 voxelMin, voxelMax;
 uniform vec3 voxelCenter;
-uniform bool voxelWarp;
+uniform bool warpVoxels;
 
 uniform int vctSteps;
 uniform float vctConeAngle;
@@ -141,6 +141,7 @@ vec4 traceCone(sampler3D voxelTexture, vec3 position, vec3 normal, vec3 directio
         float coneRadius = coneHeight * tan(coneAngle / 2.0);
         float lod = log2(max(1.0, 2 * coneRadius));
         vec3 samplePosition = start + coneHeight * direction;
+        if (any(notEqual(samplePosition, clamp(samplePosition, 0, 1)))) break;
         vec4 sampleColor = textureLod(voxelTexture, samplePosition, lod + lodOffset);
         float a = 1 - alpha;
         color += sampleColor.rgb * a;
@@ -326,28 +327,33 @@ LightingResult calculateDirectLighting(Material m, vec4 diffuseColor, vec3 eye, 
 
 void main() {
     if (voxelize) {
-        vec3 i = voxelIndex(fs_in.fragPosition, voxelDim, voxelCenter, voxelMin, voxelMax, voxelWarp) / voxelDim;
+        vec3 i = voxelIndex(fs_in.fragPosition, voxelDim, voxelCenter, voxelMin, voxelMax, warpVoxels) / voxelDim;
 
         if (normals) {
             vec3 normal = normalize(textureLod(voxelNormal, i, miplevel).rgb);
             color = vec4(normal, 1);
         }
         else if (drawWarpSlope) {
-            vec3 range = voxelMax - voxelMin;
-            vec3 pos = fs_in.fragPosition - voxelCenter;
+            vec3 c_tc = voxelLinearPosition(eye, voxelCenter, voxelMin, voxelMax);
+            vec3 linear = voxelLinearPosition(fs_in.fragPosition, voxelCenter, voxelMin, voxelMax);
+            vec3 warped = voxelWarpedPosition(fs_in.fragPosition, eye, voxelCenter, voxelMin, voxelMax);
 
-            vec3 unit = (pos - voxelMin) / range;
-            unit.z = 1 - unit.z;
+            vec3 gradient = voxelWarpFnGradient(fs_in.fragPosition, eye, voxelCenter, voxelMin, voxelMax);
+            float slope = dot(gradient, vec3(1,0,0));//normalize(fs_in.fragPosition - eye));
 
-            float slope = voxelWarpFnGradient(unit).x;
-            unit = voxelWarpFn(unit);
-
-            const vec3 gradient[] = vec3[](
+            const vec3 colors[] = vec3[](
                 vec3(1, 0, 0),
                 vec3(0, 1, 0),
                 vec3(0, 0, 1)
             );
-            color.rgb = mix(gradient[int(max(floor(slope), 0))], gradient[int(min(ceil(slope), gradient.length()))], fract(slope));
+            color.rgb = mix(colors[int(max(floor(slope), 0))], colors[int(min(ceil(slope), colors.length()))], fract(slope));
+
+            // if (gl_FragCoord.y > 360) {
+            //     // The darker region is "compressed" -> more of texture is being used closer to camera
+            //     color.rgb = vec3(abs(warped.x - c_tc).x);
+            // } else {
+            //     color.rgb = vec3(abs(linear - c_tc).x);
+            // }
         }
         else if (radiance) {
             color = textureLod(voxelRadiance, i, miplevel).rgba;
@@ -389,7 +395,7 @@ void main() {
         vec3 specularLighting = enableSpecular ? lighting.specular : vec3(0);
 
         if (enableIndirect) {
-            vec3 voxelPosition = voxelIndex(fs_in.fragPosition, voxelDim, voxelCenter, voxelMin, voxelMax, voxelWarp) / voxelDim;
+            vec3 voxelPosition = voxelIndex(fs_in.fragPosition, voxelDim, voxelCenter, voxelMin, voxelMax, warpVoxels) / voxelDim;
             vec4 indirect = vec4(0);
 
 #if 0

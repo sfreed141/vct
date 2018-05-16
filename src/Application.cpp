@@ -239,10 +239,13 @@ void Application::render(float dt) {
         voxelProgram.setUniform3fv("lightPos", mainlight.position);
         voxelProgram.setUniform3fv("lightInt", mainlight.color);
         voxelProgram.setUniform1i("voxelizeDilate", settings.voxelizeDilate);
-        voxelProgram.setUniform1i("voxelWarp", settings.voxelWarp);
+        voxelProgram.setUniform1i("warpVoxels", settings.warpVoxels);
         voxelProgram.setUniform1i("voxelizeAtomicMax", settings.voxelizeAtomicMax);
         voxelProgram.setUniform1i("toggle", settings.toggle);
         voxelProgram.setUniform1i("voxelizeLighting", settings.voxelizeLighting);
+        voxelProgram.setUniform3fv("voxelMin", vct.min);
+        voxelProgram.setUniform3fv("voxelMax", vct.max);
+        voxelProgram.setUniform3fv("voxelCenter", vct.center);
 
         glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
         glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
@@ -343,7 +346,8 @@ void Application::render(float dt) {
         injectRadianceProgram.setUniform3fv("lightPos", mainlight.position);
         injectRadianceProgram.setUniform3fv("lightInt", mainlight.color);
 
-        injectRadianceProgram.setUniform1i("voxelWarp", settings.voxelWarp);
+        injectRadianceProgram.setUniform3fv("eye", camera.position);
+        injectRadianceProgram.setUniform1i("warpVoxels", settings.warpVoxels);
         injectRadianceProgram.setUniform1i("voxelDim", vct.voxelDim);
         injectRadianceProgram.setUniform3fv("voxelMin", vct.min);
         injectRadianceProgram.setUniform3fv("voxelMax", vct.max);
@@ -496,7 +500,7 @@ void Application::render(float dt) {
 
             program.setUniform1i("miplevel", settings.miplevel);
 
-            program.setUniform1i("voxelWarp", settings.voxelWarp);
+            program.setUniform1i("warpVoxels", settings.warpVoxels);
             program.setUniform1i("voxelDim", vct.voxelDim);
             program.setUniform3fv("voxelMin", vct.min);
             program.setUniform3fv("voxelMax", vct.max);
