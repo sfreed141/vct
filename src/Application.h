@@ -51,6 +51,8 @@ struct Settings {
     int debugOcclusion = false;
     int debugIndirect = false;
 
+    int debugMaterialDiffuse = false, debugMaterialRoughness = false, debugMaterialMetallic = false;
+
     int msaa = false;
     int alphatocoverage = false;
     int cooktorrance = true;

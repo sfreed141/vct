@@ -496,6 +496,9 @@ void Application::render(float dt) {
             program.setUniform1i("drawOcclusion", settings.drawOcclusion);
             program.setUniform1i("debugOcclusion", settings.debugOcclusion);
             program.setUniform1i("debugIndirect", settings.debugIndirect);
+            program.setUniform1i("debugMaterialDiffuse", settings.debugMaterialDiffuse);
+            program.setUniform1i("debugMaterialRoughness", settings.debugMaterialRoughness);
+            program.setUniform1i("debugMaterialMetallic", settings.debugMaterialMetallic);
 
             program.setUniform1i("cooktorrance", settings.cooktorrance);
             program.setUniform1i("enablePostprocess", settings.enablePostprocess);

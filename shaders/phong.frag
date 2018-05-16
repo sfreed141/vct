@@ -84,6 +84,7 @@ uniform bool drawWarpSlope = false;
 uniform bool drawOcclusion = false;
 uniform bool debugOcclusion = false;
 uniform bool debugIndirect = false;
+uniform bool debugMaterialDiffuse = false, debugMaterialRoughness = false, debugMaterialMetallic = false;
 
 uniform bool cooktorrance = true;
 
@@ -363,6 +364,27 @@ void main() {
         }
 
 
+        return;
+    }
+    else if (debugMaterialDiffuse) {
+        color = vec4(1.0, 0.0, 1.0, 1.0);
+        if (material.hasDiffuseMap) {
+            color = vec4(texture(diffuseMap, fs_in.fragTexcoord).rgb, 1);
+        }
+        return;
+    }
+    else if (debugMaterialRoughness) {
+        color = vec4(0.5, 0.0, 0.0, 1.0);
+        if (material.hasRoughnessMap) {
+            color = vec4(vec3(texture(roughnessMap, fs_in.fragTexcoord).r), 1);
+        }
+        return;
+    }
+    else if (debugMaterialMetallic) {
+        color = vec4(1.0, 0.0, 1.0, 1.0);
+        if (material.hasMetallicMap) {
+            color = vec4(vec3(texture(metallicMap, fs_in.fragTexcoord).r), 1);
+        }
         return;
     }
 

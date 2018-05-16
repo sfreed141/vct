@@ -61,6 +61,10 @@ void Mesh::loadMesh(const std::string &meshname) {
             Material m {mp};
 
             auto loadImage = [&] (const std::string &path) {
+                if (textures.find(path) != textures.end()) {
+                    return textures[path].handle;
+                }
+
                 string texture_name = path;
                 convertPathFromWindows(texture_name);
 
@@ -69,38 +73,17 @@ void Mesh::loadMesh(const std::string &meshname) {
                 GLTexture2D texture {texture_id};
 
                 textures.insert(make_pair(path, std::move(texture)));
+
+                LOG_INFO("loaded texture ", path);
                 return texture_id;
             };
 
-            if (!mp.diffuse_texname.empty() && textures.find(mp.diffuse_texname) == textures.end()) {
-                m.diffuse_map = loadImage(mp.diffuse_texname);
-                LOG_INFO("loaded diffuse ", mp.diffuse_texname);
-            }
-
-            if (!mp.specular_texname.empty() && textures.find(mp.specular_texname) == textures.end()) {
-                m.specular_map = loadImage(mp.specular_texname);
-                LOG_INFO("loaded specular ", mp.specular_texname);
-            }
-
-            if (!mp.normal_texname.empty() && textures.find(mp.normal_texname) == textures.end()) {
-                m.normal_map = loadImage(mp.normal_texname);
-                LOG_INFO("loaded normal map ", mp.normal_texname);
-            }
-
-            if (!mp.roughness_texname.empty() && textures.find(mp.roughness_texname) == textures.end()) {
-                m.roughness_map = loadImage(mp.roughness_texname);
-                LOG_INFO("loaded roughness map ", mp.roughness_texname);
-            }
-
-            if (!mp.metallic_texname.empty() && textures.find(mp.metallic_texname) == textures.end()) {
-                m.metallic_map = loadImage(mp.metallic_texname);
-                LOG_INFO("loaded metallic map ", mp.metallic_texname);
-            }
-
-            if (!mp.alpha_texname.empty() && textures.find(mp.alpha_texname) == textures.end()) {
-                m.alpha_map = loadImage(mp.alpha_texname);
-                LOG_INFO("loaded alpha map ", mp.alpha_texname);
-            }
+            if (!mp.diffuse_texname.empty()) { m.diffuse_map = loadImage(mp.diffuse_texname); }
+            if (!mp.specular_texname.empty()) { m.specular_map = loadImage(mp.specular_texname); }
+            if (!mp.normal_texname.empty()) { m.normal_map = loadImage(mp.normal_texname); }
+            if (!mp.roughness_texname.empty()) { m.roughness_map = loadImage(mp.roughness_texname); }
+            if (!mp.metallic_texname.empty()) { m.metallic_map = loadImage(mp.metallic_texname); }
+            if (!mp.alpha_texname.empty()) { m.alpha_map = loadImage(mp.alpha_texname); }
 
             mats.push_back(m);
         }

@@ -144,6 +144,9 @@ void Overlay::render(float dt) {
             nk_checkbox_label(ctx, "debugVoxelsOpacity", &settings.debugVoxelOpacity);
             nk_checkbox_label(ctx, "radianceLighting", &settings.radianceLighting);
             nk_checkbox_label(ctx, "voxelizeLighting", &settings.voxelizeLighting);
+            nk_checkbox_label(ctx, "debugMaterialDiffuse", &settings.debugMaterialDiffuse);
+            nk_checkbox_label(ctx, "debugMaterialRoughness", &settings.debugMaterialRoughness);
+            nk_checkbox_label(ctx, "debugMaterialMetallic", &settings.debugMaterialMetallic);
 
             nk_layout_row_dynamic(ctx, rowheight, 2);
             nk_labelf(ctx, NK_TEXT_LEFT, "Miplevel: %d", settings.miplevel);
