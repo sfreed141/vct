@@ -17,7 +17,6 @@
 #include "Graphics/GLShaderProgram.h"
 #include "Graphics/GLQuad.h"
 #include "Graphics/GLTimer.h"
-#include "Graphics/GLCube.h"
 
 #include "Input/Keyboard.h"
 #include "Input/Mouse.h"

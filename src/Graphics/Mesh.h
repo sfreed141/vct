@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <algorithm>
 
 #include <tiny_obj_loader.h>
 #include <common.h>
