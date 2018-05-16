@@ -155,8 +155,6 @@ void Application::update(float dt) {
 
     if (settings.voxelTrackCamera) {
         // To prevent temporal artifacts, the voxel textures are 'snapped' to a discrete grid
-
-        // TODO
         glm::vec3 gridcell = glm::pow(2.f, (float)vct.voxelLevels) * (vct.max - vct.min) / (float)vct.voxelDim;
         vct.center = glm::floor(camera.position / gridcell) * gridcell;
     }
@@ -283,6 +281,8 @@ void Application::render(float dt) {
     }
     voxelizeTimer.stop();
 
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
     // Normalize vct.voxelColor and vct.voxelNormal textures (divides by alpha component)
     if (vct.useRGBA16f) {
         static GLShaderProgram p ("Normalize Voxels", {SHADER_DIR "normalizeVoxels.comp"});
@@ -318,6 +318,8 @@ void Application::render(float dt) {
         }
     }
 
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
     // Inject radiance into voxel grid
     radianceTimer.start();
     {
@@ -334,6 +336,8 @@ void Application::render(float dt) {
 
             temporalRadianceFilterProgram.unbind();
             GL_DEBUG_POP()
+
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
         }
         else if (vct.useRGBA16f) {
             glClearTexImage(vct.voxelRadiance, 0, GL_RGBA, GL_FLOAT, nullptr);
@@ -378,6 +382,8 @@ void Application::render(float dt) {
     }
     radianceTimer.stop();
 
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
     mipmapTimer.start();
     {
         // glGenerateTextureMipmap(vct.voxelColor);
@@ -398,6 +404,8 @@ void Application::render(float dt) {
             glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
             glBindImageTexture(1, 0, 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
 
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
             dim >>= 1;
         }
         dim = vct.voxelDim;
@@ -410,6 +418,8 @@ void Application::render(float dt) {
 
             glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
             glBindImageTexture(1, 0, 1, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
             dim >>= 1;
         }
