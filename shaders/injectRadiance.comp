@@ -26,7 +26,9 @@ uniform vec3 voxelMin, voxelMax;
 uniform vec3 voxelCenter;
 uniform bool warpVoxels;
 
+uniform bool radianceLighting = false;
 uniform bool radianceDilate = false;
+uniform bool temporalFilterRadiance = false;
 
 uniform vec3 eye;
 #pragma include "common.glsl"
@@ -65,22 +67,26 @@ void main() {
         }
     }
     else {
-        // Calculate diffuse lighting
         vec4 color = imageLoad(voxelColor, voxelPosition);
-        vec3 normal = imageLoad(voxelNormal, voxelPosition).xyz;
-        normal = 2 * normal - 1;    // need to remap normal from [0, 1] -> [-1, 1]
 
-        vec3 lightVector = normalize(lightPos - worldPosition);
-        float diffuse = max(dot(normal, lightVector), 0);
+        if (radianceLighting) {
+            // Calculate diffuse lighting
+            vec3 normal = imageLoad(voxelNormal, voxelPosition).xyz;
+            normal = normalize(2 * normal - 1);    // need to remap normal from [0, 1] -> [-1, 1]
 
-        // TODO
-        // color.rgb = diffuse * lightInt * color.rgb;
+            vec3 lightVector = normalize(lightPos - worldPosition);
+            float diffuse = max(dot(normal, lightVector), 0);
+
+            color.rgb = diffuse * lightInt * color.rgb;
+        }
 
         // Inject into voxel texture
         // imageStore(voxelColor, voxelPosition, f16vec4(color));
-        vec4 previousColor = imageLoad(voxelRadiance, voxelPosition);
-        if (previousColor.a > 0.1)
-            color.rgb = mix(color.rgb, previousColor.rgb / previousColor.a, previousColor.a);
+        if (temporalFilterRadiance) {
+            vec4 previousColor = imageLoad(voxelRadiance, voxelPosition);
+            if (previousColor.a > 0.1)
+                color.rgb = mix(color.rgb, previousColor.rgb / previousColor.a, previousColor.a);
+        }
         imageStore(voxelRadiance, voxelPosition, color);
     }
 }

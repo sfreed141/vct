@@ -298,16 +298,25 @@ void Application::render(float dt) {
         glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
         p.unbind();
     }
+    else {
+        glClearTexImage(vct.voxelRadiance, 0, GL_RGBA, GL_FLOAT, nullptr);
 
-    if (settings.toggle) {
-        static GLShaderProgram shader {"Set Voxel Opacity", {SHADER_DIR "setVoxelOpacity.comp"}};
-        shader.bind();
+        // Copies opacity to radiance texture. Optionally sets opacity to 1 (which should be 'correct' but it looks too dark)
+        // TODO breaks temporal filtering (since it sets to constant color + alpha)
+        {
+            static GLShaderProgram shader {"Set Voxel Opacity", {SHADER_DIR "setVoxelOpacity.comp"}};
+            shader.bind();
 
-        glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-        glDispatchCompute((vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4);
-        glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+            shader.setUniform1i("voxelSetOpacity", settings.toggle);
 
-        shader.unbind();
+            glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+            glBindImageTexture(1, vct.voxelRadiance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+            glDispatchCompute((vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4);
+            glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+            glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+
+            shader.unbind();
+        }
     }
 
     // Inject radiance into voxel grid
@@ -327,7 +336,7 @@ void Application::render(float dt) {
             temporalRadianceFilterProgram.unbind();
             GL_DEBUG_POP()
         }
-        else {
+        else if (vct.useRGBA16f) {
             glClearTexImage(vct.voxelRadiance, 0, GL_RGBA, GL_FLOAT, nullptr);
         }
 
@@ -353,7 +362,9 @@ void Application::render(float dt) {
         injectRadianceProgram.setUniform3fv("voxelMax", vct.max);
         injectRadianceProgram.setUniform3fv("voxelCenter", vct.center);
 
+        injectRadianceProgram.setUniform1i("radianceLighting", settings.radianceLighting);
         injectRadianceProgram.setUniform1i("radianceDilate", settings.radianceDilate);
+        injectRadianceProgram.setUniform1i("temporalFilterRadiance", settings.temporalFilterRadiance);
 
         // 2D workgroup should be the size of shadowmap, local_size = 16
         glDispatchCompute((SHADOWMAP_WIDTH + 16 - 1) / 16, (SHADOWMAP_HEIGHT + 16 - 1) / 16, 1);

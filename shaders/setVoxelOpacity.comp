@@ -3,6 +3,9 @@
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 
 layout(binding = 0, rgba8) uniform image3D voxelColor;
+layout(binding = 1, rgba8) uniform image3D voxelRadiance;
+
+uniform bool voxelSetOpacity = false;
 
 void main() {
     ivec3 threadId = ivec3(gl_GlobalInvocationID.xyz);
@@ -13,7 +16,9 @@ void main() {
 
     vec4 value = imageLoad(voxelColor, threadId);
     if (value.a > 0) {
-        value.a = 1;
+        if (voxelSetOpacity) value.a = 0.5;
+
         imageStore(voxelColor, threadId, value);
+        imageStore(voxelRadiance, threadId, vec4(0, 0, 0, value.a));
     }
 }

@@ -66,6 +66,7 @@ struct Settings {
     float ambientScale = 1.0f;
     float reflectScale = 0.5f;
 
+    int radianceLighting = false;
     int radianceDilate = false;
     int temporalFilterRadiance = false;
     float temporalDecay = 0.8f;
