@@ -213,11 +213,15 @@ void main() {
         imageAtomicAdd(voxelNormal, voxelIndex, f16vec4(normal, 1));
     }
 #else
-            imageAtomicRGBA8Avg(voxelColor, voxelIndex + offset, vec4(color, w));
-            imageAtomicRGBA8Avg(voxelNormal, voxelIndex + offset, vec4(normal, w));
+    // TODO BAD THINGS HAPPEN (only on desktop linux though...)
+    // also can't accurately emulate a weighted average with r32ui
+    //         w = clamp(w, 0, 1);
+    //         imageAtomicRGBA8Avg(voxelColor, voxelIndex + offset, vec4(color, w));
+    //         imageAtomicRGBA8Avg(voxelNormal, voxelIndex + offset, vec4(normal, w));
         }
     }
-    else if (voxelizeAtomicMax) {
+    // else
+    if (voxelizeAtomicMax) {
         imageAtomicMax(voxelColor, voxelIndex, convVec4ToRGBA8(255 * vec4(color, 1)));
         imageAtomicMax(voxelNormal, voxelIndex, convVec4ToRGBA8(255 * vec4(normal, 1)));
     }
