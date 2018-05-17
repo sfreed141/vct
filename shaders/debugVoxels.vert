@@ -11,7 +11,7 @@ layout(binding = 0) uniform sampler3D voxels;
 
 uniform mat4 mvp;
 
-uniform int level = 0;
+uniform float level = 0.0;
 uniform float voxelDim;
 uniform vec3 voxelMin, voxelMax, voxelCenter;
 

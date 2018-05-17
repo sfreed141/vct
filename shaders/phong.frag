@@ -85,6 +85,7 @@ uniform bool drawOcclusion = false;
 uniform bool debugOcclusion = false;
 uniform bool debugIndirect = false;
 uniform bool debugMaterialDiffuse = false, debugMaterialRoughness = false, debugMaterialMetallic = false;
+uniform bool toggle = false;
 
 uniform bool cooktorrance = true;
 
@@ -101,7 +102,7 @@ uniform float reflectScale = 0.5;
 uniform vec3 eye;
 uniform mat4 ls;
 
-uniform int miplevel = 0;
+uniform float miplevel = 0.0;
 uniform int voxelDim;
 uniform vec3 voxelMin, voxelMax;
 uniform vec3 voxelCenter;

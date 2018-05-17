@@ -22,7 +22,7 @@ uniform vec3 voxelMin, voxelMax;
 uniform vec3 voxelCenter;
 uniform bool warpVoxels;
 
-uniform int lod = 0;
+uniform int float = 0.0;
 
 uniform bool radiance = true;
 

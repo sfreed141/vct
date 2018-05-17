@@ -74,7 +74,7 @@ struct Settings {
     float temporalDecay = 0.8f;
     float voxelSetOpacity = 0.5f;
 
-    int miplevel = 0;
+    float miplevel = 0;
 
     int voxelizeLighting = true;
     int voxelizeAtomicMax = false;  // only used if voxel textures are rgba8

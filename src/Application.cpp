@@ -509,6 +509,7 @@ void Application::render(float dt) {
             program.setUniform1i("debugMaterialDiffuse", settings.debugMaterialDiffuse);
             program.setUniform1i("debugMaterialRoughness", settings.debugMaterialRoughness);
             program.setUniform1i("debugMaterialMetallic", settings.debugMaterialMetallic);
+            program.setUniform1i("toggle", settings.toggle);
 
             program.setUniform1i("cooktorrance", settings.cooktorrance);
             program.setUniform1i("enablePostprocess", settings.enablePostprocess);
@@ -521,7 +522,7 @@ void Application::render(float dt) {
             program.setUniform1f("ambientScale", settings.ambientScale);
             program.setUniform1f("reflectScale", settings.reflectScale);
 
-            program.setUniform1i("miplevel", settings.miplevel);
+            program.setUniform1f("miplevel", settings.miplevel);
 
             program.setUniform1i("warpVoxels", settings.warpVoxels);
             program.setUniform1i("voxelDim", vct.voxelDim);
@@ -698,7 +699,7 @@ void Application::viewRaymarched() {
     glUniform3fv(glGetUniformLocation(program, "voxelMin"), 1, glm::value_ptr(vct.min));
     glUniform3fv(glGetUniformLocation(program, "voxelMax"), 1, glm::value_ptr(vct.max));
     glUniform3fv(glGetUniformLocation(program, "voxelCenter"), 1, glm::value_ptr(vct.center));
-    glUniform1i(glGetUniformLocation(program, "lod"), settings.miplevel);
+    glUniform1f(glGetUniformLocation(program, "lod"), settings.miplevel);
     glUniform1i(glGetUniformLocation(program, "radiance"), settings.drawRadiance);
 
 
@@ -739,7 +740,7 @@ void Application::debugVoxels(GLuint texture_id, const glm::mat4 &mvp) {
     shader->bind();
 
     shader->setUniformMatrix4fv("mvp", mvp);
-    shader->setUniform1i("level", settings.miplevel);
+    shader->setUniform1f("level", settings.miplevel);
     shader->setUniform1f("voxelDim", vct.voxelDim);
     shader->setUniform3fv("voxelMin", vct.min);
     shader->setUniform3fv("voxelMax", vct.max);

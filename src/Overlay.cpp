@@ -148,9 +148,33 @@ void Overlay::render(float dt) {
             nk_checkbox_label(ctx, "debugMaterialRoughness", &settings.debugMaterialRoughness);
             nk_checkbox_label(ctx, "debugMaterialMetallic", &settings.debugMaterialMetallic);
 
+            {
+                static int current_minfilter = 5;
+                static const char *minfilters[] = {
+                    "GL_NEAREST", "GL_LINEAR",
+                    "GL_NEAREST_MIPMAP_NEAREST", "GL_LINEAR_MIPMAP_NEAREST",
+                    "GL_NEAREST_MIPMAP_LINEAR", "GL_LINEAR_MIPMAP_LINEAR"
+                };
+                static const GLint minfilterValue[] = {
+                    GL_NEAREST, GL_LINEAR,
+                    GL_NEAREST_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_NEAREST,
+                    GL_NEAREST_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_LINEAR
+                };
+                const float ratio[] = {0.4f, 0.6f};
+                nk_layout_row(ctx, NK_DYNAMIC, rowheight, 2, ratio);
+                nk_label(ctx, "Voxel Min Filter", NK_TEXT_LEFT);
+                int minfilter = nk_combo(ctx, minfilters, LEN(minfilters), current_minfilter, rowheight, nk_vec2(200, 200));
+                if (minfilter != current_minfilter) {
+                    current_minfilter = minfilter;
+                    glTextureParameteri(app.vct.voxelColor, GL_TEXTURE_MIN_FILTER, minfilterValue[minfilter]);
+                    glTextureParameteri(app.vct.voxelNormal, GL_TEXTURE_MIN_FILTER, minfilterValue[minfilter]);
+                    glTextureParameteri(app.vct.voxelRadiance, GL_TEXTURE_MIN_FILTER, minfilterValue[minfilter]);
+                }
+            }
+
             nk_layout_row_dynamic(ctx, rowheight, 2);
-            nk_labelf(ctx, NK_TEXT_LEFT, "Miplevel: %d", settings.miplevel);
-            nk_slider_int(ctx, 0, &settings.miplevel, app.vct.voxelLevels - 1, 1);
+            nk_labelf(ctx, NK_TEXT_LEFT, "Miplevel: %0.1f", settings.miplevel);
+            nk_slider_float(ctx, 0.0f, &settings.miplevel, app.vct.voxelLevels - 1, 0.1f);
 
             nk_layout_row_dynamic(ctx, rowheight, 2);
             nk_labelf(ctx, NK_TEXT_LEFT, "Voxel Opacity: %0.1f", settings.voxelSetOpacity);
