@@ -2,3 +2,5 @@ build/
 .vscode/
 .DS_STORE
 tags/
+.vs/
+resources/

@@ -281,41 +281,61 @@ void Application::render(float dt) {
     }
     voxelizeTimer.stop();
 
+    if (settings.temporalFilterRadiance) {
+        GL_DEBUG_PUSH("Temporal Radiance Filter")
+        temporalRadianceFilterProgram.bind();
+
+        // TODO won't work with GL_RGBA16F
+        glBindImageTexture(0, vct.voxelRadiance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+        temporalRadianceFilterProgram.setUniform1f("temporalDecay", settings.temporalDecay);
+
+        glDispatchCompute((vct.voxelDim + 8 - 1) / 8, (vct.voxelDim + 8 - 1) / 8, (vct.voxelDim + 8 - 1) / 8);
+
+        temporalRadianceFilterProgram.unbind();
+        GL_DEBUG_POP()
+
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    }
+    else {
+        glClearTexImage(vct.voxelRadiance, 0, GL_RGBA, GL_FLOAT, nullptr);
+    }
+
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-    // Normalize vct.voxelColor and vct.voxelNormal textures (divides by alpha component)
     if (vct.useRGBA16f) {
+        // Normalize vct.voxelColor and vct.voxelNormal textures (divides by alpha component)
+        // Also copies opacity to radiance texture
         static GLShaderProgram p ("Normalize Voxels", {SHADER_DIR "normalizeVoxels.comp"});
 
         p.bind();
+        p.setUniform1f("voxelSetOpacity", settings.voxelSetOpacity);
+
         glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
         glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+        glBindImageTexture(2, vct.voxelRadiance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
 
         glDispatchCompute((vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4);
 
         glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
         glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+        glBindImageTexture(2, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
         p.unbind();
     }
     else {
-        glClearTexImage(vct.voxelRadiance, 0, GL_RGBA, GL_FLOAT, nullptr);
-
         // Copies opacity to radiance texture. Optionally sets opacity to 1 (which should be 'correct' but it looks too dark)
-        // TODO breaks temporal filtering (since it sets to constant color + alpha)
-        {
-            static GLShaderProgram shader {"Set Voxel Opacity", {SHADER_DIR "setVoxelOpacity.comp"}};
-            shader.bind();
+        static GLShaderProgram shader {"Set Voxel Opacity", {SHADER_DIR "setVoxelOpacity.comp"}};
 
-            shader.setUniform1f("voxelSetOpacity", settings.voxelSetOpacity);
+        shader.bind();
+        shader.setUniform1f("voxelSetOpacity", settings.voxelSetOpacity);
 
-            glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-            glBindImageTexture(1, vct.voxelRadiance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-            glDispatchCompute((vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4);
-            glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-            glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+        glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+        glBindImageTexture(1, vct.voxelRadiance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
 
-            shader.unbind();
-        }
+        glDispatchCompute((vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4);
+
+        glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+        glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+        shader.unbind();
     }
 
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
@@ -324,24 +344,6 @@ void Application::render(float dt) {
     radianceTimer.start();
     {
         GL_DEBUG_PUSH("Radiance Injection")
-
-        if (settings.temporalFilterRadiance) {
-            GL_DEBUG_PUSH("Temporal Radiance Filter")
-            temporalRadianceFilterProgram.bind();
-
-            glBindImageTexture(0, vct.voxelRadiance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-            temporalRadianceFilterProgram.setUniform1f("temporalDecay", settings.temporalDecay);
-
-            glDispatchCompute((vct.voxelDim + 8 - 1) / 8, (vct.voxelDim + 8 - 1) / 8, (vct.voxelDim + 8 - 1) / 8);
-
-            temporalRadianceFilterProgram.unbind();
-            GL_DEBUG_POP()
-
-            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-        }
-        else if (vct.useRGBA16f) {
-            glClearTexImage(vct.voxelRadiance, 0, GL_RGBA, GL_FLOAT, nullptr);
-        }
 
         injectRadianceProgram.bind();
 

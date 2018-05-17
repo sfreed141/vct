@@ -39,7 +39,7 @@ struct Settings {
     int drawDominantAxis = false;
     int drawWireframe = false;
     int drawVoxels = false;
-    int drawRadiance = false;
+    int drawRadiance = true;
     int drawAxes = false;
     int axisOverride = -1;
     int drawShadowmap = false;
@@ -91,8 +91,9 @@ GLuint make3DTexture(GLsizei size, GLsizei levels, GLenum internalFormat, GLint 
 class VCT {
 public:
     VCT() {
-        useRGBA16f = false; // GLAD_GL_NV_shader_atomic_fp16_vector; // MUST ALSO DEFINE USE_RGBA16F in voxelize.frag and injectRadiance.comp
+        useRGBA16f = false;//GLAD_GL_NV_shader_atomic_fp16_vector; // MUST ALSO DEFINE USE_RGBA16F in voxelize.frag and injectRadiance.comp
         voxelFormat = useRGBA16f ? GL_RGBA16F : GL_RGBA8;
+        LOG_DEBUG("useRGBA16f: ", useRGBA16f ? "true" : "false");
         make();
     }
 

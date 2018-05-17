@@ -178,34 +178,46 @@ void main() {
     }
 
     // Store value (must be atomic, use alpha component as count)
-#if USE_RGBA16F && GL_NV_shader_atomic_fp16_vector
+    vec3 voxelPosition = getVoxelPosition();
+    ivec3 voxelIndex = ivec3(voxelPosition);
     if (voxelizeDilate) {
-        vec3 voxelPosition = getVoxelPosition();
-        ivec3 voxelIndex = ivec3(voxelPosition);
         vec3 fractionalPosition = fract(voxelPosition);
+
+        vec3 t;
+        vec3 d = modf(fractionalPosition + 0.5, t);
+        d = mix(d, 1 - d, t);
+
         const ivec3 offsets[] = ivec3[](
             ivec3(0, 0, 0), ivec3(0, 0, 1), ivec3(0, 1, 0), ivec3(0, 1, 1),
             ivec3(1, 0, 0), ivec3(1, 0, 1), ivec3(1, 1, 0), ivec3(1, 1, 1)
         );
+        for (int i = 0; i < offsets.length(); i++) {
+            ivec3 offset = offsets[i];
+            vec3 weights = mix(d, 1 - d, offset);
+            offset = ivec3(mix(vec3(-1), vec3(1), t) * offset);
 
-        for (int i = 0; i < 8; i++) {
-            vec3 weight = vec3(
-                offsets[i].x == 0 ? 1 - fractionalPosition.x : fractionalPosition.x,
-                offsets[i].y == 0 ? 1 - fractionalPosition.y : fractionalPosition.y,
-                offsets[i].z == 0 ? 1 - fractionalPosition.z : fractionalPosition.z
-            );
-            imageAtomicAdd(voxelColor, voxelIndex + offsets[i], f16vec4(color, weight.x + weight.y + weight.z));
-            imageAtomicAdd(voxelNormal, voxelIndex + offsets[i], f16vec4(normal, weight.x + weight.y + weight.z));
+            // Weighted average separately in each direction would be better but we only have one component :/
+            // TODO seems to diminish total brightness: is this expected (and needs to be compensated for)?
+            float w = length(weights);
+#if USE_RGBA16F && GL_NV_shader_atomic_fp16_vector
+            imageAtomicAdd(voxelColor, voxelIndex + offset, f16vec4(color * w, w));
+            imageAtomicAdd(voxelNormal, voxelIndex + offset, f16vec4(normal * w, w));
         }
     }
+    else if (voxelizeAtomicMax) {
+        imageAtomicMax(voxelColor, voxelIndex, f16vec4(color, 1));
+        imageAtomicMax(voxelNormal, voxelIndex, f16vec4(normal, 1));
+    }
     else {
-        ivec3 voxelIndex = ivec3(getVoxelPosition());
         imageAtomicAdd(voxelColor, voxelIndex, f16vec4(color, 1));
         imageAtomicAdd(voxelNormal, voxelIndex, f16vec4(normal, 1));
     }
 #else
-    ivec3 voxelIndex = ivec3(getVoxelPosition());
-    if (voxelizeAtomicMax) {
+            imageAtomicRGBA8Avg(voxelColor, voxelIndex + offset, vec4(color, w));
+            imageAtomicRGBA8Avg(voxelNormal, voxelIndex + offset, vec4(normal, w));
+        }
+    }
+    else if (voxelizeAtomicMax) {
         imageAtomicMax(voxelColor, voxelIndex, convVec4ToRGBA8(255 * vec4(color, 1)));
         imageAtomicMax(voxelNormal, voxelIndex, convVec4ToRGBA8(255 * vec4(normal, 1)));
     }
