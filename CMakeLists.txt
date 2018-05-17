@@ -26,3 +26,7 @@ target_link_libraries(${PROJECT_NAME} glfw ${OPENGL_gl_LIBRARY})
 if(NOT WIN32)
     target_link_libraries(${PROJECT_NAME} dl)
 endif()
+
+if(MSVC)
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif()
