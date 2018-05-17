@@ -5,6 +5,14 @@ layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 layout(binding = 0, rgba8) uniform image3D voxelColor;
 layout(binding = 1, rgba8) uniform image3D voxelRadiance;
 
+struct VoxelizeInfo {
+    uint totalVoxelFragments, uniqueVoxels, maxFragmentsPerVoxel;
+};
+
+layout(std140, binding = 4) buffer VoxelizeInfoBlock {
+    VoxelizeInfo voxelizeInfo;
+};
+
 uniform float voxelSetOpacity = 0;
 
 void main() {
@@ -16,6 +24,9 @@ void main() {
 
     vec4 value = imageLoad(voxelColor, threadId);
     if (value.a > 0) {
+        atomicAdd(voxelizeInfo.uniqueVoxels, 1);
+        atomicMax(voxelizeInfo.maxFragmentsPerVoxel, uint(255 * value.a));  // TODO not sure if correct
+
         if (voxelSetOpacity > 0) value.a = voxelSetOpacity;
 
         imageStore(voxelColor, threadId, value);

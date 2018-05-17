@@ -123,6 +123,13 @@ void Application::init() {
     camera.update(0.0f);
 
     GLQuad::init();
+
+    {
+        glCreateBuffers(1, &voxelizeInfoSSBO);
+        glNamedBufferStorage(voxelizeInfoSSBO, sizeof(VoxelizeInfo), nullptr, 0);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, voxelizeInfoSSBO);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+    }
 }
 
 void Application::update(float dt) {
@@ -194,6 +201,9 @@ void Application::render(float dt) {
         GL_DEBUG_POP()
     }
     shadowmapTimer.stop();
+
+    // TODO does this need to be synchronized before rendering?
+    glClearNamedBufferData(voxelizeInfoSSBO, GL_R32UI, GL_RED, GL_UNSIGNED_INT, nullptr);
 
     voxelizeTimer.start();
     // Voxelize scene
@@ -338,7 +348,7 @@ void Application::render(float dt) {
         shader.unbind();
     }
 
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 
     // Inject radiance into voxel grid
     radianceTimer.start();

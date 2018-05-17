@@ -169,6 +169,12 @@ private:
     Settings settings;
     GLBufferedTimer voxelizeTimer, shadowmapTimer, radianceTimer, mipmapTimer, renderTimer, totalTimer;
 
+    // if voxelizeDilate is enabled then maxFragmentsPerVoxel is invalid
+    struct VoxelizeInfo {
+        GLuint totalVoxelFragments = 0, uniqueVoxels = 0, maxFragmentsPerVoxel = 0;
+    } voxelizeInfo;
+    GLuint voxelizeInfoSSBO = 0;
+
     void viewRaymarched();
     void debugVoxels(GLuint texture_id, const glm::mat4 &mvp);
 };

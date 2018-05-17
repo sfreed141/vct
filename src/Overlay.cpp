@@ -100,6 +100,22 @@ void Overlay::render(float dt) {
             availableMem /= 1024;
             nk_labelf(ctx, NK_TEXT_RIGHT, "GPU Memory Usage: %d / %d MB ", totalMem - availableMem, totalMem);
 
+
+            {
+                const float refreshTime = 1.0f;
+                static float refreshTimer = 0.0f;
+                if ((refreshTimer += dt) > refreshTime) {
+                    glGetNamedBufferSubData(app.voxelizeInfoSSBO, 0, sizeof(Application::VoxelizeInfo), &app.voxelizeInfo);
+                    refreshTimer = 0.0f;
+                }
+                nk_layout_row_dynamic(ctx, rowheight, 1);
+                nk_labelf(ctx, NK_TEXT_LEFT, "Voxels (total, unique, max): (%u, %u, %u)",
+                    app.voxelizeInfo.totalVoxelFragments,
+                    app.voxelizeInfo.uniqueVoxels,
+                    app.voxelizeInfo.maxFragmentsPerVoxel
+                );
+            }
+
             if (nk_tree_push(ctx, NK_TREE_NODE, "Timing Breakdown", NK_MINIMIZED)) {
                 nk_layout_row_dynamic(ctx, rowheight, 1);
                 nk_labelf(ctx, NK_TEXT_LEFT, "Voxelize: %.2f ms", app.voxelizeTimer.getTime() / 1.0e6);

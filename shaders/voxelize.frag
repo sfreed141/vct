@@ -48,6 +48,14 @@ layout(std140, binding = 3) buffer LightBlock {
 layout(binding = 0) uniform sampler2D diffuseMap;
 layout(binding = 6) uniform sampler2D shadowmap;
 
+struct VoxelizeInfo {
+    uint totalVoxelFragments, uniqueVoxels, maxFragmentsPerVoxel;
+};
+
+layout(std140, binding = 4) buffer VoxelizeInfoBlock {
+    VoxelizeInfo voxelizeInfo;
+};
+
 uniform bool voxelizeDilate = false;
 uniform bool warpVoxels;
 uniform bool voxelizeAtomicMax = false;
@@ -147,6 +155,8 @@ float calcShadowFactor(vec4 lsPosition) {
 }
 
 void main() {
+    atomicAdd(voxelizeInfo.totalVoxelFragments, 1);
+
     vec3 color = texture(diffuseMap, fs_in.texcoord).rgb;
     vec3 normal = (normalize(fs_in.normal) + 1) * 0.5; // map normal [-1, 1] -> [0, 1]
 
