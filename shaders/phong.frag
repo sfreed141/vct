@@ -84,6 +84,7 @@ uniform bool drawWarpSlope = false;
 uniform bool drawOcclusion = false;
 uniform bool debugOcclusion = false;
 uniform bool debugIndirect = false;
+uniform bool debugReflections = false;
 uniform bool debugMaterialDiffuse = false, debugMaterialRoughness = false, debugMaterialMetallic = false;
 uniform bool toggle = false;
 
@@ -118,6 +119,7 @@ uniform float vctSpecularConeAngle;
 uniform float vctSpecularBias;
 uniform float vctSpecularConeInitialHeight;
 uniform float vctSpecularLodOffset;
+uniform bool vctSpecularConeAngleFromRoughness;
 
 out vec4 color;
 
@@ -368,21 +370,21 @@ void main() {
         return;
     }
     else if (debugMaterialDiffuse) {
-        color = vec4(1.0, 0.0, 1.0, 1.0);
+        color = vec4(0.5, 0.0, 0.5, 1.0);
         if (material.hasDiffuseMap) {
             color = vec4(texture(diffuseMap, fs_in.fragTexcoord).rgb, 1);
         }
         return;
     }
     else if (debugMaterialRoughness) {
-        color = vec4(0.5, 0.0, 0.0, 1.0);
+        color = vec4(0.5, 0.0, 0.5, 1.0);
         if (material.hasRoughnessMap) {
             color = vec4(vec3(texture(roughnessMap, fs_in.fragTexcoord).r), 1);
         }
         return;
     }
     else if (debugMaterialMetallic) {
-        color = vec4(1.0, 0.0, 1.0, 1.0);
+        color = vec4(0.5, 0.0, 0.5, 1.0);
         if (material.hasMetallicMap) {
             color = vec4(vec3(texture(metallicMap, fs_in.fragTexcoord).r), 1);
         }
@@ -454,20 +456,26 @@ void main() {
             if (debugIndirect) { color = vec4(indirect.rgb * (drawOcclusion ? occlusion : 1.0), 1); return; }
             if (debugOcclusion) { color = vec4(vec3(occlusion), 1); return; }
 
-            indirect.rgb *= ambientScale;
-            indirect.rgb *= diffuseColor.rgb;
-            color = vec4(indirect.rgb + diffuseLighting + specularLighting, 1);
-            if (drawOcclusion) color *= occlusion;
-
             if (enableReflections) {
+                float coneAngle = vctSpecularConeAngle;
+                if (vctSpecularConeAngleFromRoughness && material.hasRoughnessMap) {
+                    float roughness = texture(roughnessMap, fs_in.fragTexcoord).r;
+                    coneAngle = roughness * PI * 0.1;
+                }
                 vec4 reflectColor = traceCone(
                     radiance ? voxelRadiance : voxelColor,
                     voxelPosition, normal,
                     reflect(fs_in.fragPosition - eye, normalize(fs_in.fragNormal)),
-                    vctSpecularSteps, vctSpecularBias, vctSpecularConeAngle, vctSpecularConeInitialHeight, vctSpecularLodOffset
+                    vctSpecularSteps, vctSpecularBias, coneAngle, vctSpecularConeInitialHeight, vctSpecularLodOffset
                 );
-                color.rgb = mix(color.rgb, reflectColor.rgb, reflectScale);
+                // if (toggle) reflectColor.rgb *= reflectColor.a;
+                indirect.rgb += reflectColor.rgb * reflectScale;
+                if (debugReflections) { color = vec4(reflectColor.rgb, 1); return; }
             }
+
+            indirect.rgb *= ambientScale * diffuseColor.rgb;
+            color = vec4(indirect.rgb + diffuseLighting + specularLighting, 1);
+            if (drawOcclusion) color *= occlusion;
         }
         else {
             color.rgb = ambientScale * diffuseColor.rgb + diffuseLighting + specularLighting;

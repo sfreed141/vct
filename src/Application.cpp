@@ -493,6 +493,7 @@ void Application::render(float dt) {
             program.setUniform1i("drawOcclusion", settings.drawOcclusion);
             program.setUniform1i("debugOcclusion", settings.debugOcclusion);
             program.setUniform1i("debugIndirect", settings.debugIndirect);
+            program.setUniform1i("debugReflections", settings.debugReflections);
             program.setUniform1i("debugMaterialDiffuse", settings.debugMaterialDiffuse);
             program.setUniform1i("debugMaterialRoughness", settings.debugMaterialRoughness);
             program.setUniform1i("debugMaterialMetallic", settings.debugMaterialMetallic);
@@ -531,6 +532,7 @@ void Application::render(float dt) {
             program.setUniform1f("vctSpecularConeAngle", settings.specularConeSettings.coneAngle);
             program.setUniform1f("vctSpecularConeInitialHeight", settings.specularConeSettings.coneInitialHeight);
             program.setUniform1f("vctSpecularLodOffset", settings.specularConeSettings.lodOffset);
+            program.setUniform1i("vctSpecularConeAngleFromRoughness", settings.specularConeAngleFromRoughness);
 
             scene->bindLightSSBO(3);
 

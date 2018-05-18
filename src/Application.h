@@ -50,6 +50,7 @@ struct Settings {
     int debugVoxelOpacity = false;
     int debugOcclusion = false;
     int debugIndirect = false;
+    int debugReflections = false;
 
     int debugMaterialDiffuse = false, debugMaterialRoughness = false, debugMaterialMetallic = false;
 
@@ -64,9 +65,9 @@ struct Settings {
     int enableIndirect = true;
     int enableDiffuse = true;
     int enableSpecular = true;
-    int enableReflections = false;
+    int enableReflections = true;
     float ambientScale = 1.0f;
-    float reflectScale = 0.5f;
+    float reflectScale = 1.0f;
 
     int radianceLighting = false;
     int radianceDilate = false;
@@ -82,8 +83,9 @@ struct Settings {
     float voxelizeMultiplier = 1.0f;
     int voxelizeDilate = false;
     int warpVoxels = false;
-    VCTSettings diffuseConeSettings { 16, glm::radians(60.f), 0.1f, 1.0f, 0.5f };
-    VCTSettings specularConeSettings { 32, glm::radians(30.f), 0.0f, 0.5f, 0.0f };
+    VCTSettings diffuseConeSettings { 16, glm::radians(60.f), 1.0f, 1.0f, 0.5f };
+    VCTSettings specularConeSettings { 32, glm::radians(30.f), 1.7f, 0.5f, 0.1f };
+    int specularConeAngleFromRoughness = true;
 };
 
 GLuint make3DTexture(GLsizei size, GLsizei levels, GLenum internalFormat, GLint minFilter, GLint magFilter);
