@@ -475,7 +475,7 @@ void main() {
 
             indirect.rgb *= ambientScale * diffuseColor.rgb;
             color = vec4(indirect.rgb + diffuseLighting + specularLighting, 1);
-            if (drawOcclusion) color *= occlusion;
+            if (drawOcclusion) color.rgb *= occlusion;
         }
         else {
             color.rgb = ambientScale * diffuseColor.rgb + diffuseLighting + specularLighting;
