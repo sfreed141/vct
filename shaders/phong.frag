@@ -447,7 +447,7 @@ void main() {
             for (int i = 0; i < coneDirs.length(); i++) {
                 vec3 dir = normalize(fs_in.TBN * coneDirs[i]);
                 indirect += coneWeights[i] * traceCone(
-                    radiance ? voxelRadiance : voxelColor, voxelPosition, normalize(fs_in.fragNormal), dir,
+                    radiance ? voxelRadiance : voxelColor, voxelPosition, normal, dir,
                     vctSteps, vctBias, vctConeAngle, vctConeInitialHeight, vctLodOffset
                 );
             }
@@ -465,7 +465,7 @@ void main() {
                 vec4 reflectColor = traceCone(
                     radiance ? voxelRadiance : voxelColor,
                     voxelPosition, normal,
-                    reflect(fs_in.fragPosition - eye, normalize(fs_in.fragNormal)),
+                    reflect(fs_in.fragPosition - eye, normal),
                     vctSpecularSteps, vctSpecularBias, coneAngle, vctSpecularConeInitialHeight, vctSpecularLodOffset
                 );
                 // if (toggle) reflectColor.rgb *= reflectColor.a;
