@@ -30,6 +30,8 @@
 #define SHADOWMAP_WIDTH 4096
 #define SHADOWMAP_HEIGHT 4096
 
+#define RSM 1
+
 void view2DTexture(GLuint texture);
 
 void Application::init() {
@@ -49,8 +51,19 @@ void Application::init() {
         GL_CLAMP_TO_BORDER, GL_CLAMP_TO_BORDER,
         &borderColor
     );
+#if RSM
+    shadowmapFBO.attachTexture(
+        GL_COLOR_ATTACHMENT0, GL_RGB8, SHADOWMAP_WIDTH, SHADOWMAP_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE
+    );
+    shadowmapFBO.attachTexture(
+        GL_COLOR_ATTACHMENT1, GL_RGB8, SHADOWMAP_WIDTH, SHADOWMAP_HEIGHT, GL_RGB, GL_UNSIGNED_BYTE
+    );
+    GLuint attachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+    glDrawBuffers(2, attachments);
+#else
     glDrawBuffer(GL_NONE);
     glReadBuffer(GL_NONE);
+#endif
     if (shadowmapFBO.getStatus() != GL_FRAMEBUFFER_COMPLETE) {
         LOG_ERROR("shadowmapFBO not created successfully");
     }
@@ -61,8 +74,13 @@ void Application::init() {
     program.setObjectLabel("Phong");
     voxelProgram.attachAndLink({SHADER_DIR "voxelize.vert", SHADER_DIR "voxelize.frag", SHADER_DIR "voxelize.geom"});
     voxelProgram.setObjectLabel("Voxelize");
+#if RSM
+    shadowmapProgram.attachAndLink({SHADER_DIR "simple.vert", SHADER_DIR "reflectiveShadowMap.frag"});
+    shadowmapProgram.setObjectLabel("RSM");
+#else
     shadowmapProgram.attachAndLink({SHADER_DIR "simple.vert", SHADER_DIR "empty.frag"});
     shadowmapProgram.setObjectLabel("Shadowmap");
+#endif
     injectRadianceProgram.attachAndLink({SHADER_DIR "injectRadiance.comp"});
     injectRadianceProgram.setObjectLabel("Inject Radiance");
     temporalRadianceFilterProgram.attachAndLink({SHADER_DIR "temporalRadianceFilter.comp"});
