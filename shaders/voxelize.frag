@@ -96,6 +96,37 @@ vec3 getVoxelPosition() {
     return imageSize(voxelColor) * unit;
 }
 
+#if 1
+vec4 convRGBA8ToVec4(uint val) {
+    return vec4(
+        float(val & 0x000000FF),
+        float((val & 0x0000FF00) >> 8U),
+        float((val & 0x00FF0000) >> 16U),
+        float((val & 0xFF000000) >> 24U)
+    );
+}
+
+uint convVec4ToRGBA8(vec4 val) {
+    return (uint(val.w) & 0x000000FF) << 24U
+        | (uint(val.z) & 0x000000FF) << 16U
+        | (uint(val.y) & 0x000000FF) << 8U
+        | (uint(val.x) & 0x000000FF);
+}
+
+void imageAtomicRGBA8Avg(layout(r32ui) coherent volatile uimage3D imgUI, ivec3 coords, vec4 val) {
+    val.rgb *= 255.0;
+    uint newVal = convVec4ToRGBA8(val);
+    uint prevStoredVal = 0, curStoredVal;
+    while ((curStoredVal = imageAtomicCompSwap(imgUI, coords, prevStoredVal, newVal)) != prevStoredVal) {
+        prevStoredVal = curStoredVal;
+        vec4 rval = convRGBA8ToVec4(curStoredVal);
+        rval.xyz *= rval.w;
+        vec4 curValF = rval + val;
+        curValF.xyz /= curValF.w;
+        newVal = convVec4ToRGBA8(curValF);
+    }
+}
+#else
 // From OpenGL Insights + https://rauwendaal.net/2013/02/07/glslrunningaverage/
 void imageAtomicRGBA8Avg(layout(r32ui) coherent volatile uimage3D imgUI, ivec3 coords, vec4 val) {
     val.a = 1.0 / 255.0;
@@ -112,6 +143,7 @@ void imageAtomicRGBA8Avg(layout(r32ui) coherent volatile uimage3D imgUI, ivec3 c
         newVal = packUnorm4x8(avg);
     }
 }
+#endif
 
 // Evaluates how shadowed a point is using PCF with 5 samples
 float calcShadowFactor(vec4 lsPosition) {
