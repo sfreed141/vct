@@ -291,75 +291,44 @@ void Application::render(float dt) {
     }
     voxelizeTimer.stop();
 
-    if (settings.temporalFilterRadiance) {
-        GL_DEBUG_PUSH("Temporal Radiance Filter")
-        temporalRadianceFilterProgram.bind();
+    {
+        static GLShaderProgram transferVoxels { "Transfer Voxels", {SHADER_DIR "transferVoxels.comp"}};
 
-        // TODO won't work with GL_RGBA16F
-        glBindImageTexture(0, vct.voxelRadiance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-        temporalRadianceFilterProgram.setUniform1f("temporalDecay", settings.temporalDecay);
+        if (!settings.temporalFilterRadiance) {
+            glClearTexImage(vct.voxelRadiance, 0, GL_RGBA, GL_FLOAT, nullptr);
+        }
+
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+        transferVoxels.bind();
+        transferVoxels.setUniform1i("temporalFilter", settings.temporalFilterRadiance);
+        transferVoxels.setUniform1f("temporalDecay", settings.temporalDecay);
+        transferVoxels.setUniform1f("voxelSetOpacity", settings.voxelSetOpacity);
+
+        glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, vct.voxelFormat);
+        glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, vct.voxelFormat);
+        glBindImageTexture(2, vct.voxelRadiance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
 
         glDispatchCompute((vct.voxelDim + 8 - 1) / 8, (vct.voxelDim + 8 - 1) / 8, (vct.voxelDim + 8 - 1) / 8);
 
-        temporalRadianceFilterProgram.unbind();
-        GL_DEBUG_POP()
-
-        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-    }
-    else {
-        glClearTexImage(vct.voxelRadiance, 0, GL_RGBA, GL_FLOAT, nullptr);
-    }
-
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
-    if (vct.useRGBA16f) {
-        // Normalize vct.voxelColor and vct.voxelNormal textures (divides by alpha component)
-        // Also copies opacity to radiance texture
-        static GLShaderProgram p ("Normalize Voxels", {SHADER_DIR "normalizeVoxels.comp"});
-
-        p.bind();
-        p.setUniform1f("voxelSetOpacity", settings.voxelSetOpacity);
-
-        glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
-        glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
-        glBindImageTexture(2, vct.voxelRadiance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-
-        glDispatchCompute((vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4);
-
-        glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
-        glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+        glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, vct.voxelFormat);
+        glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, vct.voxelFormat);
         glBindImageTexture(2, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-        p.unbind();
+        transferVoxels.unbind();
     }
-    else {
-        // Copies opacity to radiance texture. Optionally sets opacity to 1 (which should be 'correct' but it looks too dark)
-        static GLShaderProgram shader {"Set Voxel Opacity", {SHADER_DIR "setVoxelOpacity.comp"}};
-
-        shader.bind();
-        shader.setUniform1f("voxelSetOpacity", settings.voxelSetOpacity);
-
-        glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-        glBindImageTexture(1, vct.voxelRadiance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-
-        glDispatchCompute((vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4, (vct.voxelDim + 4 - 1) / 4);
-
-        glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-        glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-        shader.unbind();
-    }
-
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT);
 
     // Inject radiance into voxel grid
     radianceTimer.start();
     {
         GL_DEBUG_PUSH("Radiance Injection")
 
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
         injectRadianceProgram.bind();
 
         glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_ONLY, vct.voxelFormat);
         glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_ONLY, vct.voxelFormat);
-        glBindImageTexture(2, vct.voxelRadiance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+        glBindImageTexture(2, vct.voxelRadiance, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
 
         GLuint shadowmap = shadowmapFBO.getTexture(0);
         glBindTextureUnit(1, shadowmap);
@@ -380,6 +349,7 @@ void Application::render(float dt) {
         injectRadianceProgram.setUniform1i("radianceLighting", settings.radianceLighting);
         injectRadianceProgram.setUniform1i("radianceDilate", settings.radianceDilate);
         injectRadianceProgram.setUniform1i("temporalFilterRadiance", settings.temporalFilterRadiance);
+        injectRadianceProgram.setUniform1f("temporalDecay", settings.temporalDecay);
 
         // 2D workgroup should be the size of shadowmap, local_size = 16
         glDispatchCompute((SHADOWMAP_WIDTH + 16 - 1) / 16, (SHADOWMAP_HEIGHT + 16 - 1) / 16, 1);
@@ -387,20 +357,20 @@ void Application::render(float dt) {
         glBindTextureUnit(1, 0);
         glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
         glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
-        glBindImageTexture(2, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+        glBindImageTexture(2, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
         injectRadianceProgram.unbind();
 
         GL_DEBUG_POP()
     }
     radianceTimer.stop();
 
-    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-
     mipmapTimer.start();
     {
         // glGenerateTextureMipmap(vct.voxelColor);
         // glGenerateTextureMipmap(vct.voxelNormal);
         // glGenerateTextureMipmap(vct.voxelRadiance);
+
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
         mipmapProgram.bind();
 
@@ -439,6 +409,8 @@ void Application::render(float dt) {
         mipmapProgram.unbind();
     }
     mipmapTimer.stop();
+
+    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     if (settings.debugVoxels) {
         glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
@@ -490,6 +462,9 @@ void Application::render(float dt) {
         // Render scene
         {
             GL_DEBUG_PUSH("Render Scene")
+
+            glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT | GL_UNIFORM_BARRIER_BIT);
+
             glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
             glm::mat4 view = camera.lookAt();
 

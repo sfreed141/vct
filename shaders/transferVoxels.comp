@@ -1,0 +1,70 @@
+#version 430
+
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
+
+#define USE_RGBA16F 0
+
+#if USE_RGBA16F
+#define voxelLayout rgba16f
+#else
+#define voxelLayout rgba8
+#endif
+
+layout(binding = 0, voxelLayout) uniform image3D voxelColor;
+layout(binding = 1, voxelLayout) uniform image3D voxelNormal;
+layout(binding = 2, rgba8) uniform image3D voxelRadiance;
+
+struct VoxelizeInfo {
+    uint totalVoxelFragments, uniqueVoxels, maxFragmentsPerVoxel;
+};
+
+layout(std140, binding = 4) buffer VoxelizeInfoBlock {
+    VoxelizeInfo voxelizeInfo;
+};
+
+uniform bool temporalFilter = false;
+uniform float temporalDecay = 0;
+uniform float voxelSetOpacity = 0;
+
+void main() {
+    ivec3 threadId = ivec3(gl_GlobalInvocationID.xyz);
+
+    if (any(greaterThan(threadId, imageSize(voxelColor).xyz))) {
+        return;
+    }
+
+
+    vec4 color = imageLoad(voxelColor, threadId);
+    if (color.a > 0) {
+        atomicAdd(voxelizeInfo.uniqueVoxels, 1);
+#if USE_RGBA16F
+        atomicMax(voxelizeInfo.maxFragmentsPerVoxel, uint(color.a));
+
+        color /= color.a;
+#else
+        atomicMax(voxelizeInfo.maxFragmentsPerVoxel, uint(255 * color.a));  // TODO not sure if correct
+#endif
+        if (voxelSetOpacity > 0) color.a = voxelSetOpacity;
+
+        // Store back into voxelColor for debugging
+        imageStore(voxelColor, threadId, color);
+    }
+
+    color.rgb = vec3(0);
+
+    if (temporalFilter) {
+        vec4 previousColor = imageLoad(voxelRadiance, threadId);
+        color = mix(previousColor, color, 1 - temporalDecay);
+    }
+
+    if (temporalFilter || color.a > 0) {
+        imageStore(voxelRadiance, threadId, color);
+    }
+
+#if USE_RGBA16F
+    vec4 normal = imageLoad(voxelNormal, threadId);
+    if (normal.a > 0) {
+        imageStore(voxelNormal, threadId, normal / normal.a);
+    }
+#endif
+}

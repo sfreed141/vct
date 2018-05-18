@@ -332,7 +332,7 @@ void main() {
         vec3 i = voxelIndex(fs_in.fragPosition, voxelDim, voxelCenter, voxelMin, voxelMax, warpVoxels) / voxelDim;
 
         if (normals) {
-            vec3 normal = normalize(textureLod(voxelNormal, i, miplevel).rgb);
+            vec3 normal = textureLod(voxelNormal, i, miplevel).rgb;
             color = vec4(normal, 1);
         }
         else if (drawWarpSlope) {

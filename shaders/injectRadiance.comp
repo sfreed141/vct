@@ -4,7 +4,7 @@ layout(local_size_x = 16, local_size_y = 16) in;
 
 #define USE_RGBA16F 0
 
-#if USE_RGBA16F && GL_NV_shader_atomic_fp16_vector
+#if USE_RGBA16F
 #define voxelLayout rgba16f
 #else
 #define voxelLayout rgba8
@@ -12,7 +12,7 @@ layout(local_size_x = 16, local_size_y = 16) in;
 
 layout(binding = 0, voxelLayout) uniform readonly image3D voxelColor;
 layout(binding = 1, voxelLayout) uniform readonly image3D voxelNormal;
-layout(binding = 2, rgba8) uniform image3D voxelRadiance;
+layout(binding = 2, r32ui) uniform uimage3D voxelRadiance;
 
 uniform sampler2D shadowmap;
 
@@ -29,6 +29,7 @@ uniform bool warpVoxels;
 uniform bool radianceLighting = false;
 uniform bool radianceDilate = false;
 uniform bool temporalFilterRadiance = false;
+uniform float temporalDecay = 0;
 
 uniform vec3 eye;
 #pragma include "common.glsl"
@@ -63,7 +64,7 @@ void main() {
             ivec3 voxelIndex = voxelPosition + offsets[i];
 
             vec4 color = imageLoad(voxelColor, voxelIndex);
-            imageStore(voxelRadiance, voxelIndex, color);
+            imageStore(voxelRadiance, voxelIndex, uvec4(packUnorm4x8(color), 0, 0, 0));
         }
     }
     else {
@@ -72,21 +73,29 @@ void main() {
         if (radianceLighting) {
             // Calculate diffuse lighting
             vec3 normal = imageLoad(voxelNormal, voxelPosition).xyz;
-            normal = normalize(2 * normal - 1);    // need to remap normal from [0, 1] -> [-1, 1]
-
-            vec3 lightVector = normalize(lightPos - worldPosition);
+            normal = 2 * normal - 1;    // need to remap normal from [0, 1] -> [-1, 1]
+            normal.z = -normal.z;       // lighting calculation is in voxel space
+            vec3 lightPosVoxelSpace = voxelIndex(lightPos, voxelDim, voxelCenter, voxelMin, voxelMax, warpVoxels);
+            vec3 lightVector = normalize(lightPosVoxelSpace - voxelPosition);
             float diffuse = max(dot(normal, lightVector), 0);
 
             color.rgb = diffuse * lightInt * color.rgb;
-        }
 
-        // Inject into voxel texture
-        // imageStore(voxelColor, voxelPosition, f16vec4(color));
-        if (temporalFilterRadiance) {
-            vec4 previousColor = imageLoad(voxelRadiance, voxelPosition);
-            if (previousColor.a > 0.1)
-                color.rgb = mix(color.rgb, previousColor.rgb / previousColor.a, previousColor.a);
+            // Already temporally filtered if lighting was done during voxelize
+            // TODO this doesn't work right now
+            if (temporalFilterRadiance) {
+                vec4 previousColor = unpackUnorm4x8(imageLoad(voxelRadiance, voxelPosition).r);
+                // Opacity is filtered from transferVoxels.comp so we only need to mix the color
+                color.rgb = (1 - temporalDecay) * color.rgb + temporalDecay * previousColor.rgb;
+                // color.rgb = (1 - temporalDecay) * color.rgb + previousColor.rgb;
+                color.a = previousColor.a;
+            }
+
+            // imageAtomicMax(voxelRadiance, voxelPosition, packUnorm4x8(color));
+            imageStore(voxelRadiance, voxelPosition, uvec4(packUnorm4x8(color), 0, 0, 0));
         }
-        imageStore(voxelRadiance, voxelPosition, color);
+        else {
+            imageStore(voxelRadiance, voxelPosition, uvec4(packUnorm4x8(color), 0, 0, 0));
+        }
     }
 }
