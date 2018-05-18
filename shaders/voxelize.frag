@@ -96,34 +96,20 @@ vec3 getVoxelPosition() {
     return imageSize(voxelColor) * unit;
 }
 
-// From OpenGL Insights
-vec4 convRGBA8ToVec4(uint val) {
-    return vec4(
-        float(val & 0x000000FF),
-        float((val & 0x0000FF00) >> 8U),
-        float((val & 0x00FF0000) >> 16U),
-        float((val & 0xFF000000) >> 24U)
-    );
-}
-
-uint convVec4ToRGBA8(vec4 val) {
-    return (uint(val.w) & 0x000000FF) << 24U
-        | (uint(val.z) & 0x000000FF) << 16U
-        | (uint(val.y) & 0x000000FF) << 8U
-        | (uint(val.x) & 0x000000FF);
-}
-
+// From OpenGL Insights + https://rauwendaal.net/2013/02/07/glslrunningaverage/
 void imageAtomicRGBA8Avg(layout(r32ui) coherent volatile uimage3D imgUI, ivec3 coords, vec4 val) {
-    val.rgb *= 255.0;
-    uint newVal = convVec4ToRGBA8(val);
+    val.a = 1.0 / 255.0;
+    uint newVal = packUnorm4x8(val);
     uint prevStoredVal = 0, curStoredVal;
+
+    // Spin wait while other threads modify
     while ((curStoredVal = imageAtomicCompSwap(imgUI, coords, prevStoredVal, newVal)) != prevStoredVal) {
         prevStoredVal = curStoredVal;
-        vec4 rval = convRGBA8ToVec4(curStoredVal);
-        rval.xyz *= rval.w;
-        vec4 curValF = rval + val;
-        curValF.xyz /= curValF.w;
-        newVal = convVec4ToRGBA8(curValF);
+        // Extract the moving average (current average in rgb, normalized count in w)
+        vec4 avg = unpackUnorm4x8(curStoredVal);
+        avg.rgb = (avg.rgb * avg.w + val.rgb * val.w) / (avg.w + val.w);
+        avg.w = avg.w + val.w;
+        newVal = packUnorm4x8(avg);
     }
 }
 
@@ -232,8 +218,8 @@ void main() {
     }
     // else
     if (voxelizeAtomicMax) {
-        imageAtomicMax(voxelColor, voxelIndex, convVec4ToRGBA8(255 * vec4(color, 1)));
-        imageAtomicMax(voxelNormal, voxelIndex, convVec4ToRGBA8(255 * vec4(normal, 1)));
+        imageAtomicMax(voxelColor, voxelIndex, packUnorm4x8(vec4(color, 1)));
+        imageAtomicMax(voxelNormal, voxelIndex, packUnorm4x8(vec4(normal, 1)));
     }
     else {
         imageAtomicRGBA8Avg(voxelColor, voxelIndex, vec4(color, 1));
