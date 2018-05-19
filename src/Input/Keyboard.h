@@ -2,8 +2,8 @@
  * http://www.glfw.org/docs/latest/input_guide.html#input_keyboard
  * https://docs.unity3d.com/ScriptReference/Input.html
  */
-#ifndef KEYBOARD_HPP
-#define KEYBOARD_HPP
+#ifndef KEYBOARD_H
+#define KEYBOARD_H
 
 #include <GLFW/glfw3.h>
 #include <cassert>
@@ -21,6 +21,8 @@ public:
     static void setKeyStatus(int key, int action);
 
 private:
+    Keyboard() {}
+
     static bool key_tap[GLFW_KEY_LAST];
     static int keys[GLFW_KEY_LAST];
 };

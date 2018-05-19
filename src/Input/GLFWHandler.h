@@ -17,6 +17,9 @@ public:
     static void mousebtn_callback(GLFWwindow *window, int button, int action, int mods);
     static void scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
     static void char_callback(GLFWwindow *window, unsigned int codepoint);
+
+private:
+    GLFWHandler() {}
 };
 
 #endif
