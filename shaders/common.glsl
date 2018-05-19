@@ -48,7 +48,7 @@ vec3 linearVoxelSize(int voxelDim, vec3 voxelMin, vec3 voxelMax) {
     return (voxelMax - voxelMin) / float(voxelDim);
 }
 
-vec3 voxelWarpFnGradient(vec3 p, vec3 camera, vec3 voxelCenter, vec3 voxelMin, vec3 voxelMax) {
+vec3 voxelWarpFnGradient(vec3 p_tc, vec3 c_tc) {
     const float h = 0.01;
     const vec3 offsets[] = vec3[](
         vec3(h, 0, 0),
@@ -56,15 +56,21 @@ vec3 voxelWarpFnGradient(vec3 p, vec3 camera, vec3 voxelCenter, vec3 voxelMin, v
         vec3(0, 0, h)
     );
 
-    vec3 warpedPosition = voxelWarpedPosition(p, camera, voxelCenter, voxelMin, voxelMax);
+    vec3 warpedPosition = voxelWarp(p_tc, c_tc);
     vec3 gradient;
     for (int i = 0; i < 3; i++) {
-        //                                                      ↓ this bitch i swear to god
-        vec3 partial = (voxelWarpedPosition(p + offsets[i]*(voxelMax - voxelMin), camera, voxelCenter, voxelMin, voxelMax) - warpedPosition) / h;
+        vec3 partial = (voxelWarp(p_tc + offsets[i], c_tc) - warpedPosition) / h;
         gradient[i] = partial[i];
     }
 
     return gradient;
+}
+
+vec3 voxelWarpFnGradient(vec3 position, vec3 camera, vec3 voxelCenter, vec3 voxelMin, vec3 voxelMax) {
+    vec3 p_tc = voxelLinearPosition(position, voxelCenter, voxelMin, voxelMax);
+    vec3 c_tc = voxelLinearPosition(camera, voxelCenter, voxelMin, voxelMax);
+
+    return voxelWarpFnGradient(p_tc, c_tc);
 }
 
 // Approximate voxel size at a given position (derived from gradient)
