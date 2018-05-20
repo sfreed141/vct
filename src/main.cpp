@@ -31,6 +31,20 @@ int main() {
         0.f, 1.f, 0.f, 0.f
     };
 
+    float occupancyTexture[warpDim * 2][warpDim * 2] {
+        0, 0,   1, 0,   1, 1,   1, 1,
+        0, 0,   1, 1,   0, 1,   1, 1,
+
+        0, 0,   1, 1,   0, 0,   1, 0,
+        0, 0,   0, 0,   0, 0,   0, 0,
+
+        0, 0,   0, 0,   1, 1,   0, 0,
+        0, 0,   1, 1,   1, 1,   0, 0,
+
+        0, 0,   0, 0,   0, 0,   0, 0,
+        0, 0,   1, 1,   0, 0,   0, 0
+    };
+
     // Compute partial sum table
     int warpPartialsX[warpDim][warpDim], warpPartialsY[warpDim][warpDim];
 
@@ -114,24 +128,58 @@ int main() {
 
     GLQuad::init();
     GLShaderProgram shader {"Test warp texture", {SHADER_DIR "quad.vert", SHADER_DIR "testWarpTexture.frag"}};
-    GLint toggle = 1;
+    GLint toggle = 1, toggleFilter = 0;
+    GLFramebuffer warpmapFBO;
+    warpmapFBO.bind();
+    warpmapFBO.attachTexture(
+        GL_COLOR_ATTACHMENT0, GL_RGBA8, warpDim, warpDim, GL_RGBA, GL_UNSIGNED_BYTE,
+        GL_LINEAR, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE
+    );
+    GLuint attachments[] = { GL_COLOR_ATTACHMENT0 };
+    glDrawBuffers(1, attachments);
+    if (warpmapFBO.getStatus() != GL_FRAMEBUFFER_COMPLETE) {
+        LOG_ERROR("warpmapFBO not created successfully");
+    }
+    warpmapFBO.unbind();
+    GLShaderProgram warpmapShader {"Warpmap", {SHADER_DIR "quad.vert", SHADER_DIR "generateWarpmap.frag"}};
 
+    glViewport(0, 0, WIDTH, HEIGHT);
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
         Mouse::update();
 
         if (Mouse::getMouseButtonClick(GLFW_MOUSE_BUTTON_LEFT)) {
-            vec2 position { Mouse::getX() / WIDTH, Mouse::getY() / HEIGHT };
+            vec2 position { Mouse::getX() / WIDTH, 1 - Mouse::getY() / HEIGHT };
             cout << to_string(position) << ":" << endl;
             vec2 warpedPosition = calculateWarpPosition(position);
             cout << "\twarpedPosition\t\t" << to_string(warpedPosition) << endl << endl;
         }
         if (Keyboard::getKeyTap(GLFW_KEY_T)) {
             toggle = !toggle;
+            cout << toggle << endl;
+        }
+        if (Keyboard::getKeyTap(GLFW_KEY_F)) {
+            toggleFilter = !toggleFilter;
+            cout << toggleFilter << endl;
         }
 
+        glViewport(0, 0, warpDim, warpDim);
+        warpmapFBO.bind();
+        warpmapShader.bind();
+        glUniform1fv(warpmapShader.uniformLocation("warpTexture[0]"), warpDim * warpDim, (GLfloat *)warpTexture);
+        glUniform1fv(warpmapShader.uniformLocation("occupancyTexture[0]"), (warpDim * 2) * (warpDim * 2), (GLfloat *)occupancyTexture);
+        glUniform1iv(warpmapShader.uniformLocation("warpPartialsX[0]"), warpDim * warpDim, (GLint *)warpPartialsX);
+        glUniform1iv(warpmapShader.uniformLocation("warpPartialsY[0]"), warpDim * warpDim, (GLint *)warpPartialsY);
+        glUniform1fv(warpmapShader.uniformLocation("warpWeights[0]"), 2 * (warpDim + 1), (GLfloat *)warpWeights);
+        GLQuad::draw();
+        warpmapShader.unbind();
+        warpmapFBO.unbind();
+
+        glViewport(0, 0, WIDTH, HEIGHT);
         shader.bind();
-        glUniform1fv(shader.uniformLocation("warpTexture[0]"), warpDim * warpDim, (GLfloat*)warpTexture);
+        glBindTextureUnit(0, warpmapFBO.getTexture(0));
+        glUniform1fv(shader.uniformLocation("warpTexture[0]"), warpDim * warpDim, (GLfloat *)warpTexture);
+        glUniform1fv(shader.uniformLocation("occupancyTexture[0]"), (warpDim * 2) * (warpDim * 2), (GLfloat *)occupancyTexture);
         glUniform1iv(shader.uniformLocation("warpPartialsX[0]"), warpDim * warpDim, (GLint*)warpPartialsX);
         glUniform1iv(shader.uniformLocation("warpPartialsY[0]"), warpDim * warpDim, (GLint*)warpPartialsY);
         glUniform1fv(shader.uniformLocation("warpWeights[0]"), 2 * (warpDim + 1), (GLfloat *)warpWeights);
@@ -140,8 +188,10 @@ int main() {
             1 - Mouse::getMouseLastClickY(GLFW_MOUSE_BUTTON_LEFT) / HEIGHT
         );
         shader.setUniform1i("toggle", toggle);
+        shader.setUniform1i("toggleFilter", toggleFilter);
         GLQuad::draw();
         shader.unbind();
+        glBindTextureUnit(0, 0);
 
         glfwSwapBuffers(window);
     }
