@@ -98,7 +98,7 @@ vec3 getVoxelPosition(ivec3 size) {
     if (warpVoxels) {
         unit = voxelWarp(unit, voxelLinearPosition(eye, voxelCenter, voxelMin, voxelMax));
     }
-    else if (warpTexture) {
+    else if (warpTexture && !voxelizeOccupancy) {
         unit = texture(warpmap, unit).xyz;
     }
 

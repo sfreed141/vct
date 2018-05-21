@@ -8,11 +8,12 @@ in VS_OUT {
 
 const int warpDim = 32;
 
-layout(binding = 0, r32ui) uniform readonly uimage3D warpTexture;
+layout(binding = 0, r32ui) uniform readonly uimage3D voxelOccupancy;
 layout(binding = 1, rgba32i) uniform readonly iimage3D warpPartials;
 layout(binding = 2, r32f) uniform readonly image2D warpWeights;
 
 uniform bool toggle = false;
+uniform bool warpTextureLinear = false;
 
 vec3 calculateWarpedPosition(vec3 tc) {
     vec3 linearTexcoord = tc * warpDim;   // convert [0, 1] -> [0, warpDim] for indexing into warp texture
@@ -20,7 +21,7 @@ vec3 calculateWarpedPosition(vec3 tc) {
     vec3 warpCellPosition = modf(linearTexcoord, warpCellIndex);
     int x = int(warpCellIndex.x), y = int(warpCellIndex.y), z = int(warpCellIndex.z);
 
-    bool warpCellOccupied = imageLoad(warpTexture, ivec3(x, y, z)).r > 0;
+    bool warpCellOccupied = imageLoad(voxelOccupancy, ivec3(x, y, z)).r > 0;
     if (warpCellOccupied) warpedOutput.w = 1;
 
     vec3 totalOccupied = vec3(
@@ -55,11 +56,11 @@ vec3 calculateWarpedPosition(vec3 tc) {
 void main() {
     vec3 tc = vec3(fs_in.tc, float(gl_Layer + 0.5) / float(warpDim));
     vec3 warpedTexcoord = calculateWarpedPosition(tc);
-    warpedOutput.xyz = warpedTexcoord;
+    warpedOutput.xyz = mix(warpedTexcoord, tc, warpTextureLinear);
 
     // Debugging
     // warpedOutput.xyz = mix(tc, warpedTexcoord, toggle);
     // ivec3 index = ivec3(floor(tc * warpDim));
-    // warpedOutput.xyz = mix(vec3(0), vec3(1), greaterThan(imageLoad(warpTexture, index).rrr, vec3(0))); // draw occupied cells
+    // warpedOutput.xyz = mix(vec3(0), vec3(1), greaterThan(imageLoad(voxelOccupancy, index).rrr, vec3(0))); // draw occupied cells
     // warpedOutput.xyz = imageLoad(warpPartials, index).zzz / float(warpDim); // draw partials
 }

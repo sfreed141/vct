@@ -78,6 +78,9 @@ struct Settings {
 
     float miplevel = 0;
 
+    float warpTextureHighResolution = 2.0f;
+    float warpTextureLowResolution = 0.5;
+
     int voxelizeLighting = true;
     int voxelizeAtomicMax = false;  // only used if voxel textures are rgba8
     int voxelTrackCamera = false;
@@ -85,6 +88,7 @@ struct Settings {
     int voxelizeDilate = false;
     int warpVoxels = false;
     int warpTexture = false;
+    int warpTextureLinear = false;
     VCTSettings diffuseConeSettings { 16, glm::radians(60.f), 1.0f, 1.0f, 0.5f };
     VCTSettings specularConeSettings { 32, glm::radians(30.f), 1.7f, 0.5f, 0.1f };
     int specularConeAngleFromRoughness = true;
