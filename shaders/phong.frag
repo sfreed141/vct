@@ -367,9 +367,9 @@ void main() {
             vec3 tc = voxelLinearPosition(fs_in.fragPosition, voxelCenter, voxelMin, voxelMax);
             vec3 warped = texture(warpmap, vec3(tc.xy, 1 - tc.z)).xyz;
             warped.z = 1 - warped.z;
-            color.rgb = toggle ? warped : tc;
+            color.rgb = toggle ? tc : warped;
             // color = textureLod(voxelRadiance, toggle ? warped : tc, miplevel);
-            color.rgb = step(0.0005, warped - tc);
+            // color.rgb = step(0.0005, warped - tc);
         }
         else if (radiance) {
             color = textureLod(voxelRadiance, i, miplevel).rgba;

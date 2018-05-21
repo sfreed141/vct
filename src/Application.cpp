@@ -338,18 +338,23 @@ void Application::render(float dt) {
                 // Linear scale if a row is all empty or all occupied
                 warpWeights[0][occupied] = warpWeights[1][occupied] = 1.f;
             } else {
-                float l = 0.5f;                 // using constant value for low resolution right now
                 int empty = warpDim - occupied; // number of empty cells along row
                 int total = warpDim;            // total number of cells along row
-                // Solve for h: l * empty + h * occupied = total --> h = (total - l * empty) / occupied
-                float h = (total - l * empty) / (float)occupied;
+
+                // Need to satisfy l * empty + h * occupied = total
+                // Also set an upper and lower bound on resolution (this is a simple linear programming problem)
+
+                // Set h to highest desired resolution
+                float h = settings.warpTextureHighResolution;
+                // Solve for l; if too low, solve for h instead
+                float l = (total - h * occupied) / (float)empty;
+                if (l < settings.warpTextureLowResolution) {
+                    l = settings.warpTextureLowResolution;
+                    h = (total - l * empty) / (float)occupied;
+                }
 
                 warpWeights[0][occupied] = l;
                 warpWeights[1][occupied] = h;
-
-                // TODO figure out l and h. Use 1 to not change anything for now
-                warpWeights[0][occupied] = 1.f;
-                warpWeights[1][occupied] = 1.f;
             }
         }
 
@@ -422,6 +427,7 @@ void Application::render(float dt) {
         glBindImageTexture(2, warpWeightsId, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
 
         generateWarpmapShader.setUniform1i("toggle", settings.toggle);
+        generateWarpmapShader.setUniform1i("warpTextureLinear", settings.warpTextureLinear);
 
         GLQuad::draw();
 
