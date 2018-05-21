@@ -17,7 +17,7 @@ GLFWwindow *init_window(unsigned width, unsigned height, const char *title);
 
 int main() {
     GLFWwindow *window = init_window(WIDTH, HEIGHT, TITLE);
-#if 1
+#if 0
     using namespace std;
     using namespace glm;
 

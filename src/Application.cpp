@@ -220,6 +220,223 @@ void Application::render(float dt) {
     }
     shadowmapTimer.stop();
 
+    {
+        // Create voxel occupancy grid
+        GL_DEBUG_PUSH("Voxelize occupancy")
+
+        glViewport(0, 0, 32, 32);
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+        glDepthMask(GL_FALSE);
+        glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+        switch (settings.conservativeRasterization) {
+            case Settings::ConservativeRasterizeMode::NV:
+                glEnable(GL_CONSERVATIVE_RASTERIZATION_NV);
+                break;
+            case Settings::ConservativeRasterizeMode::MSAA:
+                glEnable(GL_MULTISAMPLE);
+                break;
+            case Settings::ConservativeRasterizeMode::OFF:
+            default:
+                // pass
+                break;
+        }
+
+        glClearTexImage(vct.voxelOccupancy, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
+
+        glm::mat4 projection =
+            glm::ortho(vct.min.x, vct.max.x, vct.min.y, vct.max.y, 0.0f, vct.max.z - vct.min.z);
+        glm::mat4 mvp_x = projection * glm::lookAt(glm::vec3(vct.max.x, 0, 0) + vct.center,
+                                                   vct.center, glm::vec3(0, 1, 0));
+        glm::mat4 mvp_y = projection * glm::lookAt(glm::vec3(0, vct.max.y, 0) + vct.center,
+                                                   vct.center, glm::vec3(0, 0, -1));
+        glm::mat4 mvp_z = projection * glm::lookAt(glm::vec3(0, 0, vct.max.z) + vct.center,
+                                                   vct.center, glm::vec3(0, 1, 0));
+
+        voxelProgram.bind();
+        voxelProgram.setUniformMatrix4fv("mvp_x", mvp_x);
+        voxelProgram.setUniformMatrix4fv("mvp_y", mvp_y);
+        voxelProgram.setUniformMatrix4fv("mvp_z", mvp_z);
+
+        voxelProgram.setUniform1i("voxelizeOccupancy", GL_TRUE);
+
+        glBindImageTexture(2, vct.voxelOccupancy, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+
+        scene->draw(voxelProgram);
+
+        glBindImageTexture(2, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+        voxelProgram.unbind();
+
+        // Restore OpenGL state
+        glViewport(0, 0, width, height);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        glDepthMask(GL_TRUE);
+        glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+        switch (settings.conservativeRasterization) {
+            case Settings::ConservativeRasterizeMode::NV:
+                glDisable(GL_CONSERVATIVE_RASTERIZATION_NV);
+                break;
+            case Settings::ConservativeRasterizeMode::MSAA:
+                glDisable(GL_MULTISAMPLE);
+                break;
+            case Settings::ConservativeRasterizeMode::OFF:
+            default:
+                // pass
+                break;
+        }
+
+        GL_DEBUG_POP()
+
+        // Create warp texture
+        const size_t warpDim = 32;
+        static GLuint warpTexture[warpDim][warpDim][warpDim];
+        glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
+        glGetTextureImage(
+            vct.voxelOccupancy, 0,
+            GL_RED_INTEGER, GL_UNSIGNED_INT,
+            warpDim * warpDim * warpDim * sizeof(GLuint), warpTexture
+        );
+
+        // Compute partial sum tables
+        static glm::ivec3 warpPartials[warpDim][warpDim][warpDim];
+
+        for (int z = 0; z < warpDim; z++) {
+            for (int y = 0; y < warpDim; y++) {
+                int sumX = 0;
+                for (int x = 0; x < warpDim; x++) {
+                    sumX += warpTexture[z][y][x] > 0.5f ? 1 : 0;
+                    warpPartials[z][y][x].x = sumX;
+                }
+            }
+        }
+
+        for (int z = 0; z < warpDim; z++) {
+            for (int x = 0; x < warpDim; x++) {
+                int sumY = 0;
+                for (int y = 0; y < warpDim; y++) {
+                    sumY += warpTexture[z][y][x] > 0.5f ? 1 : 0;
+                    warpPartials[z][y][x].y = sumY;
+                }
+            }
+        }
+
+        for (int y = 0; y < warpDim; y++) {
+            for (int x = 0; x < warpDim; x++) {
+                int sumZ = 0;
+                for (int z = 0; z < warpDim; z++) {
+                    sumZ += warpTexture[z][y][x] > 0.5f ? 1 : 0;
+                    warpPartials[z][y][x].z = sumZ;
+                }
+            }
+        }
+
+        // Calculate weights (index by # occupied cells, low and then high)
+        static float warpWeights[2][warpDim + 1];
+        for (int occupied = 0; occupied <= warpDim; occupied++) {
+            if (occupied == 0 || occupied == warpDim) {
+                // Linear scale if a row is all empty or all occupied
+                warpWeights[0][occupied] = warpWeights[1][occupied] = 1.f;
+            } else {
+                float l = 0.5f;                 // using constant value for low resolution right now
+                int empty = warpDim - occupied; // number of empty cells along row
+                int total = warpDim;            // total number of cells along row
+                // Solve for h: l * empty + h * occupied = total --> h = (total - l * empty) / occupied
+                float h = (total - l * empty) / (float)occupied;
+
+                warpWeights[0][occupied] = l;
+                warpWeights[1][occupied] = h;
+
+                // TODO figure out l and h. Use 1 to not change anything for now
+                warpWeights[0][occupied] = 1.f;
+                warpWeights[1][occupied] = 1.f;
+            }
+        }
+
+        GL_DEBUG_PUSH("Generate Warpmap")
+
+        // Use layered rendering to generate the warpmap
+        static GLShaderProgram generateWarpmapShader{"Generate Warpmap",
+                                                     {SHADER_DIR "quad.vert",
+                                                      SHADER_DIR "generateWarpmap.geom",
+                                                      SHADER_DIR "generateWarpmap.frag"}};
+        static GLuint warpmapFBO = 0, warpmap;
+        static GLuint warpTextureId, warpPartialsId, warpWeightsId;
+        if (warpmapFBO == 0) {
+            // Create 3D warpmap
+            glCreateTextures(GL_TEXTURE_3D, 1, &warpmap);
+            glTextureParameteri(warpmap, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTextureParameteri(warpmap, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTextureParameteri(warpmap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTextureParameteri(warpmap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            glTextureParameteri(warpmap, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+            glTextureStorage3D(warpmap, 1, GL_RGBA8, warpDim, warpDim, warpDim);
+
+            // Create layered framebuffer
+            glCreateFramebuffers(1, &warpmapFBO);
+            glNamedFramebufferTexture(warpmapFBO, GL_COLOR_ATTACHMENT0, warpmap, 0);
+            glNamedFramebufferDrawBuffer(warpmapFBO, GL_COLOR_ATTACHMENT0);
+            glNamedFramebufferReadBuffer(warpmapFBO, GL_NONE);
+            if (glCheckNamedFramebufferStatus(warpmapFBO, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+                LOG_ERROR("Failed to create warpmapFBO");
+            }
+
+            // Create images to pass warpmap data
+            glCreateTextures(GL_TEXTURE_3D, 1, &warpTextureId);
+            glTextureStorage3D(warpTextureId, 1, GL_R32UI, warpDim, warpDim, warpDim);
+            glClearTexImage(warpTextureId, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
+
+            glCreateTextures(GL_TEXTURE_3D, 1, &warpPartialsId);
+            glTextureStorage3D(warpPartialsId, 1, GL_RGBA32I, warpDim, warpDim, warpDim);
+
+            glCreateTextures(GL_TEXTURE_2D, 1, &warpWeightsId);
+            glTextureStorage2D(warpWeightsId, 1, GL_R32F, warpDim + 1, 2);
+        }
+
+        // Upload warpmap data to GPU
+        glTextureSubImage3D(
+            warpTextureId, 0,
+            0, 0, 0, warpDim, warpDim, warpDim,
+            GL_RED_INTEGER, GL_UNSIGNED_INT, warpTexture
+        );
+        glTextureSubImage3D(
+            warpPartialsId, 0,
+            0, 0, 0, warpDim, warpDim, warpDim,
+            GL_RGB_INTEGER, GL_INT, warpPartials
+        );
+        glTextureSubImage2D(
+            warpWeightsId, 0,
+            0, 0, warpDim + 1, 2,
+            GL_RED, GL_FLOAT, warpWeights
+        );
+
+        glBindFramebuffer(GL_FRAMEBUFFER, warpmapFBO);
+        glViewport(0, 0, warpDim, warpDim);
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+        generateWarpmapShader.bind();
+
+        // glBindImageTexture(0, vct.voxelOccupancy, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R32UI);
+        glBindImageTexture(0, warpTextureId, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R32UI);
+        glBindImageTexture(1, warpPartialsId, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA32I);
+        glBindImageTexture(2, warpWeightsId, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
+
+        generateWarpmapShader.setUniform1i("toggle", settings.toggle);
+
+        GLQuad::draw();
+
+        glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R32UI);
+        glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA32I);
+        glBindImageTexture(2, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
+        generateWarpmapShader.unbind();
+        glViewport(0, 0, width, height);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        GL_DEBUG_POP()
+    }
+
     // TODO does this need to be synchronized before rendering?
     glClearNamedBufferData(voxelizeInfoSSBO, GL_R32UI, GL_RED, GL_UNSIGNED_INT, nullptr);
 
@@ -257,6 +474,8 @@ void Application::render(float dt) {
         voxelProgram.setUniformMatrix4fv("mvp_x", mvp_x);
         voxelProgram.setUniformMatrix4fv("mvp_y", mvp_y);
         voxelProgram.setUniformMatrix4fv("mvp_z", mvp_z);
+
+        voxelProgram.setUniform1i("voxelizeOccupancy", GL_FALSE);
 
         voxelProgram.setUniform1i("axis_override", settings.axisOverride);
 
@@ -605,7 +824,13 @@ GLuint make3DTexture(GLsizei size, GLsizei levels, GLenum internalFormat, GLint 
     glTexParameteri(GL_TEXTURE_3D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_BORDER);
 
     glTexStorage3D(GL_TEXTURE_3D, levels, internalFormat, size, size, size);
-    glClearTexImage(handle, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+
+    if (internalFormat == GL_R32UI) {
+        glClearTexImage(handle, 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, nullptr);
+    }
+    else {
+        glClearTexImage(handle, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+    }
 
     if (levels > 1) {
         glGenerateMipmap(GL_TEXTURE_3D);
