@@ -43,10 +43,7 @@ vec3 calculateWarpedPosition(vec3 tc) {
     vec3 warpCellResolution = warpCellOccupied ? warpCellWeightsHigh : warpCellWeightsLow;
 
     // if totalOccupied = 0 or warpDim then it doesn't matter which we choose (edge case for all linear cells)
-    // TODO replace with mix?
-    if (totalOccupied.x == 0) totalOccupied.x = warpDim;
-    if (totalOccupied.y == 0) totalOccupied.y = warpDim;
-    if (totalOccupied.z == 0) totalOccupied.z = warpDim;
+    totalOccupied = mix(vec3(warpDim), totalOccupied, equal(totalOccupied, vec3(0)));
     vec3 previousPartial = warpCellOccupied ? partialSum - vec3(1) : partialSum;
     vec3 warpCellOffset = warpCellWeightsLow * (warpCellIndex - previousPartial) + warpCellWeightsHigh * previousPartial;
     vec3 warpCellInnerOffset = warpCellPosition * warpCellResolution;

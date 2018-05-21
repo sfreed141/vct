@@ -360,7 +360,7 @@ void Application::render(float dt) {
                                                      {SHADER_DIR "quad.vert",
                                                       SHADER_DIR "generateWarpmap.geom",
                                                       SHADER_DIR "generateWarpmap.frag"}};
-        static GLuint warpmapFBO = 0, warpmap;
+        static GLuint warpmapFBO = 0;
         static GLuint warpTextureId, warpPartialsId, warpWeightsId;
         if (warpmapFBO == 0) {
             // Create 3D warpmap
@@ -370,7 +370,7 @@ void Application::render(float dt) {
             glTextureParameteri(warpmap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTextureParameteri(warpmap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glTextureParameteri(warpmap, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-            glTextureStorage3D(warpmap, 1, GL_RGBA8, warpDim, warpDim, warpDim);
+            glTextureStorage3D(warpmap, 1, GL_RGB10_A2, warpDim, warpDim, warpDim);
 
             // Create layered framebuffer
             glCreateFramebuffers(1, &warpmapFBO);
@@ -484,6 +484,7 @@ void Application::render(float dt) {
         voxelProgram.setUniform3fv("lightInt", mainlight.color);
         voxelProgram.setUniform1i("voxelizeDilate", settings.voxelizeDilate);
         voxelProgram.setUniform1i("warpVoxels", settings.warpVoxels);
+        voxelProgram.setUniform1i("warpTexture", settings.warpTexture);
         voxelProgram.setUniform1i("voxelizeAtomicMax", settings.voxelizeAtomicMax);
         voxelProgram.setUniform1i("toggle", settings.toggle);
         voxelProgram.setUniform1i("voxelizeLighting", settings.voxelizeLighting);
@@ -500,10 +501,14 @@ void Application::render(float dt) {
         GLuint shadowmap = shadowmapFBO.getTexture(0);
         glBindTextureUnit(6, shadowmap);
 
+        glBindTextureUnit(10, warpmap);
+
         scene->draw(voxelProgram);
 
         glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
         glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA16F);
+        glBindTextureUnit(6, 0);
+        glBindTextureUnit(10, 0);
         voxelProgram.unbind();
 
         // Restore OpenGL state
@@ -529,6 +534,8 @@ void Application::render(float dt) {
     voxelizeTimer.stop();
 
     {
+        GL_DEBUG_PUSH("Transfer Voxels")
+
         static GLShaderProgram transferVoxels { "Transfer Voxels", {SHADER_DIR "transferVoxels.comp"}};
 
         if (!settings.temporalFilterRadiance) {
@@ -552,6 +559,8 @@ void Application::render(float dt) {
         glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, vct.voxelFormat);
         glBindImageTexture(2, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
         transferVoxels.unbind();
+
+        GL_DEBUG_POP()
     }
 
     // Inject radiance into voxel grid
@@ -578,6 +587,7 @@ void Application::render(float dt) {
 
         injectRadianceProgram.setUniform3fv("eye", camera.position);
         injectRadianceProgram.setUniform1i("warpVoxels", settings.warpVoxels);
+        injectRadianceProgram.setUniform1i("warpTexture", settings.warpTexture);
         injectRadianceProgram.setUniform1i("voxelDim", vct.voxelDim);
         injectRadianceProgram.setUniform3fv("voxelMin", vct.min);
         injectRadianceProgram.setUniform3fv("voxelMax", vct.max);
@@ -587,6 +597,8 @@ void Application::render(float dt) {
         injectRadianceProgram.setUniform1i("radianceDilate", settings.radianceDilate);
         injectRadianceProgram.setUniform1i("temporalFilterRadiance", settings.temporalFilterRadiance);
         injectRadianceProgram.setUniform1f("temporalDecay", settings.temporalDecay);
+
+        glBindTextureUnit(10, warpmap);
 
         // 2D workgroup should be the size of shadowmap, local_size = 16
         glDispatchCompute((SHADOWMAP_WIDTH + 16 - 1) / 16, (SHADOWMAP_HEIGHT + 16 - 1) / 16, 1);
@@ -734,6 +746,7 @@ void Application::render(float dt) {
             program.setUniform1i("debugMaterialDiffuse", settings.debugMaterialDiffuse);
             program.setUniform1i("debugMaterialRoughness", settings.debugMaterialRoughness);
             program.setUniform1i("debugMaterialMetallic", settings.debugMaterialMetallic);
+            program.setUniform1i("debugWarpTexture", settings.debugWarpTexture);
             program.setUniform1i("toggle", settings.toggle);
 
             program.setUniform1i("cooktorrance", settings.cooktorrance);
@@ -750,6 +763,7 @@ void Application::render(float dt) {
             program.setUniform1f("miplevel", settings.miplevel);
 
             program.setUniform1i("warpVoxels", settings.warpVoxels);
+            program.setUniform1i("warpTexture", settings.warpTexture);
             program.setUniform1i("voxelDim", vct.voxelDim);
             program.setUniform3fv("voxelMin", vct.min);
             program.setUniform3fv("voxelMax", vct.max);
@@ -771,6 +785,8 @@ void Application::render(float dt) {
             program.setUniform1f("vctSpecularLodOffset", settings.specularConeSettings.lodOffset);
             program.setUniform1i("vctSpecularConeAngleFromRoughness", settings.specularConeAngleFromRoughness);
 
+            glBindTextureUnit(10, warpmap);
+
             scene->bindLightSSBO(3);
 
             scene->draw(program);
@@ -779,6 +795,8 @@ void Application::render(float dt) {
             glBindTextureUnit(2, 0);
             glBindTextureUnit(3, 0);
             glBindTextureUnit(4, 0);
+            glBindTextureUnit(6, 0);
+            glBindTextureUnit(10, 0);
             program.unbind();
 
             glDisable(GL_MULTISAMPLE);
@@ -916,6 +934,7 @@ void Application::viewRaymarched() {
     glBindTextureUnit(0, vct.voxelColor);
     glBindTextureUnit(1, vct.voxelNormal);
     glBindTextureUnit(2, vct.voxelRadiance);
+    glBindTextureUnit(10, warpmap);
 
     glm::vec3 cameraRight = glm::normalize(glm::cross(camera.front, camera.up)) * ((float)width / height);
 
@@ -928,14 +947,20 @@ void Application::viewRaymarched() {
     glUniform1f(glGetUniformLocation(program, "near"), near);
     glUniform1f(glGetUniformLocation(program, "far"), far);
     glUniform1i(glGetUniformLocation(program, "voxelDim"), vct.voxelDim);
+    glUniform1i(glGetUniformLocation(program, "warpVoxels"), settings.warpVoxels);
+    glUniform1i(glGetUniformLocation(program, "warpTexture"), settings.warpTexture);
     glUniform3fv(glGetUniformLocation(program, "voxelMin"), 1, glm::value_ptr(vct.min));
     glUniform3fv(glGetUniformLocation(program, "voxelMax"), 1, glm::value_ptr(vct.max));
     glUniform3fv(glGetUniformLocation(program, "voxelCenter"), 1, glm::value_ptr(vct.center));
     glUniform1f(glGetUniformLocation(program, "lod"), settings.miplevel);
     glUniform1i(glGetUniformLocation(program, "radiance"), settings.drawRadiance);
 
-
     GLQuad::draw();
+
+    glBindTextureUnit(0, 0);
+    glBindTextureUnit(1, 0);
+    glBindTextureUnit(2, 0);
+    glBindTextureUnit(10, 0);
 
     glUseProgram(0);
 }

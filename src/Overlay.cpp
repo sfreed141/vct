@@ -164,6 +164,7 @@ void Overlay::render(float dt) {
             nk_checkbox_label(ctx, "debugMaterialDiffuse", &settings.debugMaterialDiffuse);
             nk_checkbox_label(ctx, "debugMaterialRoughness", &settings.debugMaterialRoughness);
             nk_checkbox_label(ctx, "debugMaterialMetallic", &settings.debugMaterialMetallic);
+            nk_checkbox_label(ctx, "debugWarpTexture", &settings.debugWarpTexture);
 
             {
                 static int current_minfilter = 5;
@@ -221,6 +222,7 @@ void Overlay::render(float dt) {
             nk_checkbox_label(ctx, "temporalFilterRadiance", &settings.temporalFilterRadiance);
             nk_checkbox_label(ctx, "voxelizeDilate", &settings.voxelizeDilate);
             nk_checkbox_label(ctx, "warpVoxels", &settings.warpVoxels);
+            nk_checkbox_label(ctx, "warpTexture", &settings.warpTexture);
             nk_checkbox_label(ctx, "voxelizeAtomicMax", &settings.voxelizeAtomicMax);
             if (nk_checkbox_label(ctx, "voxelTrackCamera", &settings.voxelTrackCamera)) {
                 // reset voxel center to origin after tracking

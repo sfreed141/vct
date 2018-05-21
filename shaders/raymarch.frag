@@ -7,6 +7,7 @@ out vec4 color;
 layout(binding = 0) uniform sampler3D voxelColor;
 layout(binding = 1) uniform sampler3D voxelNormal;
 layout(binding = 2) uniform sampler3D voxelRadiance;
+layout(binding = 10) uniform sampler3D warpmap;
 
 uniform vec3 eye = vec3(0);
 uniform vec3 viewForward = vec3(0, 0, -1);
@@ -21,6 +22,7 @@ uniform int voxelDim = 128;
 uniform vec3 voxelMin, voxelMax;
 uniform vec3 voxelCenter;
 uniform bool warpVoxels;
+uniform bool warpTexture;
 
 uniform int float = 0.0;
 

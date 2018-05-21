@@ -51,6 +51,7 @@ struct Settings {
     int debugOcclusion = false;
     int debugIndirect = false;
     int debugReflections = false;
+    int debugWarpTexture = false;
 
     int debugMaterialDiffuse = false, debugMaterialRoughness = false, debugMaterialMetallic = false;
 
@@ -83,6 +84,7 @@ struct Settings {
     float voxelizeMultiplier = 1.0f;
     int voxelizeDilate = false;
     int warpVoxels = false;
+    int warpTexture = false;
     VCTSettings diffuseConeSettings { 16, glm::radians(60.f), 1.0f, 1.0f, 0.5f };
     VCTSettings specularConeSettings { 32, glm::radians(30.f), 1.7f, 0.5f, 0.1f };
     int specularConeAngleFromRoughness = true;
@@ -160,6 +162,7 @@ private:
     std::unique_ptr<Scene> scene = nullptr;
     GLShaderProgram program;
 
+    GLuint warpmap;
     GLShaderProgram voxelProgram;
     VCT vct;
 

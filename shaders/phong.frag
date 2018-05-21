@@ -76,6 +76,8 @@ layout(binding = 2) uniform sampler3D voxelColor;
 layout(binding = 3) uniform sampler3D voxelNormal;
 layout(binding = 4) uniform sampler3D voxelRadiance;
 
+layout(binding = 10) uniform sampler3D warpmap;
+
 uniform bool voxelize = false;
 uniform bool normals = false;
 uniform bool dominant_axis = false;
@@ -86,6 +88,7 @@ uniform bool debugOcclusion = false;
 uniform bool debugIndirect = false;
 uniform bool debugReflections = false;
 uniform bool debugMaterialDiffuse = false, debugMaterialRoughness = false, debugMaterialMetallic = false;
+uniform bool debugWarpTexture = false;
 uniform bool toggle = false;
 
 uniform bool cooktorrance = true;
@@ -108,6 +111,7 @@ uniform int voxelDim;
 uniform vec3 voxelMin, voxelMax;
 uniform vec3 voxelCenter;
 uniform bool warpVoxels;
+uniform bool warpTexture;
 
 uniform int vctSteps;
 uniform float vctConeAngle;
@@ -359,13 +363,20 @@ void main() {
             //     color.rgb = vec3(abs(linear - c_tc).x);
             // }
         }
+        else if (debugWarpTexture) {
+            vec3 tc = voxelLinearPosition(fs_in.fragPosition, voxelCenter, voxelMin, voxelMax);
+            vec3 warped = texture(warpmap, vec3(tc.xy, 1 - tc.z)).xyz;
+            warped.z = 1 - warped.z;
+            color.rgb = toggle ? warped : tc;
+            // color = textureLod(voxelRadiance, toggle ? warped : tc, miplevel);
+            color.rgb = step(0.0005, warped - tc);
+        }
         else if (radiance) {
             color = textureLod(voxelRadiance, i, miplevel).rgba;
         }
         else {
             color = textureLod(voxelColor, i, miplevel).rgba;
         }
-
 
         return;
     }
