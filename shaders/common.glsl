@@ -37,6 +37,13 @@ vec3 voxelIndex(vec3 pos, int voxelDim, vec3 voxelCenter, vec3 voxelMin, vec3 vo
     if (warpVoxels) {
         pos = voxelWarpedPosition(pos, eye, voxelCenter, voxelMin, voxelMax);
     }
+    else if (warpTexture) {
+        vec3 tc = voxelLinearPosition(pos, voxelCenter, voxelMin, voxelMax);
+        // TODO does z need to be flipped?
+        tc.z = 1 - tc.z;
+        pos = texture(warpmap, tc).xyz;
+        pos.z = 1 - pos.z;
+    }
     else {
         pos = voxelLinearPosition(pos, voxelCenter, voxelMin, voxelMax);
     }

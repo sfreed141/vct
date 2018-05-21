@@ -15,6 +15,7 @@ layout(binding = 1, voxelLayout) uniform readonly image3D voxelNormal;
 layout(binding = 2, r32ui) uniform uimage3D voxelRadiance;
 
 uniform sampler2D shadowmap;
+layout(binding = 10) uniform sampler3D warpmap;
 
 uniform mat4 lsInverse;
 
@@ -25,6 +26,7 @@ uniform int voxelDim;
 uniform vec3 voxelMin, voxelMax;
 uniform vec3 voxelCenter;
 uniform bool warpVoxels;
+uniform bool warpTexture;
 
 uniform bool radianceLighting = false;
 uniform bool radianceDilate = false;

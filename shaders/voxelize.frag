@@ -61,11 +61,14 @@ layout(std140, binding = 4) buffer VoxelizeInfoBlock {
 uniform bool voxelizeOccupancy = false;
 uniform bool voxelizeDilate = false;
 uniform bool warpVoxels;
+uniform bool warpTexture;
 uniform bool voxelizeAtomicMax = false;
 uniform bool voxelizeLighting;
 uniform vec3 eye;
 uniform vec3 voxelCenter, voxelMin, voxelMax;
 uniform mat4 ls;
+
+layout(binding = 10) uniform sampler3D warpmap;
 
 // Map [-1, 1] -> [0, 1]
 vec3 ndcToUnit(vec3 p) { return (p + 1.0) * 0.5; }
@@ -94,6 +97,9 @@ vec3 getVoxelPosition(ivec3 size) {
 
     if (warpVoxels) {
         unit = voxelWarp(unit, voxelLinearPosition(eye, voxelCenter, voxelMin, voxelMax));
+    }
+    else if (warpTexture) {
+        unit = texture(warpmap, unit).xyz;
     }
 
     return size * unit;
