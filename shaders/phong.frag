@@ -133,9 +133,7 @@ out vec4 color;
 // based on https://github.com/godotengine/godot/blob/master/drivers/gles3/shaders/scene.glsl
 vec4 traceCone(sampler3D voxelTexture, vec3 position, vec3 normal, vec3 direction, int steps, float bias, float coneAngle, float coneHeight, float lodOffset) {
     direction = normalize(direction);
-    direction.z = -direction.z;
     direction /= voxelDim;
-    normal.z = -normal.z;
     normal /= voxelDim;
     vec3 start = position + bias * normal;
 
@@ -365,8 +363,7 @@ void main() {
         }
         else if (debugWarpTexture) {
             vec3 tc = voxelLinearPosition(fs_in.fragPosition, voxelCenter, voxelMin, voxelMax);
-            vec3 warped = texture(warpmap, vec3(tc.xy, 1 - tc.z)).xyz;
-            warped.z = 1 - warped.z;
+            vec3 warped = texture(warpmap, tc).xyz;
             color.rgb = toggle ? tc : warped;
             // color = textureLod(voxelRadiance, toggle ? warped : tc, miplevel);
             // color.rgb = step(0.0005, warped - tc);

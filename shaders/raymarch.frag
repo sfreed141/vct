@@ -24,7 +24,7 @@ uniform vec3 voxelCenter;
 uniform bool warpVoxels;
 uniform bool warpTexture;
 
-uniform int float = 0.0;
+uniform float lod = 0.0;
 
 uniform bool radiance = true;
 

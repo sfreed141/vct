@@ -3,7 +3,6 @@ const float PI = 3.1415982;
 // Returns position of a voxel in texture coordinates. worldPosition assumed inside the voxel volume.
 vec3 voxelLinearPosition(vec3 worldPosition, vec3 voxelCenter, vec3 voxelMin, vec3 voxelMax) {
     vec3 tc = (worldPosition - voxelCenter - voxelMin) / (voxelMax - voxelMin);
-    tc.z = 1 - tc.z;
     return tc;
 }
 
@@ -39,10 +38,7 @@ vec3 voxelIndex(vec3 pos, int voxelDim, vec3 voxelCenter, vec3 voxelMin, vec3 vo
     }
     else if (warpTexture) {
         vec3 tc = voxelLinearPosition(pos, voxelCenter, voxelMin, voxelMax);
-        // TODO does z need to be flipped?
-        tc.z = 1 - tc.z;
         pos = texture(warpmap, tc).xyz;
-        pos.z = 1 - pos.z;
     }
     else {
         pos = voxelLinearPosition(pos, voxelCenter, voxelMin, voxelMax);

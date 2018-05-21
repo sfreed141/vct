@@ -22,7 +22,7 @@ void main() {
     float z = instance / voxelDim;
     vec3 voxelPosition = vec3(x,y,z) + 0.5 / voxelDim;
 
-    vec3 tc = vec3(voxelPosition.x, voxelPosition.y, 1 - voxelPosition.z);
+    vec3 tc = voxelPosition;
     vs_out.voxelColor = textureLod(voxels, tc, level);
 
     // TODO doesn't account for warping (will need to scale cubes differently too)

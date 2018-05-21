@@ -94,6 +94,7 @@ vec3 getVoxelPosition(ivec3 size) {
     else {
         // looking down z axis
     }
+    unit.z = 1 - unit.z;
 
     if (warpVoxels) {
         unit = voxelWarp(unit, voxelLinearPosition(eye, voxelCenter, voxelMin, voxelMax));

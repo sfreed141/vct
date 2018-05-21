@@ -76,7 +76,6 @@ void main() {
             // Calculate diffuse lighting
             vec3 normal = imageLoad(voxelNormal, voxelPosition).xyz;
             normal = 2 * normal - 1;    // need to remap normal from [0, 1] -> [-1, 1]
-            normal.z = -normal.z;       // lighting calculation is in voxel space
             vec3 lightPosVoxelSpace = voxelIndex(lightPos, voxelDim, voxelCenter, voxelMin, voxelMax, warpVoxels);
             vec3 lightVector = normalize(lightPosVoxelSpace - voxelPosition);
             float diffuse = max(dot(normal, lightVector), 0);
