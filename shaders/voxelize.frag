@@ -16,6 +16,8 @@ layout(binding = 0, r32ui) uniform uimage3D voxelColor;
 layout(binding = 1, r32ui) uniform uimage3D voxelNormal;
 #endif // USE_RGBA16F
 
+layout(binding = 2, r32ui) uniform uimage3D voxelOccupancy;
+
 in GS_OUT {
     vec3 position;
     vec3 worldPosition;
@@ -56,6 +58,7 @@ layout(std140, binding = 4) buffer VoxelizeInfoBlock {
     VoxelizeInfo voxelizeInfo;
 };
 
+uniform bool voxelizeOccupancy = false;
 uniform bool voxelizeDilate = false;
 uniform bool warpVoxels;
 uniform bool voxelizeAtomicMax = false;
@@ -69,7 +72,7 @@ vec3 ndcToUnit(vec3 p) { return (p + 1.0) * 0.5; }
 
 #pragma include "common.glsl"
 
-vec3 getVoxelPosition() {
+vec3 getVoxelPosition(ivec3 size) {
     // get ndc
     vec3 ndc = vec3(fs_in.position);
 
@@ -93,7 +96,7 @@ vec3 getVoxelPosition() {
         unit = voxelWarp(unit, voxelLinearPosition(eye, voxelCenter, voxelMin, voxelMax));
     }
 
-    return imageSize(voxelColor) * unit;
+    return size * unit;
 }
 
 #if 1
@@ -173,6 +176,14 @@ float calcShadowFactor(vec4 lsPosition) {
 }
 
 void main() {
+    if (voxelizeOccupancy) {
+        ivec3 voxelIndex = ivec3(getVoxelPosition(imageSize(voxelOccupancy)));
+        // TODO pack bits; compute average instead of binary
+        // TODO don't need to use atomic if use GL_R8 and use one byte per voxel
+        imageAtomicOr(voxelOccupancy, voxelIndex, 1);
+        return;
+    }
+
     atomicAdd(voxelizeInfo.totalVoxelFragments, 1);
 
     vec3 color = texture(diffuseMap, fs_in.texcoord).rgb;
@@ -206,7 +217,7 @@ void main() {
     }
 
     // Store value (must be atomic, use alpha component as count)
-    vec3 voxelPosition = getVoxelPosition();
+    vec3 voxelPosition = getVoxelPosition(imageSize(voxelColor));
     ivec3 voxelIndex = ivec3(voxelPosition);
     if (voxelizeDilate) {
         vec3 fractionalPosition = fract(voxelPosition);

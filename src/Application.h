@@ -117,7 +117,7 @@ public:
     glm::vec3 voxelWorldSize() const { return (max - min) / (float)voxelDim; }
 
     int voxelDim = 256, voxelLevels = 6;
-    GLuint voxelColor = 0, voxelNormal = 0, voxelRadiance = 0;
+    GLuint voxelColor = 0, voxelNormal = 0, voxelRadiance = 0, voxelOccupancy = 0;
     bool useRGBA16f;
     GLenum voxelFormat;
 
@@ -129,12 +129,14 @@ private:
         voxelColor = make3DTexture(voxelDim, voxelLevels, voxelFormat, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
         voxelNormal = make3DTexture(voxelDim, 1, voxelFormat, GL_NEAREST, GL_NEAREST);
         voxelRadiance = make3DTexture(voxelDim, voxelLevels, GL_RGBA8, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
+        voxelOccupancy = make3DTexture(32, 1, GL_R32UI, GL_NEAREST, GL_NEAREST);
     }
 
     void cleanup() {
         glDeleteTextures(1, &voxelColor);
         glDeleteTextures(1, &voxelNormal);
         glDeleteTextures(1, &voxelRadiance);
+        glDeleteTextures(1, &voxelOccupancy);
     }
 };
 
