@@ -76,6 +76,23 @@ vec3 voxelWarpFnGradient(vec3 position, vec3 camera, vec3 voxelCenter, vec3 voxe
     return voxelWarpFnGradient(p_tc, c_tc);
 }
 
+vec3 voxelWarpTextureGradient(vec3 p_tc) {
+    vec3 warpedPosition = texture(warpmap, p_tc).xyz;
+    const ivec3 offsets[] = ivec3[](
+        ivec3(1, 0, 0),
+        ivec3(0, 1, 0),
+        ivec3(0, 0, 1)
+    );
+    vec3 texelSize = 1.0 / textureSize(warpmap, 0);
+    vec3 gradient;
+    for (int i = 0; i < 3; i++) {
+        vec3 partial = (textureOffset(warpmap, p_tc, offsets[i]).xyz - warpedPosition) / texelSize;
+        gradient[i] = partial[i];
+    }
+
+    return gradient;
+}
+
 // Approximate voxel size at a given position (derived from gradient)
 // vec3 warpedVoxelSize(vec3 unit, int voxelDim, vec3 voxelMin, vec3 voxelMax) {
 //     return voxelWarpFnGradient(unit) * linearVoxelSize(voxelDim, voxelMin, voxelMax);

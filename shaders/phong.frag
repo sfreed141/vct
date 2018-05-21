@@ -339,6 +339,26 @@ void main() {
             vec3 normal = textureLod(voxelNormal, i, miplevel).rgb;
             color = vec4(normal, 1);
         }
+        else if (debugWarpTexture) {
+            vec3 tc = voxelLinearPosition(fs_in.fragPosition, voxelCenter, voxelMin, voxelMax);
+            vec3 warped = texture(warpmap, tc).xyz;
+            color.rgb = toggle ? tc : warped;
+            // color = textureLod(voxelRadiance, toggle ? warped : tc, miplevel);
+            // color.rgb = step(0.0005, warped - tc);
+            if (drawWarpSlope) {
+                vec3 gradient = voxelWarpTextureGradient(tc);
+                float slope = dot(gradient, normalize(gradient));
+                const vec3 colors[] = vec3[](
+                    vec3(255, 0, 0) / 255,
+                    vec3(255, 127, 0) / 255,
+                    vec3(255, 255, 0) / 255,
+                    vec3(0, 255, 0) / 255,
+                    vec3(0, 0, 255) / 255,
+                    vec3(139, 0, 255) / 255
+                );
+                color.rgb = mix(colors[int(max(floor(slope), 0))], colors[int(min(ceil(slope), colors.length()))], fract(slope));
+            }
+        }
         else if (drawWarpSlope) {
             vec3 c_tc = voxelLinearPosition(eye, voxelCenter, voxelMin, voxelMax);
             vec3 linear = voxelLinearPosition(fs_in.fragPosition, voxelCenter, voxelMin, voxelMax);
@@ -360,13 +380,6 @@ void main() {
             // } else {
             //     color.rgb = vec3(abs(linear - c_tc).x);
             // }
-        }
-        else if (debugWarpTexture) {
-            vec3 tc = voxelLinearPosition(fs_in.fragPosition, voxelCenter, voxelMin, voxelMax);
-            vec3 warped = texture(warpmap, tc).xyz;
-            color.rgb = toggle ? tc : warped;
-            // color = textureLod(voxelRadiance, toggle ? warped : tc, miplevel);
-            // color.rgb = step(0.0005, warped - tc);
         }
         else if (radiance) {
             color = textureLod(voxelRadiance, i, miplevel).rgba;
