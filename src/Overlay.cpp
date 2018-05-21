@@ -180,13 +180,52 @@ void Overlay::render(float dt) {
                 };
                 const float ratio[] = {0.4f, 0.6f};
                 nk_layout_row(ctx, NK_DYNAMIC, rowheight, 2, ratio);
-                nk_label(ctx, "Voxel Min Filter", NK_TEXT_LEFT);
+                nk_label(ctx, "Voxel MIN_FILTER", NK_TEXT_LEFT);
                 int minfilter = nk_combo(ctx, minfilters, LEN(minfilters), current_minfilter, rowheight, nk_vec2(200, 200));
                 if (minfilter != current_minfilter) {
                     current_minfilter = minfilter;
                     glTextureParameteri(app.vct.voxelColor, GL_TEXTURE_MIN_FILTER, minfilterValue[minfilter]);
-                    glTextureParameteri(app.vct.voxelNormal, GL_TEXTURE_MIN_FILTER, minfilterValue[minfilter]);
                     glTextureParameteri(app.vct.voxelRadiance, GL_TEXTURE_MIN_FILTER, minfilterValue[minfilter]);
+                }
+            }
+            {
+                static int current_magfilter = 0;
+                static const char *magfilters[] = { "GL_NEAREST", "GL_LINEAR" };
+                static const GLint magfilterValue[] = { GL_NEAREST, GL_LINEAR };
+                const float ratio[] = {0.4f, 0.6f};
+                nk_layout_row(ctx, NK_DYNAMIC, rowheight, 2, ratio);
+                nk_label(ctx, "Voxel MAG_FILTER", NK_TEXT_LEFT);
+                int magfilter = nk_combo(ctx, magfilters, LEN(magfilters), current_magfilter, rowheight, nk_vec2(200, 200));
+                if (magfilter != current_magfilter) {
+                    current_magfilter = magfilter;
+                    glTextureParameteri(app.vct.voxelColor, GL_TEXTURE_MAG_FILTER, magfilterValue[magfilter]);
+                    glTextureParameteri(app.vct.voxelRadiance, GL_TEXTURE_MAG_FILTER, magfilterValue[magfilter]);
+                }
+            }
+            {
+                static int current_minfilter = 1;
+                static const char *minfilters[] = { "GL_NEAREST", "GL_LINEAR" };
+                static const GLint minfilterValue[] = { GL_NEAREST, GL_LINEAR };
+                const float ratio[] = {0.4f, 0.6f};
+                nk_layout_row(ctx, NK_DYNAMIC, rowheight, 2, ratio);
+                nk_label(ctx, "Warpmap MIN_FILTER", NK_TEXT_LEFT);
+                int minfilter = nk_combo(ctx, minfilters, LEN(minfilters), current_minfilter, rowheight, nk_vec2(200, 200));
+                if (minfilter != current_minfilter) {
+                    current_minfilter = minfilter;
+                    glTextureParameteri(app.warpmap, GL_TEXTURE_MIN_FILTER, minfilterValue[minfilter]);
+                }
+            }
+            {
+                static int current_magfilter = 1;
+                static const char *magfilters[] = { "GL_NEAREST", "GL_LINEAR" };
+                static const GLint magfilterValue[] = { GL_NEAREST, GL_LINEAR };
+                const float ratio[] = {0.4f, 0.6f};
+                nk_layout_row(ctx, NK_DYNAMIC, rowheight, 2, ratio);
+                nk_label(ctx, "Warpmap MAG_FILTER", NK_TEXT_LEFT);
+                int magfilter = nk_combo(ctx, magfilters, LEN(magfilters), current_magfilter, rowheight, nk_vec2(200, 200));
+                if (magfilter != current_magfilter) {
+                    current_magfilter = magfilter;
+                    glTextureParameteri(app.warpmap, GL_TEXTURE_MAG_FILTER, magfilterValue[magfilter]);
                 }
             }
 
