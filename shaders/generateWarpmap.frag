@@ -16,6 +16,25 @@ uniform bool toggle = false;
 uniform bool warpTextureLinear = false;
 uniform bvec3 warpTextureAxes = bvec3(true, true, true);
 
+float packCellInfo(vec3 totalOccupied, bool warpCellOccupied) {
+    uint bits = (uint(totalOccupied.x) & 0x001F)
+        | (uint(totalOccupied.y) & 0x001F) << 5
+        | (uint(totalOccupied.z) & 0x001F) << 10
+        | (warpCellOccupied ? 1 : 0) << 15;
+
+    return float(bits) / 65535.0;
+}
+
+vec4 unpackCellInfo(float bits) {
+    uint data = uint(bits * 65535.0);
+    return vec4(
+        float((data & 0x001F)),
+        float((data & 0x03D0) >> 5),
+        float((data & 0x7C00) >> 10),
+        float((data & 0x8000) >> 15)
+    );
+}
+
 vec3 calculateWarpedPosition(vec3 tc) {
     vec3 linearTexcoord = tc * warpDim;   // convert [0, 1] -> [0, warpDim] for indexing into warp texture
     vec3 warpCellIndex;
@@ -43,6 +62,7 @@ vec3 calculateWarpedPosition(vec3 tc) {
         imageLoad(warpWeights, ivec2(totalOccupied.z, 1)).r
     );
     vec3 warpCellResolution = warpCellOccupied ? warpCellWeightsHigh : warpCellWeightsLow;
+    warpedOutput.w = packCellInfo(totalOccupied, warpCellOccupied);
 
     // if totalOccupied = 0 or warpDim then it doesn't matter which we choose (edge case for all linear cells)
     totalOccupied = mix(vec3(warpDim), totalOccupied, equal(totalOccupied, vec3(0)));
