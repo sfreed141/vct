@@ -375,7 +375,7 @@ void Application::render(float dt) {
             glTextureParameteri(warpmap, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
             glTextureParameteri(warpmap, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             glTextureParameteri(warpmap, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-            glTextureStorage3D(warpmap, 1, GL_RGB10_A2, warpDim, warpDim, warpDim);
+            glTextureStorage3D(warpmap, 1, GL_RGBA16, warpDim, warpDim, warpDim);
 
             // Create layered framebuffer
             glCreateFramebuffers(1, &warpmapFBO);
