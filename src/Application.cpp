@@ -702,6 +702,44 @@ void Application::render(float dt) {
     }
     radianceTimer.stop();
 
+    if (settings.voxelFillHoles) {
+        GL_DEBUG_PUSH("Voxel Fill Holes")
+
+        glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+        static GLShaderProgram fillHoles {"Voxel Fill Holes", {SHADER_DIR "voxelFillHoles.comp"}};
+        static GLuint filledVoxels = 0;
+        if (filledVoxels == 0) {
+                glCreateTextures(GL_TEXTURE_3D, 1, &filledVoxels);
+                glTextureParameteri(filledVoxels, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // TODO ?
+                glTextureParameteri(filledVoxels, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // TODO ?
+                glTextureParameteri(filledVoxels, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTextureParameteri(filledVoxels, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTextureParameteri(filledVoxels, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+                glTextureStorage3D(filledVoxels, 1, GL_RGBA8, vct.voxelDim, vct.voxelDim, vct.voxelDim);
+        }
+
+        fillHoles.bind();
+        glBindImageTexture(0, vct.voxelRadiance, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+        glBindImageTexture(1, filledVoxels, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+
+        GLuint num_groups = (vct.voxelDim + 8 - 1) / 8;
+        glDispatchCompute(num_groups, num_groups, num_groups);
+
+        glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA8);
+        glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA8);
+        fillHoles.unbind();
+
+        glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
+        glCopyImageSubData(
+            filledVoxels, GL_TEXTURE_3D, 0, 0, 0, 0,
+            vct.voxelRadiance, GL_TEXTURE_3D, 0, 0, 0, 0,
+            vct.voxelDim, vct.voxelDim, vct.voxelDim
+        );
+
+        GL_DEBUG_POP()
+    }
+
     mipmapTimer.start();
     {
         // glGenerateTextureMipmap(vct.voxelColor);

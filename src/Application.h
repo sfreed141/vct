@@ -91,6 +91,7 @@ struct Settings {
     int warpTextureLinear = false;
     int warpTextureAxes[3] = {true, true, true};
     int useWarpmapWeightsTexture = true;
+     int voxelFillHoles = false;
     VCTSettings diffuseConeSettings { 16, glm::radians(60.f), 1.0f, 1.0f, 0.5f };
     VCTSettings specularConeSettings { 32, glm::radians(30.f), 1.7f, 0.5f, 0.1f };
     int specularConeAngleFromRoughness = true;
