@@ -14,6 +14,7 @@ layout(binding = 2, r32f) uniform readonly image2D warpWeights;
 
 uniform bool toggle = false;
 uniform bool warpTextureLinear = false;
+uniform bvec3 warpTextureAxes = bvec3(true, true, true);
 
 vec3 calculateWarpedPosition(vec3 tc) {
     vec3 linearTexcoord = tc * warpDim;   // convert [0, 1] -> [0, warpDim] for indexing into warp texture
@@ -56,7 +57,7 @@ vec3 calculateWarpedPosition(vec3 tc) {
 void main() {
     vec3 tc = vec3(fs_in.tc, float(gl_Layer + 0.5) / float(warpDim));
     vec3 warpedTexcoord = calculateWarpedPosition(tc);
-    warpedOutput.xyz = mix(warpedTexcoord, tc, warpTextureLinear);
+    warpedOutput.xyz = mix(tc, warpedTexcoord, warpTextureLinear ? bvec3(false) : warpTextureAxes);
 
     // Debugging
     // warpedOutput.xyz = mix(tc, warpedTexcoord, toggle);

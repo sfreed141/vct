@@ -285,6 +285,15 @@ void Overlay::render(float dt) {
             nk_property_float(ctx, "warpTextureHighResolution", 1.0f, &settings.warpTextureHighResolution, 4.0f, 0.5, 0.1f);
             nk_property_float(ctx, "warpTextureLowResolution", 0.1f, &settings.warpTextureLowResolution, 1.0f, 0.1, 0.1f);
 
+            {
+                const float ratio[] = {0.4f, 0.2f, 0.2f, 0.2f};
+                nk_layout_row(ctx, NK_DYNAMIC, rowheight, 4, ratio);
+                nk_label(ctx, "warpTextureAxes: ", NK_TEXT_LEFT);
+                nk_checkbox_label(ctx, "x", &settings.warpTextureAxes[0]);
+                nk_checkbox_label(ctx, "y", &settings.warpTextureAxes[1]);
+                nk_checkbox_label(ctx, "z", &settings.warpTextureAxes[2]);
+            }
+
             nk_layout_row_dynamic(ctx, rowheight, 2);
             static int nextVoxelResolution = app.vct.voxelDim;
             sprintf(tmp_buffer, "Set voxelDim (%d->%d)", app.vct.voxelDim, nextVoxelResolution);

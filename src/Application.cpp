@@ -428,6 +428,7 @@ void Application::render(float dt) {
 
         generateWarpmapShader.setUniform1i("toggle", settings.toggle);
         generateWarpmapShader.setUniform1i("warpTextureLinear", settings.warpTextureLinear);
+        glUniform3iv(generateWarpmapShader.uniformLocation("warpTextureAxes"), 1, settings.warpTextureAxes);
 
         GLQuad::draw();
 
