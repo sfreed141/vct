@@ -16,6 +16,9 @@ uniform bool toggle = false;
 uniform bool warpTextureLinear = false;
 uniform bvec3 warpTextureAxes = bvec3(true, true, true);
 
+uniform int warpDim = 32;
+uniform int layerOffset = 0;
+
 float packCellInfo(vec3 totalOccupied, bool warpCellOccupied) {
     uint bits = (uint(totalOccupied.x) & 0x001F)
         | (uint(totalOccupied.y) & 0x001F) << 5
@@ -75,7 +78,7 @@ vec3 calculateWarpedPosition(vec3 tc) {
 }
 
 void main() {
-    vec3 tc = vec3(fs_in.tc, float(gl_Layer + 0.5) / float(warpDim));
+    vec3 tc = vec3(fs_in.tc, float(gl_Layer + layerOffset + 0.5) / float(warpDim));
     vec3 warpedTexcoord = calculateWarpedPosition(tc);
     warpedOutput.xyz = mix(tc, warpedTexcoord, warpTextureLinear ? bvec3(false) : warpTextureAxes);
 

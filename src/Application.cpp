@@ -224,7 +224,7 @@ void Application::render(float dt) {
         // Create voxel occupancy grid
         GL_DEBUG_PUSH("Voxelize occupancy")
 
-        glViewport(0, 0, 32, 32);
+        glViewport(0, 0, vct.voxelOccupancyDim, vct.voxelOccupancyDim);
         glDisable(GL_DEPTH_TEST);
         glDisable(GL_CULL_FACE);
         glDepthMask(GL_FALSE);
@@ -289,7 +289,6 @@ void Application::render(float dt) {
         GL_DEBUG_POP()
 
         // Create warp texture
-        const size_t warpDim = 32;
         static GLuint warpTexture[warpDim][warpDim][warpDim];
         glMemoryBarrier(GL_TEXTURE_UPDATE_BARRIER_BIT);
         glGetTextureImage(
@@ -429,8 +428,13 @@ void Application::render(float dt) {
         generateWarpmapShader.setUniform1i("toggle", settings.toggle);
         generateWarpmapShader.setUniform1i("warpTextureLinear", settings.warpTextureLinear);
         glUniform3iv(generateWarpmapShader.uniformLocation("warpTextureAxes"), 1, settings.warpTextureAxes);
+        generateWarpmapShader.setUniform1i("warpDim", warpDim);
 
+        const size_t layersPerRender = 32;
+        for (size_t layerOffset = 0; layerOffset < warpDim; layerOffset += layersPerRender) {
+            generateWarpmapShader.setUniform1i("layerOffset", layerOffset);
         GLQuad::draw();
+        }
 
         glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R32UI);
         glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA32I);

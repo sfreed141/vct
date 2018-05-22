@@ -127,6 +127,7 @@ public:
     GLuint voxelColor = 0, voxelNormal = 0, voxelRadiance = 0, voxelOccupancy = 0;
     bool useRGBA16f;
     GLenum voxelFormat;
+    int voxelOccupancyDim = 32;
 
     glm::vec3 center { 0.0f };
     glm::vec3 min { -20.0f }, max { 20.0f };
@@ -136,7 +137,7 @@ private:
         voxelColor = make3DTexture(voxelDim, voxelLevels, voxelFormat, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
         voxelNormal = make3DTexture(voxelDim, 1, voxelFormat, GL_NEAREST, GL_NEAREST);
         voxelRadiance = make3DTexture(voxelDim, voxelLevels, GL_RGBA8, GL_LINEAR_MIPMAP_LINEAR, GL_NEAREST);
-        voxelOccupancy = make3DTexture(32, 1, GL_R32UI, GL_NEAREST, GL_NEAREST);
+        voxelOccupancy = make3DTexture(voxelOccupancyDim, 1, GL_R32UI, GL_NEAREST, GL_NEAREST);
     }
 
     void cleanup() {
@@ -167,7 +168,9 @@ private:
     std::unique_ptr<Scene> scene = nullptr;
     GLShaderProgram program;
 
+    static const size_t warpDim = 32;
     GLuint warpmap;
+
     GLShaderProgram voxelProgram;
     VCT vct;
 
