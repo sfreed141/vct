@@ -6,15 +6,18 @@ in VS_OUT {
     vec2 tc;
 } fs_in;
 
-const int warpDim = 32;
-
 layout(binding = 0, r32ui) uniform readonly uimage3D voxelOccupancy;
 layout(binding = 1, rgba32i) uniform readonly iimage3D warpPartials;
 layout(binding = 2, r32f) uniform readonly image2D warpWeights;
 
+layout(binding = 0) uniform sampler3D warpmapWeightsLow;
+layout(binding = 1) uniform sampler3D warpmapWeightsHigh;
+
 uniform bool toggle = false;
 uniform bool warpTextureLinear = false;
 uniform bvec3 warpTextureAxes = bvec3(true, true, true);
+uniform bool useWarpmapWeightsTexture = false;
+uniform float maxWeight = 2.0;
 
 uniform int warpDim = 32;
 uniform int layerOffset = 0;
@@ -54,16 +57,23 @@ vec3 calculateWarpedPosition(vec3 tc) {
     );
     vec3 partialSum = imageLoad(warpPartials, ivec3(x, y, z)).xyz;
 
-    vec3 warpCellWeightsLow = vec3(
+    vec3 warpCellWeightsLow, warpCellWeightsHigh;
+    if (useWarpmapWeightsTexture) {
+        warpCellWeightsLow = texture(warpmapWeightsLow, tc).xyz; // * maxWeight;
+        warpCellWeightsHigh = texture(warpmapWeightsHigh, tc).xyz; // * maxWeight;
+    }
+    else {
+        warpCellWeightsLow = vec3(
         imageLoad(warpWeights, ivec2(totalOccupied.x, 0)).r,
         imageLoad(warpWeights, ivec2(totalOccupied.y, 0)).r,
         imageLoad(warpWeights, ivec2(totalOccupied.z, 0)).r
     );
-    vec3 warpCellWeightsHigh = vec3(
+        warpCellWeightsHigh = vec3(
         imageLoad(warpWeights, ivec2(totalOccupied.x, 1)).r,
         imageLoad(warpWeights, ivec2(totalOccupied.y, 1)).r,
         imageLoad(warpWeights, ivec2(totalOccupied.z, 1)).r
     );
+    }
     vec3 warpCellResolution = warpCellOccupied ? warpCellWeightsHigh : warpCellWeightsLow;
     warpedOutput.w = packCellInfo(totalOccupied, warpCellOccupied);
 

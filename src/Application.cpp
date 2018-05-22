@@ -414,6 +414,73 @@ void Application::render(float dt) {
             GL_RED, GL_FLOAT, warpWeights
         );
 
+        // Compute warpmap weights separately
+        static GLuint warpmapWeightsLow = 0, warpmapWeightsHigh = 0;
+        if (settings.useWarpmapWeightsTexture) {
+            static GLShaderProgram warpweightShader {"Generate Warp Weights", {SHADER_DIR "quad.vert",
+                                                          SHADER_DIR "generateWarpmap.geom",
+                                                          SHADER_DIR "generateWarpmapWeights.frag"}};
+            static GLuint warpmapWeightsFBO = 0;
+            if (warpmapWeightsFBO == 0) {
+                // Create 3D warpmap
+                glCreateTextures(GL_TEXTURE_3D, 1, &warpmapWeightsLow);
+                glTextureParameteri(warpmapWeightsLow, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // TODO ?
+                glTextureParameteri(warpmapWeightsLow, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // TODO ?
+                glTextureParameteri(warpmapWeightsLow, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTextureParameteri(warpmapWeightsLow, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTextureParameteri(warpmapWeightsLow, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+                glTextureStorage3D(warpmapWeightsLow, 1, GL_RGBA16F, warpDim, warpDim, warpDim);
+
+                glCreateTextures(GL_TEXTURE_3D, 1, &warpmapWeightsHigh);
+                glTextureParameteri(warpmapWeightsHigh, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // TODO ?
+                glTextureParameteri(warpmapWeightsHigh, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // TODO ?
+                glTextureParameteri(warpmapWeightsHigh, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTextureParameteri(warpmapWeightsHigh, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                glTextureParameteri(warpmapWeightsHigh, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+                glTextureStorage3D(warpmapWeightsHigh, 1, GL_RGBA16F, warpDim, warpDim, warpDim);
+
+                // Create layered framebuffer
+                glCreateFramebuffers(1, &warpmapWeightsFBO);
+                glNamedFramebufferTexture(warpmapWeightsFBO, GL_COLOR_ATTACHMENT0, warpmapWeightsLow, 0);
+                glNamedFramebufferTexture(warpmapWeightsFBO, GL_COLOR_ATTACHMENT1, warpmapWeightsHigh, 0);
+                GLuint attachments[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+                glNamedFramebufferDrawBuffers(warpmapWeightsFBO, 2, attachments);
+                glNamedFramebufferReadBuffer(warpmapWeightsFBO, GL_NONE);
+                if (glCheckNamedFramebufferStatus(warpmapWeightsFBO, GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+                    LOG_ERROR("Failed to create warpmapWeightsFBO");
+                }
+            }
+
+            glBindFramebuffer(GL_FRAMEBUFFER, warpmapWeightsFBO);
+            glViewport(0, 0, warpDim, warpDim);
+            glDisable(GL_DEPTH_TEST);
+            glDisable(GL_CULL_FACE);
+            warpweightShader.bind();
+
+            // glBindImageTexture(0, vct.voxelOccupancy, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R32UI);
+            glBindImageTexture(0, warpTextureId, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R32UI);
+            glBindImageTexture(1, warpPartialsId, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA32I);
+            glBindImageTexture(2, warpWeightsId, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
+
+            warpweightShader.setUniform1i("warpDim", warpDim);
+            warpweightShader.setUniform1f("maxWeight", settings.warpTextureHighResolution);
+
+            const size_t layersPerRender = 32;
+            for (size_t layerOffset = 0; layerOffset < warpDim; layerOffset += layersPerRender) {
+                warpweightShader.setUniform1i("layerOffset", layerOffset);
+                GLQuad::draw();
+            }
+
+            glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R32UI);
+            glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA32I);
+            glBindImageTexture(2, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
+            warpweightShader.unbind();
+            glViewport(0, 0, width, height);
+            glEnable(GL_DEPTH_TEST);
+            glEnable(GL_CULL_FACE);
+            glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        }
+
         glBindFramebuffer(GL_FRAMEBUFFER, warpmapFBO);
         glViewport(0, 0, warpDim, warpDim);
         glDisable(GL_DEPTH_TEST);
@@ -425,10 +492,17 @@ void Application::render(float dt) {
         glBindImageTexture(1, warpPartialsId, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA32I);
         glBindImageTexture(2, warpWeightsId, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
 
+        if (settings.useWarpmapWeightsTexture) {
+            glBindTextureUnit(0, warpmapWeightsLow);
+            glBindTextureUnit(1, warpmapWeightsHigh);
+        }
+
         generateWarpmapShader.setUniform1i("toggle", settings.toggle);
         generateWarpmapShader.setUniform1i("warpTextureLinear", settings.warpTextureLinear);
         glUniform3iv(generateWarpmapShader.uniformLocation("warpTextureAxes"), 1, settings.warpTextureAxes);
         generateWarpmapShader.setUniform1i("warpDim", warpDim);
+        generateWarpmapShader.setUniform1i("useWarpmapWeightsTexture", settings.useWarpmapWeightsTexture);
+        generateWarpmapShader.setUniform1f("maxWeight", settings.warpTextureHighResolution);
 
         const size_t layersPerRender = 32;
         for (size_t layerOffset = 0; layerOffset < warpDim; layerOffset += layersPerRender) {
@@ -439,6 +513,10 @@ void Application::render(float dt) {
         glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_R32UI);
         glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA32I);
         glBindImageTexture(2, 0, 0, GL_FALSE, 0, GL_READ_ONLY, GL_R32F);
+        if (settings.useWarpmapWeightsTexture) {
+            glBindTextureUnit(0, 0);
+            glBindTextureUnit(1, 0);
+        }
         generateWarpmapShader.unbind();
         glViewport(0, 0, width, height);
         glEnable(GL_DEPTH_TEST);

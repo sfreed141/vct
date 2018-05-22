@@ -284,6 +284,7 @@ void Overlay::render(float dt) {
             nk_layout_row_dynamic(ctx, rowheight, 1);
             nk_property_float(ctx, "warpTextureHighResolution", 1.0f, &settings.warpTextureHighResolution, 4.0f, 0.5, 0.1f);
             nk_property_float(ctx, "warpTextureLowResolution", 0.1f, &settings.warpTextureLowResolution, 1.0f, 0.1, 0.1f);
+            nk_checkbox_label(ctx, "useWarpmapWeightsTexture", &settings.useWarpmapWeightsTexture);
 
             {
                 const float ratio[] = {0.4f, 0.2f, 0.2f, 0.2f};
