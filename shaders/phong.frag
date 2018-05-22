@@ -133,21 +133,27 @@ out vec4 color;
 // based on https://github.com/godotengine/godot/blob/master/drivers/gles3/shaders/scene.glsl
 vec4 traceCone(sampler3D voxelTexture, vec3 position, vec3 normal, vec3 direction, int steps, float bias, float coneAngle, float coneHeight, float lodOffset) {
     direction = normalize(direction);
-    direction /= voxelDim;
-    normal /= voxelDim;
-    vec3 start = position + bias * normal;
 
     vec3 color = vec3(0);
     float alpha = 0;
 
-    // TODO incorporate voxel size (need to support warping too). one axis for now (assume extents symmetric)
-    // float stepScale = linearVoxelSize(voxelDim, voxelMin, voxelMax).x;
-    // direction *= stepScale;
+    // TODO incorporate voxel size
+    // use gradient along cone tracing direction to determine step size? negative gradients?
+    float scale = 1.0 / voxelDim;
+    vec3 start = position + bias * normal * scale;
     for (int i = 0; i < steps && alpha < 0.95; i++) {
         float coneRadius = coneHeight * tan(coneAngle / 2.0);
         float lod = log2(max(1.0, 2 * coneRadius));
-        vec3 samplePosition = start + coneHeight * direction;
+        vec3 samplePosition = start + coneHeight * direction * scale;
         if (any(notEqual(samplePosition, clamp(samplePosition, 0, 1)))) break;
+        if (warpTexture) {
+            samplePosition = texture(warpmap, samplePosition).xyz;
+        }
+        else if (warpVoxels) {
+            vec3 c_tc = voxelLinearPosition(eye, voxelCenter, voxelMin, voxelMax);
+            // c_tc = floor(c_tc * voxelDim) / voxelDim;
+            samplePosition = voxelWarp(samplePosition, c_tc);
+        }
         vec4 sampleColor = textureLod(voxelTexture, samplePosition, lod + lodOffset);
         float a = 1 - alpha;
         color += sampleColor.rgb * a;
@@ -441,7 +447,7 @@ void main() {
         vec3 specularLighting = enableSpecular ? lighting.specular : vec3(0);
 
         if (enableIndirect) {
-            vec3 voxelPosition = voxelIndex(fs_in.fragPosition, voxelDim, voxelCenter, voxelMin, voxelMax, warpVoxels) / voxelDim;
+            vec3 voxelPosition = voxelLinearPosition(fs_in.fragPosition, voxelCenter, voxelMin, voxelMax);
             vec4 indirect = vec4(0);
 
 #if 0
