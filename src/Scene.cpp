@@ -28,10 +28,10 @@ void Scene::update(float dt) {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-void Scene::draw(GLShaderProgram &program) {
+void Scene::draw(GLShaderProgram &program, GLenum mode) {
     for (auto &actor : actors) {
         program.setUniformMatrix4fv("model", actor->getTransform());
-        actor->draw(program);
+        actor->draw(program, mode);
     }
 }
 

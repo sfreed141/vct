@@ -85,7 +85,7 @@ class Mesh {
 public:
     Mesh(const std::string &meshname);
 
-    void draw(GLShaderProgram &program) const;
+    void draw(GLShaderProgram &program, GLenum mode = GL_TRIANGLES) const;
 
     void loadMesh(const std::string &meshname);
 

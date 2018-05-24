@@ -22,7 +22,7 @@ public:
 class Actor {
 public:
     virtual void update(float dt) { if (controller) controller->update(*this, dt); }
-    virtual void draw(GLShaderProgram &program) const {}
+    virtual void draw(GLShaderProgram &program, GLenum mode = GL_TRIANGLES) const {}
 
     const glm::mat4 &getTransform() { return transform.getMatrix(); }
 
@@ -35,7 +35,7 @@ class StaticMeshActor : public Actor {
 public:
     StaticMeshActor(const std::string &meshname) : Actor(), mesh(ResourceLoader::loadMesh(meshname)) {}
 
-    void draw(GLShaderProgram &program) const override { mesh->draw(program); }
+    void draw(GLShaderProgram &program, GLenum mode = GL_TRIANGLES) const override { mesh->draw(program, mode); }
 
     MeshResource mesh;
 };

@@ -265,7 +265,7 @@ void Mesh::loadMesh(const std::string &meshname) {
     }
 }
 
-void Mesh::draw(GLShaderProgram &program) const {
+void Mesh::draw(GLShaderProgram &program, GLenum mode) const {
     if (program.getObjectLabel() == "Phong") {
         GLuint uboIndex = glGetUniformBlockIndex(program.getHandle(), "MaterialBlock");
         // LOG_DEBUG("uboIndex: ", uboIndex);
@@ -363,7 +363,7 @@ void Mesh::draw(GLShaderProgram &program) const {
         }
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, d.ebo);
-        glDrawElements(GL_PATCHES, d.indices.size(), GL_UNSIGNED_INT, 0);
+        glDrawElements(mode, d.indices.size(), GL_UNSIGNED_INT, 0);
     }
 
     glBindTextureUnit(0, 0);

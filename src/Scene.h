@@ -39,7 +39,7 @@ public:
     ~Scene() { glDeleteBuffers(1, &lightSSBO); }
 
     void update(float dt);
-    void draw(GLShaderProgram &program);
+    void draw(GLShaderProgram &program, GLenum mode = GL_TRIANGLES);
 
     void addActor(std::shared_ptr<Actor> actor) { actors.push_back(actor); }
     void addLight(const Light &light);

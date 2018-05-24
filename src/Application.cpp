@@ -205,7 +205,7 @@ void Application::render(float dt) {
 
         static GLShaderProgram shader {"Test Tesselation", {
             // SHADER_DIR "quad.vert",
-            SHADER_DIR "simple.vert",
+            SHADER_DIR "simpleTesselated.vert",
             SHADER_DIR "testTesselation.tesc",
             SHADER_DIR "testTesselation.tese",
             SHADER_DIR "testTesselation.frag"
@@ -223,7 +223,7 @@ void Application::render(float dt) {
         glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
 
         // GLQuad::draw(GL_PATCHES);
-        scene->draw(shader);
+        scene->draw(shader, GL_PATCHES);
 
         shader.unbind();
 
