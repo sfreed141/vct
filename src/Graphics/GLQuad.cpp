@@ -34,8 +34,8 @@ void GLQuad::init() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void GLQuad::draw() {
+void GLQuad::draw(GLenum mode) {
     glBindVertexArray(vao);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glDrawArrays(mode, 0, 6);
     glBindVertexArray(0);
 }

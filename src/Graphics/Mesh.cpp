@@ -363,7 +363,7 @@ void Mesh::draw(GLShaderProgram &program) const {
         }
 
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, d.ebo);
-        glDrawElements(GL_TRIANGLES, d.indices.size(), GL_UNSIGNED_INT, 0);
+        glDrawElements(GL_PATCHES, d.indices.size(), GL_UNSIGNED_INT, 0);
     }
 
     glBindTextureUnit(0, 0);

@@ -9,5 +9,5 @@ out VS_OUT {
 
 void main() {
     vs_out.tc = tc;
-    gl_Position = vec4(position, 1);
+    gl_Position = vec4(position * 0.8, 1);
 }

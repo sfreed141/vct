@@ -191,6 +191,45 @@ void Application::render(float dt) {
     totalTimer.start();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    // TEST TESSELATION
+    {
+        glViewport(0, 0, width, height);
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glDisable(GL_DEPTH_TEST);
+        glDisable(GL_CULL_FACE);
+
+		// const GLfloat inner[] = { 2.f, 2.f };
+		// const GLfloat outer[] = { 3.f, 3.f, 3.f, 3.f };
+        // glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, inner);
+        // glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, outer);
+
+        static GLShaderProgram shader {"Test Tesselation", {
+            // SHADER_DIR "quad.vert",
+            SHADER_DIR "simple.vert",
+            SHADER_DIR "testTesselation.tesc",
+            SHADER_DIR "testTesselation.tese",
+            SHADER_DIR "testTesselation.frag"
+        }};
+
+        glPatchParameteri(GL_PATCH_VERTICES, 3);
+        shader.bind();
+
+        glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
+        glm::mat4 view = camera.lookAt();
+
+        shader.setUniformMatrix4fv("projection", projection);
+        shader.setUniformMatrix4fv("view", view);
+
+        glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+
+        // GLQuad::draw(GL_PATCHES);
+        scene->draw(shader);
+
+        shader.unbind();
+
+        return;
+    }
+
     Light mainlight = scene->lights[0];
 
     const float lz_near = 0.0f, lz_far = 100.0f, l_boundary = 25.0f;
@@ -479,6 +518,45 @@ void Application::render(float dt) {
             glEnable(GL_DEPTH_TEST);
             glEnable(GL_CULL_FACE);
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+            // Apply Gaussian blur to the weights
+            if (settings.blurWarpmapWeights) {
+                GL_DEBUG_PUSH("Blur Warpmap Weights")
+                static GLShaderProgram blurShader {"Blur Shader", {SHADER_DIR "gaussianBlur.comp"}};
+
+                static GLuint blurTemp = 0;
+                if (blurTemp == 0) {
+                    // Create temporary texture to hold intermediate blur results
+                    glCreateTextures(GL_TEXTURE_3D, 1, &blurTemp);
+                    glTextureParameteri(blurTemp, GL_TEXTURE_MIN_FILTER, GL_NEAREST); // TODO ?
+                    glTextureParameteri(blurTemp, GL_TEXTURE_MAG_FILTER, GL_NEAREST); // TODO ?
+                    glTextureParameteri(blurTemp, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                    glTextureParameteri(blurTemp, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+                    glTextureParameteri(blurTemp, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+                    glTextureStorage3D(blurTemp, 1, GL_RGBA16F, warpDim, warpDim, warpDim);
+                }
+
+                GLuint num_groups = (warpDim + 8 - 1) / 8;
+                GLuint src = warpmapWeightsHigh, dst = blurTemp;
+                blurShader.bind();
+                for (size_t axis = 0; axis < 3; ++axis) {
+                    blurShader.setUniform1i("axis", axis);
+                    glBindImageTexture(0, src, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
+                    glBindImageTexture(1, dst, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+
+                    glDispatchCompute(num_groups, num_groups, num_groups);
+                    std::swap(src, dst);
+
+                    // TODO need to blur both? or rederive?
+
+                    glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+                }
+                glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_ONLY, GL_RGBA16F);
+                glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_WRITE_ONLY, GL_RGBA16F);
+                blurShader.unbind();
+
+                GL_DEBUG_POP()
+            }
         }
 
         glBindFramebuffer(GL_FRAMEBUFFER, warpmapFBO);

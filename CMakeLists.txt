@@ -16,6 +16,7 @@ add_definitions(-DRESOURCE_DIR="${CMAKE_SOURCE_DIR}/resources/")
 add_definitions(-DSHADER_DIR="${CMAKE_SOURCE_DIR}/shaders/")
 
 # set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
+message(${CMAKE_TOOLCHAIN_FILE})
 
 find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)

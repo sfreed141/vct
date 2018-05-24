@@ -6,7 +6,7 @@
 class GLQuad {
 public:
     static void init();
-    static void draw();
+    static void draw(GLenum mode = GL_TRIANGLES);
 private:
     static GLuint vao;
 };
