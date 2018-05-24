@@ -4,6 +4,8 @@ layout(triangles, equal_spacing, ccw) in;
 
 layout(binding = 0, rgba8) uniform image3D voxels;
 
+layout(binding = 0) uniform sampler2D diffuseMap;
+
 in vec4 tcPosition[];
 in vec3 tcNormal[];
 in vec2 tcTexcoord[];
@@ -29,5 +31,9 @@ void main() {
                 + gl_TessCoord.y * tcTexcoord[1]
                 + gl_TessCoord.z * tcTexcoord[2];
 
-    // imageStore(voxels, ivec3(0), vec4(1,0,1,1));
+
+    vec3 color = texture(diffuseMap, fragTexcoord).rgb;
+    // vec3 color = vec3(1,0,1);
+    vec3 voxelPosition = (position.xyz - vec3(0) - vec3(-20,-20,-20)) / (vec3(20,20,20)-vec3(-20,-20,-20));
+    imageStore(voxels, ivec3(voxelPosition * imageSize(voxels).xyz), vec4(color, 1));
 }

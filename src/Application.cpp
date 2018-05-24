@@ -202,6 +202,8 @@ void Application::render(float dt) {
 		// const GLfloat outer[] = { 3.f, 3.f, 3.f, 3.f };
         // glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, inner);
         // glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, outer);
+        const GLfloat clearColor[] = {0.f, 0.f, 0.f, 1.f};
+        glClearTexImage(vct.voxelColor, 0, GL_RGBA, GL_FLOAT, clearColor);
 
         static GLShaderProgram shader {"Test Tesselation", {
             // SHADER_DIR "quad.vert",
