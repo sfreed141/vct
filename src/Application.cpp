@@ -194,16 +194,18 @@ void Application::render(float dt) {
     // TEST TESSELATION
     {
         glViewport(0, 0, width, height);
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glDisable(GL_DEPTH_TEST);
-        glDisable(GL_CULL_FACE);
+        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        // glDisable(GL_DEPTH_TEST);
+        // glDisable(GL_CULL_FACE);
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+        // glEnable(GL_RASTERIZER_DISCARD);
 
-		// const GLfloat inner[] = { 2.f, 2.f };
-		// const GLfloat outer[] = { 3.f, 3.f, 3.f, 3.f };
+        // const GLfloat inner[] = { 2.f, 2.f };
+        // const GLfloat outer[] = { 3.f, 3.f, 3.f, 3.f };
         // glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, inner);
         // glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, outer);
-        const GLfloat clearColor[] = {0.f, 0.f, 0.f, 1.f};
-        glClearTexImage(vct.voxelColor, 0, GL_RGBA, GL_FLOAT, clearColor);
+        glClearTexImage(vct.voxelColor, 0, GL_RGBA, GL_FLOAT, nullptr);
 
         static GLShaderProgram shader {"Test Tesselation", {
             // SHADER_DIR "quad.vert",
@@ -229,7 +231,16 @@ void Application::render(float dt) {
         // GLQuad::draw(GL_PATCHES);
         scene->draw(shader, GL_PATCHES);
 
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glDisable(GL_RASTERIZER_DISCARD);
         shader.unbind();
+
+        // Render overlay
+        {
+            GL_DEBUG_PUSH("Render Overlay")
+            ui.render(dt);
+            GL_DEBUG_POP()
+        }
 
         return;
     }

@@ -40,6 +40,12 @@ void main() {
     te_out.texcoord = texcoord;
     te_out.voxelColor = color;
 
+    // if (gl_TessLevelInner[0] > 32.0) te_out.voxelColor = vec4(1, 0, 0, 1);
+    // if (gl_TessLevelInner[0] > 48.0) te_out.voxelColor = vec4(0, 1, 0, 1);
+    // if (gl_TessLevelInner[0] >= 64.0) te_out.voxelColor = vec4(0, 0, 1, 1);
+    // TODO fill adjacent voxels if tess level >= some threshold?
+
+
     // gl_Position = position;
     gl_Position = projection * view * position;
 }

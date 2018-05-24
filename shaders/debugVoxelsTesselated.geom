@@ -54,7 +54,8 @@ void main() {
 
         // project and emit vertices
         for (int i = 0; i < cube_indices.length(); i++) {
-            vec3 position = voxelWorldSize() * cube_vertices[cube_indices[i]] + gs_in[0].worldPosition;
+            vec3 voxelPosition = floor(gs_in[0].worldPosition / voxelWorldSize()) * voxelWorldSize();
+            vec3 position = voxelWorldSize() * cube_vertices[cube_indices[i]] + voxelPosition;
             gl_Position = projection * view * vec4(position, 1);
             EmitVertex();
         }
