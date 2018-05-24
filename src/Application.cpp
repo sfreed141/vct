@@ -210,7 +210,9 @@ void Application::render(float dt) {
             SHADER_DIR "simpleTesselated.vert",
             SHADER_DIR "testTesselation.tesc",
             SHADER_DIR "testTesselation.tese",
-            SHADER_DIR "testTesselation.frag"
+            SHADER_DIR "debugVoxelsTesselated.geom",
+            SHADER_DIR "debugVoxels.frag"
+            // SHADER_DIR "testTesselation.frag"
         }};
 
         glPatchParameteri(GL_PATCH_VERTICES, 3);
