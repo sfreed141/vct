@@ -206,6 +206,7 @@ void Application::render(float dt) {
         // glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, inner);
         // glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, outer);
         glClearTexImage(vct.voxelColor, 0, GL_RGBA, GL_FLOAT, nullptr);
+        glClearTexImage(vct.voxelNormal, 0, GL_RGBA, GL_FLOAT, nullptr);
 
         static GLShaderProgram shader {"Test Tesselation", {
             // SHADER_DIR "quad.vert",
@@ -227,6 +228,7 @@ void Application::render(float dt) {
         shader.setUniformMatrix4fv("view", view);
 
         glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
+        glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
 
         // GLQuad::draw(GL_PATCHES);
         scene->draw(shader, GL_PATCHES);

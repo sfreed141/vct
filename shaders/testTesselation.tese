@@ -2,7 +2,8 @@
 
 layout(triangles, equal_spacing, ccw, point_mode) in;
 
-layout(binding = 0, rgba8) uniform image3D voxels;
+layout(binding = 0, rgba8) uniform image3D voxelColor;
+layout(binding = 1, rgba8) uniform image3D voxelNormal;
 
 layout(binding = 0) uniform sampler2D diffuseMap;
 
@@ -20,6 +21,9 @@ out TE_OUT {
 uniform mat4 projection;
 uniform mat4 view;
 
+uniform float voxelDim = 256;
+uniform vec3 voxelMin = vec3(-20), voxelMax = vec3(20), voxelCenter = vec3(0);
+
 void main() {
     vec4 position = gl_TessCoord.x * tcPosition[0]
                     + gl_TessCoord.y * tcPosition[1]
@@ -32,8 +36,10 @@ void main() {
                     + gl_TessCoord.z * tcTexcoord[2];
 
     vec4 color = texture(diffuseMap, texcoord);
-    vec3 voxelPosition = (position.xyz - vec3(0) - vec3(-20,-20,-20)) / (vec3(20,20,20)-vec3(-20,-20,-20));
-    imageStore(voxels, ivec3(voxelPosition * imageSize(voxels).xyz), color);
+    vec3 voxelPosition = (position.xyz - voxelCenter - voxelMin) / (voxelMax - voxelMin);
+    ivec3 voxelIndex = ivec3(voxelPosition * imageSize(voxelColor).xyz);
+    imageStore(voxelColor, voxelIndex, color);
+    imageStore(voxelNormal, voxelIndex, vec4(normalize(normal) * 0.5 + 0.5, 1));
 
     te_out.worldPosition = position.xyz;
     te_out.normal = normal;
