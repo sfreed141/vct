@@ -99,7 +99,7 @@ struct Settings {
 
     int voxelizeTesselation = true;
     int voxelizeTesselationDebug = false;
-    int voxelizeTesselationWarp = true;
+    int voxelizeTesselationWarp = false;
 };
 
 GLuint make3DTexture(GLsizei size, GLsizei levels, GLenum internalFormat, GLint minFilter, GLint magFilter);

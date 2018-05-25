@@ -199,7 +199,7 @@ void Application::render(float dt) {
 
     const glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
     const glm::mat4 view = camera.lookAt();
-    const glm::mat4 pv = projection * view;
+    const glm::mat4 pv = glm::perspective(camera.fov, (float)width / height, 1.f, 20.f) * view;
     const glm::mat4 pvInverse = glm::inverse(pv);
 
     const Light mainlight = scene->lights[0];
@@ -633,6 +633,7 @@ void Application::render(float dt) {
         shader->setUniformMatrix4fv("view", view);
         shader->setUniform1i("voxelizeAtomicMax", settings.voxelizeAtomicMax);
         shader->setUniform1i("voxelizeTesselationWarp", settings.voxelizeTesselationWarp);
+        shader->setUniformMatrix4fv("pv", pv);
 
         glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
         glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
@@ -805,6 +806,7 @@ void Application::render(float dt) {
         injectRadianceProgram.setUniform1i("warpVoxels", settings.warpVoxels);
         injectRadianceProgram.setUniform1i("warpTexture", settings.warpTexture);
         injectRadianceProgram.setUniform1i("voxelizeTesselationWarp", settings.voxelizeTesselationWarp);
+        injectRadianceProgram.setUniformMatrix4fv("pv", pv);
         injectRadianceProgram.setUniform1i("voxelDim", vct.voxelDim);
         injectRadianceProgram.setUniform3fv("voxelMin", vct.min);
         injectRadianceProgram.setUniform3fv("voxelMax", vct.max);
@@ -1013,6 +1015,7 @@ void Application::render(float dt) {
             program.setUniform1i("warpVoxels", settings.warpVoxels);
             program.setUniform1i("warpTexture", settings.warpTexture);
             program.setUniform1i("voxelizeTesselationWarp", settings.voxelizeTesselationWarp);
+            program.setUniformMatrix4fv("pv", pv);
             program.setUniform1i("voxelDim", vct.voxelDim);
             program.setUniform3fv("voxelMin", vct.min);
             program.setUniform3fv("voxelMax", vct.max);

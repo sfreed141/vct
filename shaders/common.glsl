@@ -1,5 +1,7 @@
 const float PI = 3.1415982;
 
+uniform mat4 pv;
+
 // Returns position of a voxel in texture coordinates. worldPosition assumed inside the voxel volume.
 vec3 voxelLinearPosition(vec3 worldPosition, vec3 voxelCenter, vec3 voxelMin, vec3 voxelMax) {
     vec3 tc = (worldPosition - voxelCenter - voxelMin) / (voxelMax - voxelMin);
@@ -32,7 +34,14 @@ vec3 voxelWarpedPosition(vec3 position, vec3 camera, vec3 voxelCenter, vec3 voxe
     return voxelWarp(p_tc, c_tc);
 }
 
-vec3 voxelIndex(vec3 pos, int voxelDim, vec3 voxelCenter, vec3 voxelMin, vec3 voxelMax, bool warpVoxels) {
+vec3 voxelTesselationWarpedPosition(vec3 position) {
+    vec4 projected = pv * vec4(position, 1);
+    projected.xyz /= projected.w;
+    projected = projected * 0.5 + 0.5;
+    return projected.xyz;
+}
+
+vec3 getVoxelPosition(vec3 pos, int voxelDim, vec3 voxelCenter, vec3 voxelMin, vec3 voxelMax, bool warpVoxels) {
     if (warpVoxels) {
         pos = voxelWarpedPosition(pos, eye, voxelCenter, voxelMin, voxelMax);
     }
@@ -40,11 +49,18 @@ vec3 voxelIndex(vec3 pos, int voxelDim, vec3 voxelCenter, vec3 voxelMin, vec3 vo
         vec3 tc = voxelLinearPosition(pos, voxelCenter, voxelMin, voxelMax);
         pos = texture(warpmap, tc).xyz;
     }
+    else if (voxelizeTesselationWarp) {
+        pos = voxelTesselationWarpedPosition(pos);
+    }
     else {
         pos = voxelLinearPosition(pos, voxelCenter, voxelMin, voxelMax);
     }
 
-    return voxelDim * pos;
+    return pos;
+}
+
+vec3 voxelIndex(vec3 pos, int voxelDim, vec3 voxelCenter, vec3 voxelMin, vec3 voxelMax, bool warpVoxels) {
+    return voxelDim * getVoxelPosition(pos, voxelDim, voxelCenter, voxelMin, voxelMax, warpVoxels);
 }
 
 vec3 linearVoxelSize(int voxelDim, vec3 voxelMin, vec3 voxelMax) {

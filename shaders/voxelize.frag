@@ -64,6 +64,7 @@ uniform bool warpVoxels;
 uniform bool warpTexture;
 uniform bool voxelizeAtomicMax = false;
 uniform bool voxelizeLighting;
+uniform bool voxelizeTesselationWarp;
 uniform vec3 eye;
 uniform vec3 voxelCenter, voxelMin, voxelMax;
 uniform mat4 ls;

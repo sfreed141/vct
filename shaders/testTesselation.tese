@@ -20,6 +20,11 @@ layout(binding = 1, r32ui) uniform uimage3D voxelNormal;
 
 layout(binding = 0) uniform sampler2D diffuseMap;
 
+// make compiler happy
+uniform bool warpTexture;
+uniform vec3 eye;
+layout(binding = 10) uniform sampler3D warpmap;
+
 in vec4 tcPosition[];
 in vec3 tcNormal[];
 in vec2 tcTexcoord[];
@@ -41,6 +46,8 @@ uniform bool voxelizeTesselationWarp;
 
 uniform float voxelDim = 256;
 uniform vec3 voxelMin = vec3(-20), voxelMax = vec3(20), voxelCenter = vec3(0);
+
+#pragma include "common.glsl"
 
 vec4 convRGBA8ToVec4(uint val) {
     return vec4(
@@ -116,12 +123,13 @@ void main() {
 
     ivec3 voxelA = ivec3(voxelDim * tcVoxelPosition[0]), voxelB = ivec3(voxelDim * tcVoxelPosition[1]), voxelC = ivec3(voxelDim * tcVoxelPosition[2]);
     if (all(equal(voxelA, voxelB)) && all(equal(voxelA, voxelC)) && gl_TessCoord.x == 1.0) {
+        // TODO do this in linear or warped space?
         voxelStore(voxelA, color, normal);
     }
     else {
-        vec3 voxelPosition = (position.xyz - voxelCenter - voxelMin) / (voxelMax - voxelMin);
-        ivec3 voxelIndex = ivec3(voxelPosition * imageSize(voxelColor).xyz);
-        voxelStore(voxelIndex, color, normal);
+        // vec3 voxelPosition = (position.xyz - voxelCenter - voxelMin) / (voxelMax - voxelMin);
+        vec3 voxelIndex = voxelIndex(position.xyz, int(voxelDim), voxelCenter, voxelMin, voxelMax, false);//ivec3(voxelPosition * imageSize(voxelColor).xyz);
+        voxelStore(ivec3(voxelIndex), color, normal);
     }
 
     te_out.worldPosition = position.xyz;

@@ -155,6 +155,11 @@ vec4 traceCone(sampler3D voxelTexture, vec3 position, vec3 normal, vec3 directio
             // c_tc = floor(c_tc * voxelDim) / voxelDim;
             samplePosition = voxelWarp(samplePosition, c_tc);
         }
+        else if (voxelizeTesselationWarp) {
+            vec3 worldPosition = samplePosition * (voxelMax - voxelMin) + voxelCenter + voxelMin;
+            samplePosition = getVoxelPosition(worldPosition, voxelDim, voxelCenter, voxelMin, voxelMax, false);
+
+        }
         vec4 sampleColor = textureLod(voxelTexture, samplePosition, lod + lodOffset);
         float a = 1 - alpha;
         color += sampleColor.rgb * a;
