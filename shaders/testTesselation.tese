@@ -2,14 +2,28 @@
 
 layout(triangles, equal_spacing, ccw, point_mode) in;
 
+#pragma include "use_rgba16f.glsl"
+
+#if USE_RGBA16F
+#extension GL_NV_gpu_shader5: enable
+#extension GL_NV_shader_atomic_float: enable
+#extension GL_NV_shader_atomic_fp16_vector: enable
+
+#if GL_NV_shader_atomic_fp16_vector
+layout(binding = 0, rgba16f) uniform image3D voxelColor;
+layout(binding = 1, rgba16f) uniform image3D voxelNormal;
+#endif // GL_NV_shader_atomic_fp16_vector
+#else
 layout(binding = 0, r32ui) uniform uimage3D voxelColor;
 layout(binding = 1, r32ui) uniform uimage3D voxelNormal;
+#endif // USE_RGBA16F
 
 layout(binding = 0) uniform sampler2D diffuseMap;
 
 in vec4 tcPosition[];
 in vec3 tcNormal[];
 in vec2 tcTexcoord[];
+in vec3 tcVoxelPosition[];
 
 out TE_OUT {
     vec3 worldPosition;
@@ -60,6 +74,16 @@ void imageAtomicRGBA8Avg(layout(r32ui) coherent volatile uimage3D imgUI, ivec3 c
 void voxelStore(ivec3 voxelIndex, vec4 color, vec3 normal) {
     normal = normalize(normal) * 0.5 + 0.5;
 
+#if USE_RGBA16F
+    if (voxelizeAtomicMax) {
+        imageAtomicMax(voxelColor, voxelIndex, f16vec4(color.rgb, 1));
+        imageAtomicMax(voxelNormal, voxelIndex, f16vec4(normal, 1));
+    }
+    else {
+        imageAtomicAdd(voxelColor, voxelIndex, f16vec4(color.rgb, 1));
+        imageAtomicAdd(voxelNormal, voxelIndex, f16vec4(normal, 1));
+    }
+#else
     // imageStore(voxelColor, voxelIndex, uvec4(packedColor, 0, 0, 0));
     // imageStore(voxelNormal, voxelIndex, uvec4(packedNormal, 0, 0, 0));
     if (voxelizeAtomicMax) {
@@ -70,9 +94,10 @@ void voxelStore(ivec3 voxelIndex, vec4 color, vec3 normal) {
         imageAtomicMax(voxelNormal, voxelIndex, packedNormal);
     }
     else {
-        imageAtomicRGBA8Avg(voxelColor, voxelIndex, color);
+        imageAtomicRGBA8Avg(voxelColor, voxelIndex, vec4(color.rgb, 1));
         imageAtomicRGBA8Avg(voxelNormal, voxelIndex, vec4(normal, 1));
     }
+#endif
 }
 
 void main() {
@@ -87,7 +112,12 @@ void main() {
                     + gl_TessCoord.z * tcTexcoord[2];
 
     vec4 color = texture(diffuseMap, texcoord);
-    vec3 voxelPosition = (position.xyz - voxelCenter - voxelMin) / (voxelMax - voxelMin);
+
+    // vec3 voxelPosition = (position.xyz - voxelCenter - voxelMin) / (voxelMax - voxelMin);
+    vec3 voxelPosition = gl_TessCoord.x * tcVoxelPosition[0]
+                    + gl_TessCoord.y * tcVoxelPosition[1]
+                    + gl_TessCoord.z * tcVoxelPosition[2];
+
     ivec3 voxelIndex = ivec3(voxelPosition * imageSize(voxelColor).xyz);
     voxelStore(voxelIndex, color, normal);
 

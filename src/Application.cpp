@@ -630,8 +630,8 @@ void Application::render(float dt) {
         shader->setUniformMatrix4fv("view", view);
         shader->setUniform1i("voxelizeAtomicMax", settings.voxelizeAtomicMax);
 
-        glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
-        glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+        glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
+        glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
 
         // GLQuad::draw(GL_PATCHES);
         scene->draw(*shader, GL_PATCHES);

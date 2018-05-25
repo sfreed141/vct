@@ -1,6 +1,6 @@
 #version 430 core
 
-#define USE_RGBA16F 0
+#pragma include "use_rgba16f.glsl"
 
 #if USE_RGBA16F
 #extension GL_NV_gpu_shader5: enable
