@@ -165,6 +165,8 @@ void Overlay::render(float dt) {
             nk_checkbox_label(ctx, "debugMaterialRoughness", &settings.debugMaterialRoughness);
             nk_checkbox_label(ctx, "debugMaterialMetallic", &settings.debugMaterialMetallic);
             nk_checkbox_label(ctx, "debugWarpTexture", &settings.debugWarpTexture);
+            nk_checkbox_label(ctx, "voxelizeTesselation", &settings.voxelizeTesselation);
+            nk_checkbox_label(ctx, "voxelizeTesselationDebug", &settings.voxelizeTesselationDebug);
 
             {
                 static int current_minfilter = 5;

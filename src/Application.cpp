@@ -148,6 +148,12 @@ void Application::init() {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, voxelizeInfoSSBO);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     }
+
+    glPatchParameteri(GL_PATCH_VERTICES, 3);
+    // const GLfloat inner[] = { 2.f, 2.f };
+    // const GLfloat outer[] = { 3.f, 3.f, 3.f, 3.f };
+    // glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, inner);
+    // glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, outer);
 }
 
 void Application::update(float dt) {
@@ -190,62 +196,6 @@ void Application::update(float dt) {
 void Application::render(float dt) {
     totalTimer.start();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    // TEST TESSELATION
-    {
-        glViewport(0, 0, width, height);
-        // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        // glDisable(GL_DEPTH_TEST);
-        // glDisable(GL_CULL_FACE);
-        glEnable(GL_DEPTH_TEST);
-        glEnable(GL_CULL_FACE);
-        // glEnable(GL_RASTERIZER_DISCARD);
-
-        // const GLfloat inner[] = { 2.f, 2.f };
-        // const GLfloat outer[] = { 3.f, 3.f, 3.f, 3.f };
-        // glPatchParameterfv(GL_PATCH_DEFAULT_INNER_LEVEL, inner);
-        // glPatchParameterfv(GL_PATCH_DEFAULT_OUTER_LEVEL, outer);
-        glClearTexImage(vct.voxelColor, 0, GL_RGBA, GL_FLOAT, nullptr);
-        glClearTexImage(vct.voxelNormal, 0, GL_RGBA, GL_FLOAT, nullptr);
-
-        static GLShaderProgram shader {"Test Tesselation", {
-            // SHADER_DIR "quad.vert",
-            SHADER_DIR "simpleTesselated.vert",
-            SHADER_DIR "testTesselation.tesc",
-            SHADER_DIR "testTesselation.tese",
-            SHADER_DIR "debugVoxelsTesselated.geom",
-            SHADER_DIR "debugVoxels.frag"
-            // SHADER_DIR "testTesselation.frag"
-        }};
-
-        glPatchParameteri(GL_PATCH_VERTICES, 3);
-        shader.bind();
-
-        glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
-        glm::mat4 view = camera.lookAt();
-
-        shader.setUniformMatrix4fv("projection", projection);
-        shader.setUniformMatrix4fv("view", view);
-
-        glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-        glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_RGBA8);
-
-        // GLQuad::draw(GL_PATCHES);
-        scene->draw(shader, GL_PATCHES);
-
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        glDisable(GL_RASTERIZER_DISCARD);
-        shader.unbind();
-
-        // Render overlay
-        {
-            GL_DEBUG_PUSH("Render Overlay")
-            ui.render(dt);
-            GL_DEBUG_POP()
-        }
-
-        return;
-    }
 
     Light mainlight = scene->lights[0];
 
@@ -626,7 +576,85 @@ void Application::render(float dt) {
 
     voxelizeTimer.start();
     // Voxelize scene
-    {
+    if (settings.voxelizeTesselation) {
+        GL_DEBUG_PUSH("Voxelize Tesselation")
+
+        static GLShaderProgram voxelizeTesselationShader {
+            "Voxelize Tesselation",
+            {
+                SHADER_DIR "simpleTesselated.vert",
+                SHADER_DIR "testTesselation.tesc",
+                SHADER_DIR "testTesselation.tese"
+            }};
+        static GLShaderProgram voxelizeTesselationDebugShader{
+            "Voxelize Tesselation Debug",
+            {
+                // SHADER_DIR "quad.vert",
+                SHADER_DIR "simpleTesselated.vert",
+                SHADER_DIR "testTesselation.tesc",
+                SHADER_DIR "testTesselation.tese",
+                SHADER_DIR "debugVoxelsTesselated.geom",
+                SHADER_DIR "debugVoxels.frag"
+                // SHADER_DIR "testTesselation.frag"
+            }};
+
+        GLShaderProgram *shader = &voxelizeTesselationShader;
+
+        if (settings.voxelizeTesselationDebug) {
+
+            glViewport(0, 0, width, height);
+            glPolygonMode(GL_FRONT_AND_BACK, settings.drawWireframe ? GL_LINE : GL_FILL);
+            glEnable(GL_DEPTH_TEST);
+            glEnable(GL_CULL_FACE);
+
+            shader = &voxelizeTesselationDebugShader;
+        }
+        else {
+
+            glEnable(GL_RASTERIZER_DISCARD);
+            glDisable(GL_DEPTH_TEST);
+            glDisable(GL_CULL_FACE);
+
+            shader = &voxelizeTesselationShader;
+        }
+
+        glClearTexImage(vct.voxelColor, 0, GL_RGBA, GL_FLOAT, nullptr);
+        glClearTexImage(vct.voxelNormal, 0, GL_RGBA, GL_FLOAT, nullptr);
+
+        shader->bind();
+
+        glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
+        glm::mat4 view = camera.lookAt();
+
+        shader->setUniformMatrix4fv("projection", projection);
+        shader->setUniformMatrix4fv("view", view);
+        shader->setUniform1i("voxelizeAtomicMax", settings.voxelizeAtomicMax);
+
+        glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+        glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+
+        // GLQuad::draw(GL_PATCHES);
+        scene->draw(*shader, GL_PATCHES);
+
+        glBindImageTexture(0, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+        glBindImageTexture(1, 0, 0, GL_TRUE, 0, GL_READ_WRITE, GL_R32UI);
+
+        glDisable(GL_RASTERIZER_DISCARD);
+
+        shader->unbind();
+        GL_DEBUG_POP()
+
+        // Render overlay
+        if (settings.voxelizeTesselationDebug) {
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+            GL_DEBUG_PUSH("Render Overlay")
+            ui.render(dt);
+            GL_DEBUG_POP()
+            return;
+        }
+    }
+    else {
         GL_DEBUG_PUSH("Voxelize Scene")
         glViewport(0, 0, settings.voxelizeMultiplier * vct.voxelDim, settings.voxelizeMultiplier * vct.voxelDim);
         glDisable(GL_DEPTH_TEST);

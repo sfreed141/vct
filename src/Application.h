@@ -96,6 +96,9 @@ struct Settings {
     VCTSettings diffuseConeSettings { 16, glm::radians(60.f), 1.0f, 1.0f, 0.5f };
     VCTSettings specularConeSettings { 32, glm::radians(30.f), 1.7f, 0.5f, 0.1f };
     int specularConeAngleFromRoughness = true;
+
+    int voxelizeTesselation = true;
+    int voxelizeTesselationDebug = false;
 };
 
 GLuint make3DTexture(GLsizei size, GLsizei levels, GLenum internalFormat, GLint minFilter, GLint magFilter);
