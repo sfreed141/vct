@@ -37,6 +37,7 @@ uniform mat4 view;
 
 uniform bool voxelizeAtomicMax = false;
 // TODO uniform bool voxelizeLighting;
+uniform bool voxelizeTesselationWarp;
 
 uniform float voxelDim = 256;
 uniform vec3 voxelMin = vec3(-20), voxelMax = vec3(20), voxelCenter = vec3(0);
@@ -113,13 +114,15 @@ void main() {
 
     vec4 color = texture(diffuseMap, texcoord);
 
-    // vec3 voxelPosition = (position.xyz - voxelCenter - voxelMin) / (voxelMax - voxelMin);
-    vec3 voxelPosition = gl_TessCoord.x * tcVoxelPosition[0]
-                    + gl_TessCoord.y * tcVoxelPosition[1]
-                    + gl_TessCoord.z * tcVoxelPosition[2];
-
-    ivec3 voxelIndex = ivec3(voxelPosition * imageSize(voxelColor).xyz);
-    voxelStore(voxelIndex, color, normal);
+    ivec3 voxelA = ivec3(voxelDim * tcVoxelPosition[0]), voxelB = ivec3(voxelDim * tcVoxelPosition[1]), voxelC = ivec3(voxelDim * tcVoxelPosition[2]);
+    if (all(equal(voxelA, voxelB)) && all(equal(voxelA, voxelC)) && gl_TessCoord.x == 1.0) {
+        voxelStore(voxelA, color, normal);
+    }
+    else {
+        vec3 voxelPosition = (position.xyz - voxelCenter - voxelMin) / (voxelMax - voxelMin);
+        ivec3 voxelIndex = ivec3(voxelPosition * imageSize(voxelColor).xyz);
+        voxelStore(voxelIndex, color, normal);
+    }
 
     te_out.worldPosition = position.xyz;
     te_out.normal = normal;

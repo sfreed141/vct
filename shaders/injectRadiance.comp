@@ -27,6 +27,7 @@ uniform vec3 voxelMin, voxelMax;
 uniform vec3 voxelCenter;
 uniform bool warpVoxels;
 uniform bool warpTexture;
+uniform bool voxelizeTesselationWarp;
 
 uniform bool radianceLighting = false;
 uniform bool radianceDilate = false;

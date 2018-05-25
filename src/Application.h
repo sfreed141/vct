@@ -82,7 +82,7 @@ struct Settings {
     float warpTextureLowResolution = 0.5;
 
     int voxelizeLighting = true;
-    int voxelizeAtomicMax = false;  // only used if voxel textures are rgba8
+    int voxelizeAtomicMax = true;
     int voxelTrackCamera = false;
     float voxelizeMultiplier = 1.0f;
     int voxelizeDilate = false;
@@ -99,6 +99,7 @@ struct Settings {
 
     int voxelizeTesselation = true;
     int voxelizeTesselationDebug = false;
+    int voxelizeTesselationWarp = true;
 };
 
 GLuint make3DTexture(GLsizei size, GLsizei levels, GLenum internalFormat, GLint minFilter, GLint magFilter);

@@ -112,6 +112,7 @@ uniform vec3 voxelMin, voxelMax;
 uniform vec3 voxelCenter;
 uniform bool warpVoxels;
 uniform bool warpTexture;
+uniform bool voxelizeTesselationWarp;
 
 uniform int vctSteps;
 uniform float vctConeAngle;

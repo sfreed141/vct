@@ -197,12 +197,18 @@ void Application::render(float dt) {
     totalTimer.start();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    Light mainlight = scene->lights[0];
+    const glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
+    const glm::mat4 view = camera.lookAt();
+    const glm::mat4 pv = projection * view;
+    const glm::mat4 pvInverse = glm::inverse(pv);
+
+    const Light mainlight = scene->lights[0];
 
     const float lz_near = 0.0f, lz_far = 100.0f, l_boundary = 25.0f;
-    glm::mat4 lp = glm::ortho(-l_boundary, l_boundary, -l_boundary, l_boundary, lz_near, lz_far);
-    glm::mat4 lv = glm::lookAt(mainlight.position, mainlight.position + mainlight.direction, glm::vec3(0.0f, 1.0f, 0.0f));
-    glm::mat4 ls = lp * lv;
+    const glm::mat4 lp = glm::ortho(-l_boundary, l_boundary, -l_boundary, l_boundary, lz_near, lz_far);
+    const glm::mat4 lv = glm::lookAt(mainlight.position, mainlight.position + mainlight.direction, glm::vec3(0.0f, 1.0f, 0.0f));
+    const glm::mat4 ls = lp * lv;
+
     // Generate shadowmap
     shadowmapTimer.start();
     {
@@ -623,12 +629,10 @@ void Application::render(float dt) {
 
         shader->bind();
 
-        glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
-        glm::mat4 view = camera.lookAt();
-
         shader->setUniformMatrix4fv("projection", projection);
         shader->setUniformMatrix4fv("view", view);
         shader->setUniform1i("voxelizeAtomicMax", settings.voxelizeAtomicMax);
+        shader->setUniform1i("voxelizeTesselationWarp", settings.voxelizeTesselationWarp);
 
         glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
         glBindImageTexture(1, vct.voxelNormal, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
@@ -800,6 +804,7 @@ void Application::render(float dt) {
         injectRadianceProgram.setUniform3fv("eye", camera.position);
         injectRadianceProgram.setUniform1i("warpVoxels", settings.warpVoxels);
         injectRadianceProgram.setUniform1i("warpTexture", settings.warpTexture);
+        injectRadianceProgram.setUniform1i("voxelizeTesselationWarp", settings.voxelizeTesselationWarp);
         injectRadianceProgram.setUniform1i("voxelDim", vct.voxelDim);
         injectRadianceProgram.setUniform3fv("voxelMin", vct.min);
         injectRadianceProgram.setUniform3fv("voxelMax", vct.max);
@@ -912,8 +917,6 @@ void Application::render(float dt) {
     glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
     if (settings.debugVoxels) {
-        glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
-        glm::mat4 view = camera.lookAt();
         glm::mat4 mvp = projection * view;
         debugVoxels(settings.drawRadiance ? vct.voxelRadiance : vct.voxelColor, mvp);
     }
@@ -927,8 +930,6 @@ void Application::render(float dt) {
         // Depth prepass
         {
             GL_DEBUG_PUSH("Depth Prepass")
-            glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
-            glm::mat4 view = camera.lookAt();
 
             glViewport(0, 0, width, height);
             glEnable(GL_DEPTH_TEST);
@@ -963,9 +964,6 @@ void Application::render(float dt) {
             GL_DEBUG_PUSH("Render Scene")
 
             glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BARRIER_BIT | GL_SHADER_STORAGE_BARRIER_BIT | GL_UNIFORM_BARRIER_BIT);
-
-            glm::mat4 projection = glm::perspective(camera.fov, (float)width / height, near, far);
-            glm::mat4 view = camera.lookAt();
 
             glViewport(0, 0, width, height);
             // glEnable(GL_FRAMEBUFFER_SRGB);
@@ -1014,6 +1012,7 @@ void Application::render(float dt) {
 
             program.setUniform1i("warpVoxels", settings.warpVoxels);
             program.setUniform1i("warpTexture", settings.warpTexture);
+            program.setUniform1i("voxelizeTesselationWarp", settings.voxelizeTesselationWarp);
             program.setUniform1i("voxelDim", vct.voxelDim);
             program.setUniform3fv("voxelMin", vct.min);
             program.setUniform3fv("voxelMax", vct.max);
