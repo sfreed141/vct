@@ -199,6 +199,25 @@ int main() {
     return 0;
 #endif
 
+#if 0
+    {
+        GLint numPageSizes, pageSizesX[10] = {0}, pageSizesY[10] = {0}, pageSizesZ[10] = {0};
+        glGetInternalformativ(GL_TEXTURE_3D, GL_RGBA8, GL_NUM_VIRTUAL_PAGE_SIZES_ARB, sizeof(GLuint), &numPageSizes);
+        numPageSizes = std::min(numPageSizes, 10);
+        glGetInternalformativ(GL_TEXTURE_3D, GL_RGBA8, GL_VIRTUAL_PAGE_SIZE_X_ARB, numPageSizes*sizeof(GLuint), pageSizesX);
+        glGetInternalformativ(GL_TEXTURE_3D, GL_RGBA8, GL_VIRTUAL_PAGE_SIZE_Y_ARB, numPageSizes*sizeof(GLuint), pageSizesY);
+        glGetInternalformativ(GL_TEXTURE_3D, GL_RGBA8, GL_VIRTUAL_PAGE_SIZE_Z_ARB, numPageSizes*sizeof(GLuint), pageSizesZ);
+
+
+        GLuint tex;
+        glCreateTextures(GL_TEXTURE_3D, 1, &tex);
+        glTextureParameteri(tex, GL_TEXTURE_SPARSE_ARB, GL_TRUE);
+        glTextureStorage3D(tex, 4, GL_RGBA8, 256, 256, 256);
+
+        glTexturePageCommitmentEXT(tex, 0, 0, 0, 0, 32, 32, 16, GL_TRUE);
+    }
+#endif
+
     // stbi_set_flip_vertically_on_load(true);
 
     Application app {window};

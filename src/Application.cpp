@@ -633,6 +633,10 @@ void Application::render(float dt) {
         shader->setUniformMatrix4fv("view", view);
         shader->setUniform1i("voxelizeAtomicMax", settings.voxelizeAtomicMax);
         shader->setUniform1i("voxelizeTesselationWarp", settings.voxelizeTesselationWarp);
+        shader->setUniform1f("voxelDim", vct.voxelDim);
+        shader->setUniform3fv("voxelMin", vct.min);
+        shader->setUniform3fv("voxelMax", vct.max);
+        shader->setUniform3fv("voxelCenter", vct.center);
         shader->setUniformMatrix4fv("pv", pv);
 
         glBindImageTexture(0, vct.voxelColor, 0, GL_TRUE, 0, GL_READ_WRITE, vct.useRGBA16f ? GL_RGBA16F : GL_R32UI);
