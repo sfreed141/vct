@@ -1,5 +1,5 @@
 # Voxel Cone Tracing
-This is the implementation for my (still in progress) thesis, Real-Time Dynamic Global Illumination using Warped Voxel Cone Tracing.
+This is the implementation for my passing thesis, Real-Time Dynamic Global Illumination using Warped Voxel Cone Tracing.
 
 At its core, the application is a standard forward rendering engine supporting multiple lights, shadow mapping, and normal mapping---in addition, of course, to full real-time dynamic global illumination. The scene to be rendered is composed of one or more actors, which are simply meshes loaded from the generic Wavefront OBJ file format. Actors are also capable of rigid body animations.
 
