@@ -1,0 +1,78 @@
+variables:
+  system.debug: true
+
+jobs:
+
+- job: macos_hosted
+  pool:
+    vmImage: 'macOS-10.14'
+  steps:
+    - task: Bash@3
+      inputs:
+        targetType: 'inline'
+        script: 'brew install gcc'
+    - task: lucappa.cmake-ninja-vcpkg-tasks.d855c326-b1c0-4d6f-b1c7-440ade6835fb.run-vcpkg@0
+      displayName: 'Run vcpkg'
+      inputs:
+        vcpkgTriplet: 'x64-osx'
+        vcpkgArguments: 'glm glfw3'
+    - task: lucappa.cmake-ninja-vcpkg-tasks.f2b1ec7d-bc54-4cc8-b9ed-1bc7f37c9dc6.run-cmake@0
+      displayName: 'Run CMake and Ninja - Basic'
+      inputs:
+        cmakeListsTxtPath: CMakeLists.txt
+        useVcpkgToolchainFile: true
+        cmakeBuildType: Release
+    - task: lucappa.cmake-ninja-vcpkg-tasks.f2b1ec7d-bc54-4cc8-b9ed-1bc7f37c9dc6.run-cmake@0
+      displayName: 'CMakeSettings.json'
+      inputs:
+        cmakeListsOrSettingsJson: CMakeSettingsJson
+        useVcpkgToolchainFile: true
+        configurationRegexFilter: 'Unix-Release'
+
+- job: ubuntu_hosted
+  pool:
+    name: Hosted Ubuntu 1604
+  steps:
+    - bash: |
+        sudo apt-get update
+        sudo apt install libxinerama-dev libxcursor-dev libx11-dev xorg-dev libglu1-mesa-dev
+      displayName: 'Bash Script'
+    - task: lucappa.cmake-ninja-vcpkg-tasks.d855c326-b1c0-4d6f-b1c7-440ade6835fb.run-vcpkg@0
+      displayName: 'Run vcpkg'
+      inputs:
+        vcpkgTriplet: 'x64-linux'
+        vcpkgArguments: 'glm glfw3'
+    - task: lucappa.cmake-ninja-vcpkg-tasks.f2b1ec7d-bc54-4cc8-b9ed-1bc7f37c9dc6.run-cmake@0
+      displayName: 'Run CMake and Ninja - Basic'
+      inputs:
+        cmakeListsTxtPath: CMakeLists.txt
+        useVcpkgToolchainFile: true
+        cmakeBuildType: Release
+    - task: lucappa.cmake-ninja-vcpkg-tasks.f2b1ec7d-bc54-4cc8-b9ed-1bc7f37c9dc6.run-cmake@0
+      displayName: 'CMakeSettings.json'
+      inputs:
+        cmakeListsOrSettingsJson: CMakeSettingsJson
+        useVcpkgToolchainFile: true
+        configurationRegexFilter: 'Unix-Release'
+
+- job: vs2019_hosted
+  pool:
+    name: Hosted Windows 2019 with VS2019
+  steps:
+    - task: lucappa.cmake-ninja-vcpkg-tasks.d855c326-b1c0-4d6f-b1c7-440ade6835fb.run-vcpkg@0
+      displayName: 'Run vcpkg'
+      inputs:
+        vcpkgTriplet: 'x64-windows'
+        vcpkgArguments: 'glm glfw3'
+    - task: lucappa.cmake-ninja-vcpkg-tasks.f2b1ec7d-bc54-4cc8-b9ed-1bc7f37c9dc6.run-cmake@0
+      displayName: 'CMakeSettings.json'
+      inputs:
+        cmakeListsOrSettingsJson: CMakeSettingsJson
+        useVcpkgToolchainFile: true
+        configurationRegexFilter: 'x64-Release'
+    - task: lucappa.cmake-ninja-vcpkg-tasks.f2b1ec7d-bc54-4cc8-b9ed-1bc7f37c9dc6.run-cmake@0
+      displayName: 'Run CMake and Ninja - Basic'
+      inputs:
+        cmakeListsTxtPath: CMakeLists.txt
+        useVcpkgToolchainFile: true
+        cmakeBuildType: Release

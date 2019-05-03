@@ -15,12 +15,10 @@ include_directories(${PROJECT_NAME} ${CMAKE_SOURCE_DIR}/src ${CMAKE_SOURCE_DIR}/
 add_definitions(-DRESOURCE_DIR="${CMAKE_SOURCE_DIR}/resources/")
 add_definitions(-DSHADER_DIR="${CMAKE_SOURCE_DIR}/shaders/")
 
-# set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_SOURCE_DIR}/cmake)
-
 find_package(OpenGL REQUIRED)
-find_package(glfw3 REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
 
-include_directories(${PROJECT_NAME}  ${OPENGL_INCLUDE_DIR})
+include_directories(${PROJECT_NAME} ${OPENGL_INCLUDE_DIR})
 target_link_libraries(${PROJECT_NAME} glfw ${OPENGL_gl_LIBRARY})
 
 if(NOT WIN32)
