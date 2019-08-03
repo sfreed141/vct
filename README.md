@@ -1,3 +1,5 @@
+[![Build Status](https://dev.azure.com/CppBuild/CppBuildTasks/_apis/build/status/vct/macos-linux-win-lukka.vct?branchName=master)](https://dev.azure.com/CppBuild/CppBuildTasks/_build/latest?definitionId=5&branchName=master)
+
 # Voxel Cone Tracing
 This is the implementation for my passing thesis, Real-Time Dynamic Global Illumination using Warped Voxel Cone Tracing.
 

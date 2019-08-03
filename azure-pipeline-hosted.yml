@@ -1,5 +1,6 @@
 variables:
   system.debug: true
+  vcpkgGitRef: 36d276a19af03210c3fffcdee844b32b9b65334e
 
 jobs:
 
@@ -11,11 +12,15 @@ jobs:
       inputs:
         targetType: 'inline'
         script: 'brew install gcc'
+    - task: CacheBeta@0
+      displayName: Cache vcpkg artifacts
+      inputs:
+        key: $(Build.SourcesDirectory)/vcpkg_x64-osx.txt | "$(vcpkgGitRef)" | "$(Agent.Name)"
+        path: '$(Build.BinariesDirectory)/vcpkg'
     - task: lucappa.cmake-ninja-vcpkg-tasks.d855c326-b1c0-4d6f-b1c7-440ade6835fb.run-vcpkg@0
       displayName: 'Run vcpkg'
       inputs:
-        vcpkgTriplet: 'x64-osx'
-        vcpkgArguments: 'glm glfw3'
+        vcpkgArguments: '@$(Build.SourcesDirectory)/vcpkg_x64-osx.txt'
     - task: lucappa.cmake-ninja-vcpkg-tasks.f2b1ec7d-bc54-4cc8-b9ed-1bc7f37c9dc6.run-cmake@0
       displayName: 'Run CMake and Ninja - Basic'
       inputs:
@@ -37,11 +42,15 @@ jobs:
         sudo apt-get update
         sudo apt install libxinerama-dev libxcursor-dev libx11-dev xorg-dev libglu1-mesa-dev
       displayName: 'Bash Script'
+    - task: CacheBeta@0
+      displayName: Cache vcpkg artifacts
+      inputs:
+        key: $(Build.SourcesDirectory)/vcpkg_x64-linux.txt | "$(vcpkgGitRef)" | "$(Agent.Name)"
+        path: '$(Build.BinariesDirectory)/vcpkg'
     - task: lucappa.cmake-ninja-vcpkg-tasks.d855c326-b1c0-4d6f-b1c7-440ade6835fb.run-vcpkg@0
       displayName: 'Run vcpkg'
       inputs:
-        vcpkgTriplet: 'x64-linux'
-        vcpkgArguments: 'glm glfw3'
+        vcpkgArguments: '@$(Build.SourcesDirectory)/vcpkg_x64-linux.txt'
     - task: lucappa.cmake-ninja-vcpkg-tasks.f2b1ec7d-bc54-4cc8-b9ed-1bc7f37c9dc6.run-cmake@0
       displayName: 'Run CMake and Ninja - Basic'
       inputs:
@@ -59,11 +68,15 @@ jobs:
   pool:
     name: Hosted Windows 2019 with VS2019
   steps:
+    - task: CacheBeta@0
+      displayName: Cache vcpkg artifacts
+      inputs:
+        key: $(Build.SourcesDirectory)/vcpkg_x64-vs2019.txt | "$(vcpkgGitRef)" | "$(Agent.Name)"
+        path: '$(Build.BinariesDirectory)/vcpkg'
     - task: lucappa.cmake-ninja-vcpkg-tasks.d855c326-b1c0-4d6f-b1c7-440ade6835fb.run-vcpkg@0
       displayName: 'Run vcpkg'
       inputs:
-        vcpkgTriplet: 'x64-windows'
-        vcpkgArguments: 'glm glfw3'
+        vcpkgArguments: '@$(Build.SourcesDirectory)/vcpkg_x64-vs2019.txt'
     - task: lucappa.cmake-ninja-vcpkg-tasks.f2b1ec7d-bc54-4cc8-b9ed-1bc7f37c9dc6.run-cmake@0
       displayName: 'CMakeSettings.json'
       inputs:
