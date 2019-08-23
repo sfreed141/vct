@@ -1,6 +1,7 @@
 variables:
+  vcpkgLocation: $(Build.SourcesDirectory)/submodules/vcpkg/
+  vcpkgCommitId: $(Build.SourcesDirectory)/.git/modules/submodules/vcpkg/HEAD
   system.debug: true
-  vcpkgGitRef: 36d276a19af03210c3fffcdee844b32b9b65334e
 
 jobs:
 
@@ -8,6 +9,8 @@ jobs:
   pool:
     vmImage: 'macOS-10.14'
   steps:
+    - checkout: self
+      submodules: recursive
     - task: Bash@3
       inputs:
         targetType: 'inline'
@@ -15,12 +18,13 @@ jobs:
     - task: CacheBeta@0
       displayName: Cache vcpkg artifacts
       inputs:
-        key: $(Build.SourcesDirectory)/vcpkg_x64-osx.txt | "$(vcpkgGitRef)" | "$(Agent.Name)"
-        path: '$(Build.BinariesDirectory)/vcpkg'
+        key: $(Build.SourcesDirectory)/vcpkg_x64-osx.txt | $(vcpkgCommitId) | "$(Agent.OS)"
+        path: '$(vcpkgLocation)'
     - task: lucappa.cmake-ninja-vcpkg-tasks.d855c326-b1c0-4d6f-b1c7-440ade6835fb.run-vcpkg@0
       displayName: 'Run vcpkg'
       inputs:
         vcpkgArguments: '@$(Build.SourcesDirectory)/vcpkg_x64-osx.txt'
+        vcpkgDirectory: $(vcpkgLocation)
     - task: lucappa.cmake-ninja-vcpkg-tasks.f2b1ec7d-bc54-4cc8-b9ed-1bc7f37c9dc6.run-cmake@0
       displayName: 'Run CMake and Ninja - Basic'
       inputs:
@@ -28,7 +32,7 @@ jobs:
         useVcpkgToolchainFile: true
         cmakeBuildType: Release
     - task: lucappa.cmake-ninja-vcpkg-tasks.f2b1ec7d-bc54-4cc8-b9ed-1bc7f37c9dc6.run-cmake@0
-      displayName: 'CMakeSettings.json'
+      displayName: 'Run CMake with CMakeSettings.json'
       inputs:
         cmakeListsOrSettingsJson: CMakeSettingsJson
         useVcpkgToolchainFile: true
@@ -38,6 +42,8 @@ jobs:
   pool:
     name: Hosted Ubuntu 1604
   steps:
+    - checkout: self
+      submodules: recursive
     - bash: |
         sudo apt-get update
         sudo apt install libxinerama-dev libxcursor-dev libx11-dev xorg-dev libglu1-mesa-dev
@@ -45,12 +51,13 @@ jobs:
     - task: CacheBeta@0
       displayName: Cache vcpkg artifacts
       inputs:
-        key: $(Build.SourcesDirectory)/vcpkg_x64-linux.txt | "$(vcpkgGitRef)" | "$(Agent.Name)"
-        path: '$(Build.BinariesDirectory)/vcpkg'
+        key: $(Build.SourcesDirectory)/vcpkg_x64-linux.txt | $(vcpkgCommitId) | "$(Agent.OS)"
+        path: '$(vcpkgLocation)'
     - task: lucappa.cmake-ninja-vcpkg-tasks.d855c326-b1c0-4d6f-b1c7-440ade6835fb.run-vcpkg@0
       displayName: 'Run vcpkg'
       inputs:
         vcpkgArguments: '@$(Build.SourcesDirectory)/vcpkg_x64-linux.txt'
+        vcpkgDirectory: $(vcpkgLocation)
     - task: lucappa.cmake-ninja-vcpkg-tasks.f2b1ec7d-bc54-4cc8-b9ed-1bc7f37c9dc6.run-cmake@0
       displayName: 'Run CMake and Ninja - Basic'
       inputs:
@@ -58,7 +65,7 @@ jobs:
         useVcpkgToolchainFile: true
         cmakeBuildType: Release
     - task: lucappa.cmake-ninja-vcpkg-tasks.f2b1ec7d-bc54-4cc8-b9ed-1bc7f37c9dc6.run-cmake@0
-      displayName: 'CMakeSettings.json'
+      displayName: 'Run CMake with CMakeSettings.json'
       inputs:
         cmakeListsOrSettingsJson: CMakeSettingsJson
         useVcpkgToolchainFile: true
@@ -68,17 +75,20 @@ jobs:
   pool:
     name: Hosted Windows 2019 with VS2019
   steps:
+    - checkout: self
+      submodules: recursive
     - task: CacheBeta@0
       displayName: Cache vcpkg artifacts
       inputs:
-        key: $(Build.SourcesDirectory)/vcpkg_x64-vs2019.txt | "$(vcpkgGitRef)" | "$(Agent.Name)"
-        path: '$(Build.BinariesDirectory)/vcpkg'
+        key: $(Build.SourcesDirectory)/vcpkg_x64-vs2019.txt | $(vcpkgCommitId) | "$(Agent.OS)"
+        path: '$(vcpkgLocation)'
     - task: lucappa.cmake-ninja-vcpkg-tasks.d855c326-b1c0-4d6f-b1c7-440ade6835fb.run-vcpkg@0
       displayName: 'Run vcpkg'
       inputs:
         vcpkgArguments: '@$(Build.SourcesDirectory)/vcpkg_x64-vs2019.txt'
+        vcpkgDirectory: $(vcpkgLocation)
     - task: lucappa.cmake-ninja-vcpkg-tasks.f2b1ec7d-bc54-4cc8-b9ed-1bc7f37c9dc6.run-cmake@0
-      displayName: 'CMakeSettings.json'
+      displayName: 'Run CMake with CMakeSettings.json'
       inputs:
         cmakeListsOrSettingsJson: CMakeSettingsJson
         useVcpkgToolchainFile: true
@@ -89,3 +99,4 @@ jobs:
         cmakeListsTxtPath: CMakeLists.txt
         useVcpkgToolchainFile: true
         cmakeBuildType: Release
+

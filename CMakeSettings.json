@@ -8,7 +8,7 @@
             "inheritEnvironments": [
                 "msvc_x86"
             ],
-            "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
+            "buildRoot": "${projectDir}/out/build/${name}",
             "cmakeCommandArgs": "",
             "buildCommandArgs": "",
             "ctestCommandArgs": ""
@@ -16,11 +16,11 @@
         {
             "name": "x86-Release",
             "generator": "Ninja",
-            "configurationType": "RelWithDebInfo",
+            "configurationType": "Release",
             "inheritEnvironments": [
                 "msvc_x86"
             ],
-            "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
+            "buildRoot": "${projectDir}/out/build/${name}",
             "cmakeCommandArgs": "",
             "buildCommandArgs": "",
             "ctestCommandArgs": ""
@@ -32,7 +32,7 @@
             "inheritEnvironments": [
                 "msvc_x64"
             ],
-            "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
+            "buildRoot": "${projectDir}/out/build/${name}",
             "cmakeCommandArgs": "",
             "buildCommandArgs": "",
             "ctestCommandArgs": ""
@@ -40,11 +40,11 @@
         {
             "name": "x64-Release",
             "generator": "Ninja",
-            "configurationType": "RelWithDebInfo",
+            "configurationType": "Release",
             "inheritEnvironments": [
                 "msvc_x64"
             ],
-            "buildRoot": "${env.USERPROFILE}\\CMakeBuilds\\${workspaceHash}\\build\\${name}",
+            "buildRoot": "${projectDir}/out/build/${name}",
             "cmakeCommandArgs": "",
             "buildCommandArgs": "",
             "ctestCommandArgs": ""
@@ -53,6 +53,14 @@
             "name": "Unix-Release",
             "generator": "Ninja",
             "configurationType": "Release",
+            "cmakeCommandArgs": "",
+            "buildCommandArgs": "",
+            "ctestCommandArgs": ""
+        },
+        {
+            "name": "Unix-Debug",
+            "generator": "Ninja",
+            "configurationType": "Debug",
             "cmakeCommandArgs": "",
             "buildCommandArgs": "",
             "ctestCommandArgs": ""
