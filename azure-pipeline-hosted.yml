@@ -3,6 +3,9 @@ variables:
   vcpkgCommitId: $(Build.SourcesDirectory)/.git/modules/submodules/vcpkg/HEAD
   system.debug: true
 
+pr:
+  - master
+
 jobs:
 
 - job: macos_hosted
