@@ -1,0 +1,4 @@
+glm
+glfw3
+--triplet
+x64-linux
